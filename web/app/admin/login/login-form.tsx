@@ -16,7 +16,7 @@ export default function LoginForm() {
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json().catch(() => ({}));
@@ -24,6 +24,18 @@ export default function LoginForm() {
         setError(data.error || "Login failed");
         return;
       }
+
+      const me = await fetch("/api/admin/auth/me", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!me.ok) {
+        setError(
+          "Login succeeded but the session cookie was not kept. Use http:// (not https://) and ensure COOKIE_SECURE=false on the server.",
+        );
+        return;
+      }
+
       window.location.assign("/admin");
       return;
     } catch {

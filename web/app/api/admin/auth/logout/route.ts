@@ -1,23 +1,23 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
   SESSION_COOKIE,
+  applySessionCookie,
   destroySession,
   getSessionUser,
-  sessionCookieOptions,
 } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
 
 export async function POST(request: Request) {
-  const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
+  const token =
+    request.headers
+      .get("cookie")
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${SESSION_COOKIE}=`))
+      ?.slice(SESSION_COOKIE.length + 1) ?? undefined;
+
   const user = await getSessionUser(token);
   await destroySession(token);
-  jar.set({
-    ...sessionCookieOptions("", 0),
-    value: "",
-    maxAge: 0,
-  });
 
   if (user) {
     await writeAuditLog({
@@ -28,5 +28,17 @@ export async function POST(request: Request) {
     });
   }
 
-  return NextResponse.redirect(new URL("/admin/login", request.url), 303);
+  const response = NextResponse.redirect(
+    new URL("/admin/login", request.url),
+    303,
+  );
+  applySessionCookie(response, "", 0);
+  response.cookies.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
 }

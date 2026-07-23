@@ -150,6 +150,7 @@ export function canManageContent(role: AdminRoleKey) {
 export function sessionCookieOptions(token: string, maxAgeSeconds = SESSION_DAYS * 86400) {
   // Opt-in only. Default false so plain HTTP deploys (e.g. http://IP:8095)
   // can keep the session cookie. Set COOKIE_SECURE=true behind HTTPS.
+  // Workers often do not see Docker env unless bound as wrangler vars — keep default false.
   const secure =
     process.env.COOKIE_SECURE === "true" || process.env.COOKIE_SECURE === "1";
 
@@ -162,4 +163,35 @@ export function sessionCookieOptions(token: string, maxAgeSeconds = SESSION_DAYS
     path: "/",
     maxAge: maxAgeSeconds,
   };
+}
+
+/** Attach session cookie on the response (required for Wrangler/Workers). */
+export function applySessionCookie(
+  response: {
+    cookies: {
+      set: (
+        name: string,
+        value: string,
+        options?: {
+          httpOnly?: boolean;
+          sameSite?: "lax" | "strict" | "none";
+          secure?: boolean;
+          path?: string;
+          maxAge?: number;
+        },
+      ) => void;
+    };
+  },
+  token: string,
+  maxAgeSeconds = SESSION_DAYS * 86400,
+) {
+  const opts = sessionCookieOptions(token, maxAgeSeconds);
+  response.cookies.set(opts.name, opts.value, {
+    httpOnly: opts.httpOnly,
+    sameSite: opts.sameSite,
+    secure: opts.secure,
+    path: opts.path,
+    maxAge: opts.maxAge,
+  });
+  return response;
 }

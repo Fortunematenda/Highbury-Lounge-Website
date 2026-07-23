@@ -1,10 +1,10 @@
 import { eq, sql } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import {
   AuthError,
+  applySessionCookie,
   authenticateAdmin,
   createSession,
-  sessionCookieOptions,
 } from "@/lib/auth";
 import { getDb } from "@/db";
 import { adminUsers } from "@/db/schema";
@@ -26,14 +26,14 @@ export async function POST(request: Request) {
     }
 
     const token = await createSession(user.id);
-    const jar = await cookies();
-    const opts = sessionCookieOptions(token);
-    jar.set(opts);
 
     const db = getDb();
     await db
       .update(adminUsers)
-      .set({ lastLoginAt: new Date().toISOString(), updatedAt: sql`CURRENT_TIMESTAMP` })
+      .set({
+        lastLoginAt: new Date().toISOString(),
+        updatedAt: sql`CURRENT_TIMESTAMP`,
+      })
       .where(eq(adminUsers.id, user.id));
 
     await writeAuditLog({
@@ -43,7 +43,9 @@ export async function POST(request: Request) {
       entityId: user.id,
     });
 
-    return Response.json({
+    // Set cookie on the Response object — cookies().set() alone is unreliable
+    // under vinext/wrangler and the browser never receives Set-Cookie.
+    const response = NextResponse.json({
       ok: true,
       user: {
         id: user.id,
@@ -53,6 +55,8 @@ export async function POST(request: Request) {
         roleName: user.roleName,
       },
     });
+    applySessionCookie(response, token);
+    return response;
   } catch (error) {
     if (error instanceof AuthError) {
       return jsonError(error.message, error.status);
