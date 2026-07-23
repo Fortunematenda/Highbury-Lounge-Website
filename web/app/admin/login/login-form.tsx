@@ -1,10 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +16,7 @@ export default function LoginForm() {
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json().catch(() => ({}));
@@ -25,8 +24,8 @@ export default function LoginForm() {
         setError(data.error || "Login failed");
         return;
       }
-      router.replace("/admin");
-      router.refresh();
+      window.location.assign("/admin");
+      return;
     } catch {
       setError("Unable to reach the server.");
     } finally {

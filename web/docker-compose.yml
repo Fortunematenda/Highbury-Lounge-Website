@@ -7,10 +7,12 @@ services:
     env_file:
       - .env
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOST=0.0.0.0
-      - WRANGLER_LOG_PATH=.wrangler/wrangler.log
+      NODE_ENV: production
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      CI: "true"
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: .wrangler/wrangler.log
     volumes:
       - highbury-wrangler:/app/.wrangler
     restart: unless-stopped
@@ -18,8 +20,8 @@ services:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/"]
       interval: 15s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 8
+      start_period: 40s
 
 volumes:
   highbury-wrangler:

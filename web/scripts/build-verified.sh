@@ -25,4 +25,10 @@ timeout \
   "${SITES_BUILD_TIMEOUT:-3m}" \
   "${vinext}" build
 
+# Node cannot import workerd `cloudflare:` modules; skip in Docker/VPS builds.
+if [[ "${SKIP_ARTIFACT_VALIDATE:-}" == "1" ]]; then
+  echo "Skipping Sites artifact Node validation (SKIP_ARTIFACT_VALIDATE=1)."
+  exit 0
+fi
+
 "${script_dir}/validate-artifact.sh"

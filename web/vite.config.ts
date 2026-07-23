@@ -16,6 +16,8 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   // WeakRef/FinalizationRegistry require >= 2025-05-08 in workerd
   compatibility_date: "2025-11-01",
+  // Keep a single nodejs_compat source here. Do not also set it in wrangler.toml
+  // or dist/server/wrangler.json ends up with the flag duplicated and workerd refuses to boot.
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
     ? [

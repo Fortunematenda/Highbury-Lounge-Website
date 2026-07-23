@@ -9,12 +9,13 @@
     "install:ci": "bash scripts/install-ci.sh",
     "dev": "vite",
     "build": "bash scripts/build-verified.sh",
-    "start": "vinext start",
+    "start": "wrangler dev --config dist/server/wrangler.json --local --ip 0.0.0.0 --port 3000 --persist-to .wrangler/state",
+    "start:node": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply highbury-lounge-d1 --local",
+    "db:migrate:local": "wrangler d1 migrations apply highbury-lounge-d1 --local --config wrangler.migrate.toml --persist-to .wrangler/state",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

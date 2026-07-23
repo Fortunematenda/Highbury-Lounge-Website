@@ -1,13 +1,4 @@
+# Intentionally no compatibility_flags here — vinext/vite owns them.
+# Duplicate nodejs_compat makes workerd fail to start.
 name = "highbury-lounge"
-# WeakRef support in workerd requires >= 2025-05-08
 compatibility_date = "2025-11-01"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "highbury-lounge-d1"
-database_id = "00000000-0000-4000-8000-000000000000"
-migrations_dir = "drizzle"
-
-[[r2_buckets]]
-binding = "UPLOADS"
-bucket_name = "highbury-lounge-uploads"
