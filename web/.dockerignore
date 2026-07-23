@@ -10,6 +10,8 @@ dist
 .env.*
 !.env.example
 tsconfig.tsbuildinfo
-.openai
+# Keep hosting.json for vite/vinext bindings; ignore other OpenAI tooling state
+.openai/*
+!.openai/hosting.json
 examples
 tests
