@@ -6,6 +6,11 @@ import "./admin.css";
 
 export const metadata = {
   title: "Admin · Highbury Lounge",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 function isLoginPath(pathname: string) {
