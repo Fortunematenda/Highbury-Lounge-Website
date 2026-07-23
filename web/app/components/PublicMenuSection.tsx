@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { formatMoney } from "@/lib/format";
+import { pickTranslated } from "@/lib/i18n/content";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
+import type { AppLocale } from "@/lib/i18n/locales";
 
 type PublicMenuItem = {
   id: number;
   name: string;
   shortDescription: string | null;
   description: string | null;
+  translationsJson?: string | null;
   price: number;
   promotionalPrice: number | null;
   currency: string;
@@ -26,6 +30,7 @@ type PublicMenuItem = {
 type PublicCategory = {
   id: number;
   name: string;
+  translationsJson?: string | null;
   items: PublicMenuItem[];
 };
 
@@ -40,6 +45,7 @@ const FALLBACK_IMAGE = "/images/food.jpg";
 const INITIAL_VISIBLE = 4;
 
 export function PublicMenuSection({ onPreview, onOrder }: Props) {
+  const { t, i18n } = useTranslation();
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,11 +57,11 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
       try {
         const res = await fetch("/api/menu");
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to load menu");
+        if (!res.ok) throw new Error(data.error || t("validation.tryAgain"));
         if (!cancelled) setCategories(data.categories ?? []);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load menu");
+          setError(err instanceof Error ? err.message : t("validation.tryAgain"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -64,11 +70,34 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const items = categories.flatMap((c) =>
-    c.items.map((item) => ({ ...item, categoryName: c.name })),
-  );
+  const locale = i18n.language as AppLocale;
+  const items = categories.flatMap((c) => {
+    const categoryLabel = pickTranslated(
+      locale,
+      { name: c.name, description: null, shortDescription: null },
+      c.translationsJson,
+    ).name;
+    return c.items.map((item) => {
+      const localized = pickTranslated(
+        locale,
+        {
+          name: item.name,
+          description: item.description,
+          shortDescription: item.shortDescription,
+        },
+        item.translationsJson,
+      );
+      return {
+        ...item,
+        categoryName: categoryLabel,
+        displayName: localized.name,
+        displayDescription: localized.shortDescription || localized.description,
+      };
+    });
+  });
   const visibleItems = showAll ? items : items.slice(0, INITIAL_VISIBLE);
   const hiddenCount = Math.max(0, items.length - INITIAL_VISIBLE);
 
@@ -76,15 +105,13 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
     <section className="section food-menu-section" aria-labelledby="food-menu-title">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Available from our kitchen</p>
-          <h2 id="food-menu-title">Explore the Highbury menu.</h2>
+          <p className="eyebrow">{t("menu.eyebrow")}</p>
+          <h2 id="food-menu-title">{t("menu.title")}</h2>
         </div>
-        <p className="price-note">
-          Freshly prepared for staying guests, conference delegates and visitors. Availability may vary during busy service periods.
-        </p>
+        <p className="price-note">{t("menu.note")}</p>
       </div>
 
-      {loading && <p className="muted">Loading live menu…</p>}
+      {loading && <p className="muted">{t("menu.loadingMenu")}</p>}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -92,8 +119,8 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
       )}
       {!loading && !error && items.length === 0 && (
         <div className="empty-state">
-          <strong>Menu coming soon</strong>
-          <p>Our kitchen team is updating today’s offerings.</p>
+          <strong>{t("menu.comingSoon")}</strong>
+          <p>{t("menu.updatingOfferings")}</p>
         </div>
       )}
 
@@ -103,41 +130,41 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
             <button
               className="food-image-button"
               onClick={() => onPreview(item)}
-              aria-label={`Preview ${item.name}`}
+              aria-label={t("menu.previewItem", { name: item.displayName })}
               type="button"
             >
-              <img src={item.imageUrl || FALLBACK_IMAGE} alt={item.name} />
-              <span className="food-availability">Available today</span>
+              <img src={item.imageUrl || FALLBACK_IMAGE} alt={item.displayName} />
+              <span className="food-availability">{t("menu.availableToday")}</span>
             </button>
             <div className="food-card-content">
               <span>{item.categoryName}</span>
               <div className="food-title-row">
-                <h3>{item.name}</h3>
+                <h3>{item.displayName}</h3>
                 <strong>
                   {item.promotionalPrice != null ? (
                     <>
                       <small style={{ textDecoration: "line-through", marginRight: 6 }}>
-                        {formatMoney(item.price, item.currency)}
+                        {formatMoney(item.price, item.currency, i18n.language)}
                       </small>
-                      {formatMoney(item.promotionalPrice, item.currency)}
+                      {formatMoney(item.promotionalPrice, item.currency, i18n.language)}
                     </>
                   ) : (
-                    formatMoney(item.price, item.currency)
+                    formatMoney(item.price, item.currency, i18n.language)
                   )}
                 </strong>
               </div>
-              <p>{item.shortDescription || item.description}</p>
+              <p>{item.displayDescription}</p>
               <div className="amenity-chips">
-                {item.isVegetarian ? <span>✓ Vegetarian</span> : null}
-                {item.isVegan ? <span>✓ Vegan</span> : null}
-                {item.isHalal ? <span>✓ Halal</span> : null}
-                {item.isGlutenFree ? <span>✓ Gluten-free</span> : null}
-                {item.containsNuts ? <span>✓ Contains nuts</span> : null}
-                {item.isSpicy ? <span>✓ Spicy</span> : null}
+                {item.isVegetarian ? <span>✓ {t("menu.vegetarian")}</span> : null}
+                {item.isVegan ? <span>✓ {t("menu.vegan")}</span> : null}
+                {item.isHalal ? <span>✓ {t("menu.halal")}</span> : null}
+                {item.isGlutenFree ? <span>✓ {t("menu.glutenFree")}</span> : null}
+                {item.containsNuts ? <span>✓ {t("menu.containsNuts")}</span> : null}
+                {item.isSpicy ? <span>✓ {t("menu.spicy")}</span> : null}
               </div>
               <div className="food-actions">
                 <button type="button" onClick={() => onPreview(item)}>
-                  View dish
+                  {t("menu.viewDish")}
                 </button>
                 {item.allowPreOrder ? (
                   <button
@@ -145,7 +172,7 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
                     type="button"
                     onClick={() => onOrder(item)}
                   >
-                    Pre-order
+                    {t("menu.preOrder")}
                   </button>
                 ) : null}
               </div>
@@ -162,20 +189,20 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
             onClick={() => setShowAll((v) => !v)}
             aria-expanded={showAll}
           >
-            {showAll ? "Show less" : `Show more (+${hiddenCount})`}
+            {showAll
+              ? t("menu.showLess")
+              : `${t("menu.showMore")} (+${hiddenCount})`}
           </button>
         </div>
       ) : null}
 
       <div className="menu-note">
         <div>
-          <strong>Planning a conference or group meal?</strong>
-          <p>
-            Choose catering in the conference request form, or send a meal pre-order with the number of servings you need.
-          </p>
+          <strong>{t("menu.planningGroupTitle")}</strong>
+          <p>{t("menu.planningGroupBody")}</p>
         </div>
         <button className="button primary" type="button" onClick={() => onOrder()}>
-          Start a food pre-order
+          {t("menu.startFoodPreOrder")}
         </button>
       </div>
     </section>

@@ -148,14 +148,10 @@ export function canManageContent(role: AdminRoleKey) {
 }
 
 export function sessionCookieOptions(token: string, maxAgeSeconds = SESSION_DAYS * 86400) {
-  // Plain HTTP (e.g. http://IP:8095) cannot store Secure cookies.
-  // Set COOKIE_SECURE=true only when serving over HTTPS.
+  // Opt-in only. Default false so plain HTTP deploys (e.g. http://IP:8095)
+  // can keep the session cookie. Set COOKIE_SECURE=true behind HTTPS.
   const secure =
-    process.env.COOKIE_SECURE === "true" || process.env.COOKIE_SECURE === "1"
-      ? true
-      : process.env.COOKIE_SECURE === "false" || process.env.COOKIE_SECURE === "0"
-        ? false
-        : process.env.NODE_ENV === "production";
+    process.env.COOKIE_SECURE === "true" || process.env.COOKIE_SECURE === "1";
 
   return {
     name: SESSION_COOKIE,

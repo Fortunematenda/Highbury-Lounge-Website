@@ -1,0 +1,20 @@
+{
+  "required": "Ichi chinhu chinodiwa.",
+  "invalidEmail": "Ndapota isa email address yakanaka.",
+  "invalidPhone": "Ndapota isa nhamba yenhare yakanaka.",
+  "checkoutAfterCheckin": "Check-out inofanira kuva mushure mezuva recheck-in.",
+  "selectGuest": "Ndapota sarudza muenzi mumwe kana vanopfuura.",
+  "roomUnavailable": "Kamuri iri harisisiri kuwanikwa pamazuva ako.",
+  "unableSubmit": "Hatikwanise kutumira. Ndapota edza zvakare.",
+  "networkError": "Dambudziko renetwork. Tarisa connection yako uye edza zvakare.",
+  "tryAgain": "Pane chakaipa. Ndapota edza zvakare.",
+  "invalidQuantity": "Ndapota isa huwandu hwakanaka.",
+  "bookingNotFound": "Booking haina kuwanikwa.",
+  "acceptTerms": "Ndapota bvuma mitemo yekubhuka kuti uenderere mberi.",
+  "waitBeforeSubmit": "Ndapota mira kashoma usati watumira zvakare.",
+  "missingFields": "Ndapota zadza zvose zvinodiwa.",
+  "atLeastOneAdult": "Munhu mukuru mumwe anodiwa.",
+  "unableCreateBooking": "Hatikwanise kugadzira booking. Ndapota edza zvakare.",
+  "selectBothDates": "Ndapota sarudza mazuva ese echeck-in necheck-out.",
+  "selectDatesBelow": "Sarudza mazuva ako pazasi, wobva watsvaga makamuri aripo."
+}

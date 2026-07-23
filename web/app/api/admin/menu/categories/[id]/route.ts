@@ -5,6 +5,7 @@ import { menuCategories, menuItems } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { jsonError } from "@/lib/format";
 import { isMenuItemType } from "@/lib/menu-constants";
+import { normalizeTranslationsJson } from "@/lib/i18n/content";
 import { slugify } from "@/lib/slug";
 
 export async function PATCH(
@@ -107,6 +108,10 @@ export async function PATCH(
           body.isActive !== undefined
             ? Boolean(body.isActive)
             : existing.isActive,
+        translationsJson:
+          body.translationsJson !== undefined
+            ? (normalizeTranslationsJson(body.translationsJson) ?? null)
+            : existing.translationsJson,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       })
       .where(eq(menuCategories.id, id))

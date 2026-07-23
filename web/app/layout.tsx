@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { PublicChrome } from "@/app/components/SiteHeader";
+import { isAppLocale, type AppLocale } from "@/lib/i18n/locales";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,15 +21,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jar = await cookies();
+  const cookieLocale = jar.get("hl_locale")?.value;
+  const initialLocale: AppLocale | null = isAppLocale(cookieLocale)
+    ? cookieLocale
+    : null;
+
   return (
-    <html lang="en">
+    <html lang={initialLocale ?? "en"}>
       <body className="antialiased">
-        <PublicChrome>{children}</PublicChrome>
+        <PublicChrome initialLocale={initialLocale}>{children}</PublicChrome>
       </body>
     </html>
   );

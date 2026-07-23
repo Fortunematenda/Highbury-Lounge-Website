@@ -3,83 +3,93 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { pickTranslated } from "@/lib/i18n/content";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
+import type { AppLocale } from "@/lib/i18n/locales";
+
+type SearchKind = "Page" | "Room" | "Menu" | "Venue";
 
 type SearchHit = {
   id: string;
   title: string;
   description: string;
   href: string;
-  kind: "Page" | "Room" | "Menu" | "Venue";
+  kind: SearchKind;
 };
 
-const SITE_PAGES: SearchHit[] = [
+const SITE_PAGE_DEFS = [
   {
     id: "page-home",
-    title: "Home",
-    description: "Welcome to Highbury Lounge in Kadoma",
+    titleKey: "search.pages.homeTitle",
+    descKey: "search.pages.homeDesc",
     href: "/#home",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-stay",
-    title: "Stay",
-    description: "Guest rooms and accommodation",
+    titleKey: "search.pages.stayTitle",
+    descKey: "search.pages.stayDesc",
     href: "/#stay",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-meet",
-    title: "Meet & celebrate",
-    description: "Conferences, events and celebrations",
+    titleKey: "search.pages.meetTitle",
+    descKey: "search.pages.meetDesc",
     href: "/#meet",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-dine",
-    title: "Dine",
-    description: "Restaurant and kitchen dining",
+    titleKey: "search.pages.dineTitle",
+    descKey: "search.pages.dineDesc",
     href: "/#dine",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-menu",
-    title: "Kitchen menu",
-    description: "Explore food and drinks from our kitchen",
+    titleKey: "search.pages.menuTitle",
+    descKey: "search.pages.menuDesc",
     href: "/#dine-menu",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-gallery",
-    title: "Gallery",
-    description: "Photos of Highbury Lounge",
+    titleKey: "search.pages.galleryTitle",
+    descKey: "search.pages.galleryDesc",
     href: "/#gallery",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-contact",
-    title: "Contact",
-    description: "Address, phone and WhatsApp",
+    titleKey: "search.pages.contactTitle",
+    descKey: "search.pages.contactDesc",
     href: "/#contact",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-conference",
-    title: "Conference enquiry",
-    description: "Request a conference or event quote",
+    titleKey: "search.pages.conferenceTitle",
+    descKey: "search.pages.conferenceDesc",
     href: "/conference",
-    kind: "Page",
+    kind: "Page" as const,
   },
   {
     id: "page-book",
-    title: "Book a room",
-    description: "Check availability and reserve your stay",
+    titleKey: "search.pages.bookTitle",
+    descKey: "search.pages.bookDesc",
     href: "/#home",
-    kind: "Page",
+    kind: "Page" as const,
   },
 ];
 
 type Props = {
-  rooms?: Array<{ id: string; name: string; detail: string }>;
+  rooms?: Array<{
+    id: string;
+    name: string;
+    detail: string;
+    translationsJson?: string | null;
+  }>;
 };
 
 function matches(query: string, ...parts: Array<string | null | undefined>) {
@@ -90,6 +100,8 @@ function matches(query: string, ...parts: Array<string | null | undefined>) {
 
 export function SiteSearch({ rooms = [] }: Props) {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as AppLocale;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
@@ -99,7 +111,8 @@ export function SiteSearch({ rooms = [] }: Props) {
   const allowCloseRef = useRef(false);
 
   useEffect(() => {
-    setMounted(true);
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => {
@@ -112,7 +125,6 @@ export function SiteSearch({ rooms = [] }: Props) {
     document.body.style.overflow = "hidden";
     allowCloseRef.current = false;
 
-    // Ignore the click/tap that opened the modal so it cannot close instantly.
     const enableCloseTimer = window.setTimeout(() => {
       allowCloseRef.current = true;
       inputRef.current?.focus();
@@ -151,15 +163,29 @@ export function SiteSearch({ rooms = [] }: Props) {
         if (cancelled) return;
         const hits: SearchHit[] = [];
         for (const category of data.categories ?? []) {
+          const cat = pickTranslated(
+            locale,
+            { name: category.name, description: category.description },
+            category.translationsJson,
+          );
           for (const item of category.items ?? []) {
+            const localized = pickTranslated(
+              locale,
+              {
+                name: item.name,
+                description: item.description,
+                shortDescription: item.shortDescription,
+              },
+              item.translationsJson,
+            );
             hits.push({
               id: `menu-${item.id}`,
-              title: item.name,
+              title: localized.name,
               description:
-                item.shortDescription ||
-                item.description ||
-                category.name ||
-                "Menu item",
+                localized.shortDescription ||
+                localized.description ||
+                cat.name ||
+                t("search.menuItem"),
               href: "/#dine-menu",
               kind: "Menu",
             });
@@ -173,28 +199,56 @@ export function SiteSearch({ rooms = [] }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, locale, t]);
+
+  const kindLabel = (kind: SearchKind) => {
+    if (kind === "Page") return t("search.kindPage");
+    if (kind === "Room") return t("search.kindRoom");
+    if (kind === "Menu") return t("search.kindMenu");
+    return t("search.kindVenue");
+  };
+
+  const sitePages: SearchHit[] = useMemo(
+    () =>
+      SITE_PAGE_DEFS.map((page) => ({
+        id: page.id,
+        title: t(page.titleKey),
+        description: t(page.descKey),
+        href: page.href,
+        kind: page.kind,
+      })),
+    [t],
+  );
 
   const roomHits: SearchHit[] = useMemo(
     () =>
-      rooms.map((room) => ({
-        id: `room-${room.id}`,
-        title: room.name,
-        description: room.detail,
-        href: "/#stay",
-        kind: "Room" as const,
-      })),
-    [rooms],
+      rooms.map((room) => {
+        const localized = pickTranslated(
+          locale,
+          { name: room.name, description: room.detail },
+          room.translationsJson,
+        );
+        return {
+          id: `room-${room.id}`,
+          title: localized.name,
+          description: localized.description || room.detail,
+          href: "/#stay",
+          kind: "Room" as const,
+        };
+      }),
+    [rooms, locale],
   );
 
   const results = useMemo(() => {
     const q = query.trim();
     if (!q) return [] as SearchHit[];
-    const pool = [...SITE_PAGES, ...roomHits, ...menuHits];
+    const pool = [...sitePages, ...roomHits, ...menuHits];
     return pool
-      .filter((hit) => matches(q, hit.title, hit.description, hit.kind))
+      .filter((hit) =>
+        matches(q, hit.title, hit.description, kindLabel(hit.kind), hit.kind),
+      )
       .slice(0, 12);
-  }, [query, roomHits, menuHits]);
+  }, [query, roomHits, menuHits, sitePages, t]);
 
   function closeSearch() {
     setOpen(false);
@@ -234,7 +288,7 @@ export function SiteSearch({ rooms = [] }: Props) {
               className="site-search-panel"
               role="dialog"
               aria-modal="true"
-              aria-label="Search Highbury Lounge"
+              aria-label={t("search.dialogLabel")}
             >
               <div className="site-search-bar">
                 <svg
@@ -265,11 +319,10 @@ export function SiteSearch({ rooms = [] }: Props) {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={(event) => {
-                    // Keep typing inside the modal; Esc still closes via window listener.
                     event.stopPropagation();
                   }}
-                  placeholder="Search rooms, menu, pages…"
-                  aria-label="Search"
+                  placeholder={t("search.placeholder")}
+                  aria-label={t("search.open")}
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
@@ -278,7 +331,7 @@ export function SiteSearch({ rooms = [] }: Props) {
                   type="button"
                   className="site-search-close"
                   onClick={closeSearch}
-                  aria-label="Close search"
+                  aria-label={t("search.close")}
                 >
                   ×
                 </button>
@@ -286,19 +339,19 @@ export function SiteSearch({ rooms = [] }: Props) {
 
               <div className="site-search-results">
                 {!query.trim() ? (
-                  <p className="site-search-hint">
-                    Try “breakfast”, “suite”, “conference”, or “gallery”.
-                  </p>
+                  <p className="site-search-hint">{t("search.hint")}</p>
                 ) : results.length === 0 ? (
                   <p className="site-search-hint">
-                    No matches for “{query.trim()}”.
+                    {t("search.noMatches", { query: query.trim() })}
                   </p>
                 ) : (
                   <ul>
                     {results.map((hit) => (
                       <li key={hit.id}>
                         <button type="button" onClick={() => goTo(hit.href)}>
-                          <span className="site-search-kind">{hit.kind}</span>
+                          <span className="site-search-kind">
+                            {kindLabel(hit.kind)}
+                          </span>
                           <strong>{hit.title}</strong>
                           <small>{hit.description}</small>
                         </button>
@@ -317,20 +370,24 @@ export function SiteSearch({ rooms = [] }: Props) {
     <>
       <button
         type="button"
-        className="header-search-btn"
-        aria-label="Search the website"
-        aria-expanded={open}
-        aria-haspopup="dialog"
+        className="site-search-trigger"
         onClick={openSearch}
+        aria-label={t("search.open")}
       >
         <svg
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           aria-hidden="true"
         >
-          <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+          <circle
+            cx="11"
+            cy="11"
+            r="7"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
           <path
             d="M20 20l-3.5-3.5"
             stroke="currentColor"

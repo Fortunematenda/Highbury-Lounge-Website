@@ -8,6 +8,7 @@ import {
   isMenuItemType,
   isPriceUnit,
 } from "@/lib/menu-constants";
+import { normalizeTranslationsJson } from "@/lib/i18n/content";
 import { slugify } from "@/lib/slug";
 
 function parseBool(value: unknown, fallback: boolean) {
@@ -184,6 +185,8 @@ export async function POST(request: Request) {
         displayOrder: Number(body.displayOrder ?? 0),
         publicVisible: parseBool(body.publicVisible, true),
         adminNotes: body.adminNotes ? String(body.adminNotes) : null,
+        translationsJson:
+          normalizeTranslationsJson(body.translationsJson) ?? null,
         createdById: user.id,
         updatedById: user.id,
       })

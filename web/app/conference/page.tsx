@@ -3,15 +3,45 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
+import { pickTranslated } from "@/lib/i18n/content";
+import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type Package = {
   id: number;
   name: string;
   capacity: number;
   description: string | null;
+  translationsJson?: string | null;
 };
 
+const EVENT_TYPE_OPTIONS = [
+  { value: "Conference", labelKey: "conference.eventTypes.conference" },
+  { value: "Board meeting", labelKey: "conference.eventTypes.board" },
+  { value: "Workshop or training", labelKey: "conference.eventTypes.workshopTraining" },
+  { value: "Corporate function", labelKey: "conference.eventTypes.corporate" },
+  { value: "Private event", labelKey: "conference.eventTypes.private" },
+  { value: "Other", labelKey: "conference.eventTypes.other" },
+] as const;
+
+const SEATING_OPTIONS = [
+  { value: "Theatre", labelKey: "conference.seating.theatre" },
+  { value: "Boardroom", labelKey: "conference.seating.boardroom" },
+  { value: "Classroom", labelKey: "conference.seating.classroom" },
+  { value: "U-shape", labelKey: "conference.seating.uShape" },
+  { value: "Banquet", labelKey: "conference.seating.banquet" },
+] as const;
+
+const REQUIREMENT_OPTIONS = [
+  ["cateringRequired", "conference.cateringRequired"],
+  ["projectorRequired", "conference.projectorRequired"],
+  ["soundSystemRequired", "conference.soundSystemRequired"],
+  ["internetRequired", "conference.internetRequired"],
+  ["accommodationRequired", "conference.accommodationRequired"],
+] as const;
+
 export default function ConferencePage() {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const today = new Date().toISOString().split("T")[0];
   const [packages, setPackages] = useState<Package[]>([]);
@@ -62,12 +92,12 @@ export default function ConferencePage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed");
+      if (!res.ok) throw new Error(data.error || t("validation.unableSubmit"));
       router.push(
         `/conference/success?reference=${encodeURIComponent(data.enquiry.reference)}`,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Submission failed");
+      setError(err instanceof Error ? err.message : t("validation.unableSubmit"));
     } finally {
       setSubmitting(false);
     }
@@ -76,10 +106,11 @@ export default function ConferencePage() {
   return (
     <main className="booking-flow">
       <section className="booking-flow-panel">
-        <BackLink href="/#meet" label="Back to venues" preferHistory={false} />
-        <p className="eyebrow">Meet & celebrate</p>
-        <h1>Conference enquiry</h1>
-        <p>Tell us about your event and our team will prepare a quotation.</p>
+        <BackLink href="/#meet" label={t("conference.backToVenues")} preferHistory={false} />
+        <LanguageSelector variant="panel" />
+        <p className="eyebrow">{t("conference.eyebrow")}</p>
+        <h1>{t("conference.title")}</h1>
+        <p>{t("conference.intro")}</p>
         {error && (
           <p className="form-error" role="alert">
             {error}
@@ -87,22 +118,29 @@ export default function ConferencePage() {
         )}
         <form className="guest-form" onSubmit={onSubmit}>
           <label>
-            Venue / package
+            {t("conference.venuePackage")}
             <select
               value={form.packageId}
               onChange={(e) => setForm({ ...form, packageId: e.target.value })}
             >
-              <option value="">Select a venue</option>
-              {packages.map((pkg) => (
-                <option key={pkg.id} value={pkg.id}>
-                  {pkg.name} (up to {pkg.capacity})
-                </option>
-              ))}
+              <option value="">{t("conference.selectVenue")}</option>
+              {packages.map((pkg) => {
+                const localized = pickTranslated(
+                  i18n.language,
+                  { name: pkg.name, description: pkg.description },
+                  pkg.translationsJson,
+                );
+                return (
+                  <option key={pkg.id} value={pkg.id}>
+                    {localized.name} ({t("conference.upToCapacity", { count: pkg.capacity })})
+                  </option>
+                );
+              })}
             </select>
           </label>
           <div className="form-row">
             <label>
-              Contact name
+              {t("conference.contactName")}
               <input
                 required
                 value={form.contactName}
@@ -110,7 +148,7 @@ export default function ConferencePage() {
               />
             </label>
             <label>
-              Company
+              {t("conference.company")}
               <input
                 value={form.company}
                 onChange={(e) => setForm({ ...form, company: e.target.value })}
@@ -119,7 +157,7 @@ export default function ConferencePage() {
           </div>
           <div className="form-row">
             <label>
-              Email
+              {t("booking.email")}
               <input
                 type="email"
                 required
@@ -128,7 +166,7 @@ export default function ConferencePage() {
               />
             </label>
             <label>
-              Phone
+              {t("booking.phone")}
               <input
                 type="tel"
                 required
@@ -139,7 +177,7 @@ export default function ConferencePage() {
           </div>
           <div className="form-row">
             <label>
-              WhatsApp
+              {t("booking.whatsapp")}
               <input
                 type="tel"
                 value={form.whatsapp}
@@ -147,25 +185,24 @@ export default function ConferencePage() {
               />
             </label>
             <label>
-              Event type
+              {t("conference.eventType")}
               <select
                 required
                 value={form.eventType}
                 onChange={(e) => setForm({ ...form, eventType: e.target.value })}
               >
-                <option value="">Select</option>
-                <option>Conference</option>
-                <option>Board meeting</option>
-                <option>Workshop or training</option>
-                <option>Corporate function</option>
-                <option>Private event</option>
-                <option>Other</option>
+                <option value="">{t("conference.select")}</option>
+                {EVENT_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {t(opt.labelKey)}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
           <div className="form-row three">
             <label>
-              Preferred date
+              {t("conference.preferredDate")}
               <input
                 type="date"
                 min={today}
@@ -175,7 +212,7 @@ export default function ConferencePage() {
               />
             </label>
             <label>
-              Start time
+              {t("conference.startTime")}
               <input
                 type="time"
                 required
@@ -184,7 +221,7 @@ export default function ConferencePage() {
               />
             </label>
             <label>
-              End time
+              {t("conference.endTime")}
               <input
                 type="time"
                 required
@@ -195,7 +232,7 @@ export default function ConferencePage() {
           </div>
           <div className="form-row">
             <label>
-              Alternative date
+              {t("conference.alternativeDate")}
               <input
                 type="date"
                 min={today}
@@ -206,7 +243,7 @@ export default function ConferencePage() {
               />
             </label>
             <label>
-              Attendees
+              {t("conference.attendees")}
               <input
                 type="number"
                 min={1}
@@ -217,42 +254,34 @@ export default function ConferencePage() {
             </label>
           </div>
           <label>
-            Seating arrangement
+            {t("conference.seatingArrangement")}
             <select
               value={form.seatingArrangement}
               onChange={(e) =>
                 setForm({ ...form, seatingArrangement: e.target.value })
               }
             >
-              <option>Theatre</option>
-              <option>Boardroom</option>
-              <option>Classroom</option>
-              <option>U-shape</option>
-              <option>Banquet</option>
+              {SEATING_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
             </select>
           </label>
           <div className="choice-grid">
-            {(
-              [
-                ["cateringRequired", "Catering"],
-                ["projectorRequired", "Projector"],
-                ["soundSystemRequired", "Sound system"],
-                ["internetRequired", "Internet"],
-                ["accommodationRequired", "Accommodation"],
-              ] as const
-            ).map(([key, label]) => (
+            {REQUIREMENT_OPTIONS.map(([key, labelKey]) => (
               <label className="check-choice" key={key}>
                 <input
                   type="checkbox"
                   checked={form[key]}
                   onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
                 />
-                {label}
+                {t(labelKey)}
               </label>
             ))}
           </div>
           <label>
-            Catering notes
+            {t("conference.cateringNotes")}
             <textarea
               rows={3}
               value={form.cateringNotes}
@@ -260,7 +289,7 @@ export default function ConferencePage() {
             />
           </label>
           <label>
-            Additional notes
+            {t("conference.additionalNotes")}
             <textarea
               rows={4}
               value={form.additionalNotes}
@@ -270,7 +299,7 @@ export default function ConferencePage() {
             />
           </label>
           <button className="button primary" type="submit" disabled={submitting}>
-            {submitting ? "Sending…" : "Submit enquiry"}
+            {submitting ? t("conference.sending") : t("conference.submitEnquiry")}
           </button>
         </form>
       </section>

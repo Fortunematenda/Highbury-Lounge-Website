@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { formatDate, formatMoney, statusColor } from "@/lib/format";
+import { LOCALE_NATIVE_NAMES, isAppLocale } from "@/lib/i18n/locales";
 import { BookingNotesForm } from "./notes-form";
 import { BookingStatusActions } from "./status-actions";
 
@@ -97,6 +98,14 @@ export default async function AdminBookingDetailPage({
               <div>
                 <dt>WhatsApp</dt>
                 <dd>{guest.whatsapp || "—"}</dd>
+              </div>
+              <div>
+                <dt>Guest language</dt>
+                <dd>
+                  {b.preferredLanguage && isAppLocale(b.preferredLanguage)
+                    ? LOCALE_NATIVE_NAMES[b.preferredLanguage]
+                    : b.preferredLanguage || "English"}
+                </dd>
               </div>
               <div>
                 <dt>Country</dt>

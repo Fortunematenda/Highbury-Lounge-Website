@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  AdminLangTabs,
+  buildTranslationDraft,
+} from "@/app/admin/components/AdminLangTabs";
 import { formatMoney } from "@/lib/format";
+import {
+  stringifyTranslations,
+  type ContentTranslations,
+} from "@/lib/i18n/content";
+import type { AppLocale } from "@/lib/i18n/locales";
 import {
   FOOD_LIKE_TYPES,
   MENU_ITEM_TYPES,
@@ -33,6 +42,7 @@ type MenuCategory = {
   displayOrder: number;
   isActive: boolean;
   archivedAt: string | null;
+  translationsJson?: string | null;
 };
 
 type MenuItem = {
@@ -74,6 +84,7 @@ type MenuItem = {
   publicVisible: boolean;
   adminNotes: string | null;
   archivedAt: string | null;
+  translationsJson?: string | null;
   images?: MenuImage[];
 };
 
@@ -315,6 +326,13 @@ export function MenusManager() {
   const [categoryForm, setCategoryForm] =
     useState<CategoryFormState>(emptyCategoryForm);
   const [categorySlugManual, setCategorySlugManual] = useState(false);
+  const [itemLang, setItemLang] = useState<AppLocale>("en");
+  const [itemTranslations, setItemTranslations] = useState<ContentTranslations>(
+    {},
+  );
+  const [categoryLang, setCategoryLang] = useState<AppLocale>("en");
+  const [categoryTranslations, setCategoryTranslations] =
+    useState<ContentTranslations>({});
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [actionsOpenId, setActionsOpenId] = useState<number | null>(null);
@@ -497,6 +515,14 @@ export function MenusManager() {
     clearPendingImages();
     setImagesExpanded(false);
     setSlugManual(false);
+    setItemLang("en");
+    setItemTranslations(
+      buildTranslationDraft({
+        name: "",
+        description: "",
+        shortDescription: "",
+      }),
+    );
     const form = emptyItemForm();
     if (preferredType) form.itemType = preferredType;
     else if (tab === "products") form.itemType = "accommodation_extra";
@@ -524,6 +550,17 @@ export function MenusManager() {
       );
       setEditingItemId(full.id);
       setItemForm(itemToForm(full));
+      setItemLang("en");
+      setItemTranslations(
+        buildTranslationDraft(
+          {
+            name: full.name,
+            description: full.description ?? "",
+            shortDescription: full.shortDescription ?? "",
+          },
+          full.translationsJson,
+        ),
+      );
       setItemImages(gallery);
       setLegacyImageUrl(full.imageUrl ?? item.imageUrl ?? null);
       setImagesExpanded(false);
@@ -540,6 +577,10 @@ export function MenusManager() {
   function openCreateCategory() {
     setEditingCategoryId(null);
     setCategorySlugManual(false);
+    setCategoryLang("en");
+    setCategoryTranslations(
+      buildTranslationDraft({ name: "", description: "" }),
+    );
     const form = emptyCategoryForm();
     if (tab === "products") form.itemType = "accommodation_extra";
     setCategoryForm(form);
@@ -549,8 +590,50 @@ export function MenusManager() {
   function openEditCategory(cat: MenuCategory) {
     setEditingCategoryId(cat.id);
     setCategoryForm(categoryToForm(cat));
+    setCategoryLang("en");
+    setCategoryTranslations(
+      buildTranslationDraft(
+        { name: cat.name, description: cat.description ?? "" },
+        cat.translationsJson,
+      ),
+    );
     setCategorySlugManual(true);
     setCategoryModalOpen(true);
+  }
+
+  function updateItemTranslationField(
+    field: "name" | "description" | "shortDescription",
+    value: string,
+  ) {
+    if (itemLang === "en") {
+      if (field === "name") updateItemField("name", value);
+      else if (field === "description") updateItemField("description", value);
+      else updateItemField("shortDescription", value);
+    }
+    setItemTranslations((prev) => ({
+      ...prev,
+      [itemLang]: {
+        ...prev[itemLang],
+        [field]: value,
+      },
+    }));
+  }
+
+  function updateCategoryTranslationField(
+    field: "name" | "description",
+    value: string,
+  ) {
+    if (categoryLang === "en") {
+      if (field === "name") updateCategoryField("name", value);
+      else updateCategoryField("description", value);
+    }
+    setCategoryTranslations((prev) => ({
+      ...prev,
+      [categoryLang]: {
+        ...prev[categoryLang],
+        [field]: value,
+      },
+    }));
   }
 
   function updateItemField<K extends keyof ItemFormState>(
@@ -584,13 +667,22 @@ export function MenusManager() {
     setBusy(true);
     setError("");
     try {
+      const englishName = categoryForm.name.trim();
+      if (!englishName) throw new Error("English name is required.");
       const payload = {
-        name: categoryForm.name.trim(),
-        slug: categoryForm.slug.trim() || slugify(categoryForm.name),
+        name: englishName,
+        slug: categoryForm.slug.trim() || slugify(englishName),
         description: categoryForm.description.trim() || null,
         itemType: categoryForm.itemType,
         displayOrder: Number(categoryForm.displayOrder || 0),
         isActive: categoryForm.isActive,
+        translationsJson: stringifyTranslations({
+          ...categoryTranslations,
+          en: {
+            name: englishName,
+            description: categoryForm.description.trim(),
+          },
+        }),
       };
       const res = await fetch(
         editingCategoryId
@@ -659,9 +751,11 @@ export function MenusManager() {
     setBusy(true);
     setError("");
     try {
+      const englishName = itemForm.name.trim();
+      if (!englishName) throw new Error("English name is required.");
       const payload = {
-        name: itemForm.name.trim(),
-        slug: itemForm.slug.trim() || slugify(itemForm.name),
+        name: englishName,
+        slug: itemForm.slug.trim() || slugify(englishName),
         itemType: itemForm.itemType,
         categoryId: Number(itemForm.categoryId),
         shortDescription: itemForm.shortDescription.trim() || null,
@@ -700,6 +794,14 @@ export function MenusManager() {
         displayOrder: Number(itemForm.displayOrder || 0),
         publicVisible: itemForm.publicVisible,
         adminNotes: itemForm.adminNotes.trim() || null,
+        translationsJson: stringifyTranslations({
+          ...itemTranslations,
+          en: {
+            name: englishName,
+            description: itemForm.description.trim(),
+            shortDescription: itemForm.shortDescription.trim(),
+          },
+        }),
       };
 
       const res = await fetch(
@@ -1767,79 +1869,111 @@ export function MenusManager() {
             </div>
 
             <form className="admin-form wide" onSubmit={(e) => void saveItem(e)}>
-              <div className="admin-form-row">
-                <label>
-                  Name
-                  <input
-                    className="admin-input"
-                    required
-                    value={itemForm.name}
-                    onChange={(e) => updateItemField("name", e.target.value)}
-                  />
-                </label>
-                <label>
-                  Slug
-                  <input
-                    className="admin-input"
-                    value={itemForm.slug}
-                    onChange={(e) => {
-                      setSlugManual(true);
-                      updateItemField("slug", e.target.value);
-                    }}
-                  />
-                </label>
-              </div>
+              <AdminLangTabs
+                lang={itemLang}
+                onChange={setItemLang}
+                translations={itemTranslations}
+              />
+              <p className="page-sub">
+                {itemLang === "en"
+                  ? "English fields are required and used as the default."
+                  : "Optional translation. Leave blank to fall back to English."}
+              </p>
 
               <div className="admin-form-row">
                 <label>
-                  Item type
-                  <select
+                  Name {itemLang === "en" ? "*" : ""}
+                  <input
                     className="admin-input"
-                    value={itemForm.itemType}
-                    onChange={(e) =>
-                      updateItemField(
-                        "itemType",
-                        e.target.value as MenuItemType,
-                      )
+                    required={itemLang === "en"}
+                    value={
+                      itemLang === "en"
+                        ? itemForm.name
+                        : (itemTranslations[itemLang]?.name ?? "")
                     }
-                  >
-                    {MENU_ITEM_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {MENU_ITEM_TYPE_LABELS[t]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Category
-                  <select
-                    className="admin-input"
-                    required
-                    value={itemForm.categoryId}
                     onChange={(e) =>
-                      updateItemField("categoryId", e.target.value)
+                      updateItemTranslationField("name", e.target.value)
                     }
-                  >
-                    <option value="">Select…</option>
-                    {(categoriesForItemForm.length
-                      ? categoriesForItemForm
-                      : activeCategories
-                    ).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
+                {itemLang === "en" ? (
+                  <label>
+                    Slug
+                    <input
+                      className="admin-input"
+                      value={itemForm.slug}
+                      onChange={(e) => {
+                        setSlugManual(true);
+                        updateItemField("slug", e.target.value);
+                      }}
+                    />
+                  </label>
+                ) : (
+                  <p className="admin-muted">
+                    Slug, pricing, and availability stay shared across languages.
+                  </p>
+                )}
               </div>
+
+              {itemLang === "en" ? (
+                <div className="admin-form-row">
+                  <label>
+                    Item type
+                    <select
+                      className="admin-input"
+                      value={itemForm.itemType}
+                      onChange={(e) =>
+                        updateItemField(
+                          "itemType",
+                          e.target.value as MenuItemType,
+                        )
+                      }
+                    >
+                      {MENU_ITEM_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {MENU_ITEM_TYPE_LABELS[t]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Category
+                    <select
+                      className="admin-input"
+                      required
+                      value={itemForm.categoryId}
+                      onChange={(e) =>
+                        updateItemField("categoryId", e.target.value)
+                      }
+                    >
+                      <option value="">Select…</option>
+                      {(categoriesForItemForm.length
+                        ? categoriesForItemForm
+                        : activeCategories
+                      ).map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ) : null}
 
               <label>
                 Short description
                 <input
                   className="admin-input"
-                  value={itemForm.shortDescription}
+                  value={
+                    itemLang === "en"
+                      ? itemForm.shortDescription
+                      : (itemTranslations[itemLang]?.shortDescription ?? "")
+                  }
                   onChange={(e) =>
-                    updateItemField("shortDescription", e.target.value)
+                    updateItemTranslationField(
+                      "shortDescription",
+                      e.target.value,
+                    )
                   }
                 />
               </label>
@@ -1848,9 +1982,13 @@ export function MenusManager() {
                 <textarea
                   className="admin-textarea"
                   rows={3}
-                  value={itemForm.description}
+                  value={
+                    itemLang === "en"
+                      ? itemForm.description
+                      : (itemTranslations[itemLang]?.description ?? "")
+                  }
                   onChange={(e) =>
-                    updateItemField("description", e.target.value)
+                    updateItemTranslationField("description", e.target.value)
                   }
                 />
               </label>
@@ -2310,79 +2448,112 @@ export function MenusManager() {
               className="admin-form"
               onSubmit={(e) => void saveCategory(e)}
             >
+              <AdminLangTabs
+                lang={categoryLang}
+                onChange={setCategoryLang}
+                translations={categoryTranslations}
+              />
+              <p className="page-sub">
+                {categoryLang === "en"
+                  ? "English fields are required and used as the default."
+                  : "Optional translation. Leave blank to fall back to English."}
+              </p>
               <label>
-                Name
+                Name {categoryLang === "en" ? "*" : ""}
                 <input
                   className="admin-input"
-                  required
-                  value={categoryForm.name}
-                  onChange={(e) => updateCategoryField("name", e.target.value)}
+                  required={categoryLang === "en"}
+                  value={
+                    categoryLang === "en"
+                      ? categoryForm.name
+                      : (categoryTranslations[categoryLang]?.name ?? "")
+                  }
+                  onChange={(e) =>
+                    updateCategoryTranslationField("name", e.target.value)
+                  }
                 />
               </label>
-              <label>
-                Slug
-                <input
-                  className="admin-input"
-                  value={categoryForm.slug}
-                  onChange={(e) => {
-                    setCategorySlugManual(true);
-                    updateCategoryField("slug", e.target.value);
-                  }}
-                />
-              </label>
+              {categoryLang === "en" ? (
+                <label>
+                  Slug
+                  <input
+                    className="admin-input"
+                    value={categoryForm.slug}
+                    onChange={(e) => {
+                      setCategorySlugManual(true);
+                      updateCategoryField("slug", e.target.value);
+                    }}
+                  />
+                </label>
+              ) : null}
               <label>
                 Description
                 <textarea
                   className="admin-textarea"
                   rows={2}
-                  value={categoryForm.description}
+                  value={
+                    categoryLang === "en"
+                      ? categoryForm.description
+                      : (categoryTranslations[categoryLang]?.description ?? "")
+                  }
                   onChange={(e) =>
-                    updateCategoryField("description", e.target.value)
+                    updateCategoryTranslationField(
+                      "description",
+                      e.target.value,
+                    )
                   }
                 />
               </label>
-              <div className="admin-form-row">
-                <label>
-                  Item type
-                  <select
-                    className="admin-input"
-                    value={categoryForm.itemType}
-                    onChange={(e) =>
-                      updateCategoryField(
-                        "itemType",
-                        e.target.value as MenuItemType,
-                      )
-                    }
-                  >
-                    {MENU_ITEM_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {MENU_ITEM_TYPE_LABELS[t]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Display order
-                  <input
-                    className="admin-input"
-                    type="number"
-                    value={categoryForm.displayOrder}
-                    onChange={(e) =>
-                      updateCategoryField("displayOrder", e.target.value)
-                    }
-                  />
-                </label>
-              </div>
-              <label className="menu-check">
-                <input
-                  type="checkbox"
-                  checked={categoryForm.isActive}
-                  onChange={(e) =>
-                    updateCategoryField("isActive", e.target.checked)
-                  }
-                />
-                Active
-              </label>
+              {categoryLang === "en" ? (
+                <>
+                  <div className="admin-form-row">
+                    <label>
+                      Item type
+                      <select
+                        className="admin-input"
+                        value={categoryForm.itemType}
+                        onChange={(e) =>
+                          updateCategoryField(
+                            "itemType",
+                            e.target.value as MenuItemType,
+                          )
+                        }
+                      >
+                        {MENU_ITEM_TYPES.map((t) => (
+                          <option key={t} value={t}>
+                            {MENU_ITEM_TYPE_LABELS[t]}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Display order
+                      <input
+                        className="admin-input"
+                        type="number"
+                        value={categoryForm.displayOrder}
+                        onChange={(e) =>
+                          updateCategoryField("displayOrder", e.target.value)
+                        }
+                      />
+                    </label>
+                  </div>
+                  <label className="menu-check">
+                    <input
+                      type="checkbox"
+                      checked={categoryForm.isActive}
+                      onChange={(e) =>
+                        updateCategoryField("isActive", e.target.checked)
+                      }
+                    />
+                    Active
+                  </label>
+                </>
+              ) : (
+                <p className="admin-muted">
+                  Type, order, and active status stay shared across languages.
+                </p>
+              )}
               <div className="admin-actions">
                 <button className="admin-btn" type="submit" disabled={busy}>
                   {busy ? "Saving…" : "Save category"}

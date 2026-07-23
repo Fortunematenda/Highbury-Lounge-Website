@@ -911,6 +911,11 @@
   background: var(--wine);
 }
 
+.admin-lang-tabs .admin-lang-missing {
+  opacity: 0.55;
+  font-weight: 500;
+}
+
 .admin-badge.ok {
   background: #15803d;
 }

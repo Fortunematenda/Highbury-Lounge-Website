@@ -13,6 +13,8 @@ services:
       CI: "true"
       WRANGLER_SEND_METRICS: "false"
       WRANGLER_LOG_PATH: .wrangler/wrangler.log
+      # Override in .env with COOKIE_SECURE=true only when serving over HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     volumes:
       - highbury-wrangler:/app/.wrangler
     restart: unless-stopped

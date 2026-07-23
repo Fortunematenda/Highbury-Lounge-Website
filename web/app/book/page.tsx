@@ -3,7 +3,9 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
+import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type RoomSummary = {
   id: number;
@@ -16,6 +18,7 @@ type RoomSummary = {
 };
 
 function BookInner() {
+  const { t, i18n } = useTranslation();
   const params = useSearchParams();
   const router = useRouter();
   const roomTypeId = Number(params.get("roomTypeId"));
@@ -57,24 +60,25 @@ function BookInner() {
         (r: RoomSummary) => r.id === roomTypeId,
       );
       setRoom(match ?? null);
-      if (!match) setError("This room is no longer available for your dates.");
+      if (!match) setError(t("validation.roomUnavailable"));
     }
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomTypeId, checkIn, checkOut, adults, children, rooms]);
 
   const guestLabel = useMemo(
     () =>
-      `${adults} adult${adults === 1 ? "" : "s"}${
-        children > 0 ? `, ${children} child${children === 1 ? "" : "ren"}` : ""
+      `${adults} ${t("booking.adults")}${
+        children > 0 ? `, ${children} ${t("booking.children")}` : ""
       }`,
-    [adults, children],
+    [adults, children, t],
   );
 
   function goSummary(event: FormEvent) {
     event.preventDefault();
     setError("");
     if (!form.termsAccepted) {
-      setError("Please accept the booking terms to continue.");
+      setError(t("validation.acceptTerms"));
       return;
     }
     setStep("summary");
@@ -94,16 +98,17 @@ function BookInner() {
           adults,
           children,
           roomsBooked: rooms,
+          preferredLanguage: i18n.language,
           guest: form,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Booking failed");
+      if (!res.ok) throw new Error(data.error || t("validation.unableCreateBooking"));
       router.push(
         `/book/success?reference=${encodeURIComponent(data.booking.reference)}&total=${data.booking.totalAmount}&currency=${data.booking.currency}`,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Booking failed");
+      setError(err instanceof Error ? err.message : t("validation.unableCreateBooking"));
       setStep("form");
     } finally {
       setSubmitting(false);
@@ -115,10 +120,13 @@ function BookInner() {
       <section className="booking-flow-panel">
         <BackLink
           href={`/rooms/search?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}&adults=${adults}&children=${children}&rooms=${rooms}`}
-          label="Back to results"
+          label={t("booking.backToResults")}
         />
-        <p className="eyebrow">Reserve your stay</p>
-        <h1>{step === "form" ? "Guest details" : "Confirm booking"}</h1>
+        <LanguageSelector variant="panel" />
+        <p className="eyebrow">{t("booking.reserveStay")}</p>
+        <h1>
+          {step === "form" ? t("booking.guestDetails") : t("booking.confirmBooking")}
+        </h1>
 
         {room && (
           <aside className="booking-summary-card">
@@ -127,13 +135,19 @@ function BookInner() {
               <h2>{room.name}</h2>
               <p>{room.shortDescription}</p>
               <p>
-                {checkIn} → {checkOut} · {room.nights} night
-                {room.nights === 1 ? "" : "s"}
+                {formatDate(checkIn, i18n.language)} → {formatDate(checkOut, i18n.language)} ·{" "}
+                {room.nights}{" "}
+                {room.nights === 1 ? t("booking.night") : t("booking.nights")}
               </p>
-              <p>{guestLabel} · {rooms} room{rooms === 1 ? "" : "s"}</p>
               <p>
-                {formatMoney(room.effectivePrice)} / night · Total{" "}
-                <strong>{formatMoney(room.estimatedTotal)}</strong>
+                {guestLabel} · {rooms} {t("booking.rooms")}
+              </p>
+              <p>
+                {formatMoney(room.effectivePrice, "USD", i18n.language)} /{" "}
+                {t("booking.perNight")} · {t("booking.total")}{" "}
+                <strong>
+                  {formatMoney(room.estimatedTotal, "USD", i18n.language)}
+                </strong>
               </p>
             </div>
           </aside>
@@ -149,7 +163,7 @@ function BookInner() {
           <form className="guest-form" onSubmit={goSummary}>
             <div className="form-row">
               <label>
-                First name
+                {t("booking.firstName")}
                 <input
                   required
                   value={form.firstName}
@@ -157,7 +171,7 @@ function BookInner() {
                 />
               </label>
               <label>
-                Last name
+                {t("booking.lastName")}
                 <input
                   required
                   value={form.lastName}
@@ -167,7 +181,7 @@ function BookInner() {
             </div>
             <div className="form-row">
               <label>
-                Email
+                {t("booking.email")}
                 <input
                   type="email"
                   required
@@ -176,7 +190,7 @@ function BookInner() {
                 />
               </label>
               <label>
-                Phone
+                {t("booking.phone")}
                 <input
                   type="tel"
                   required
@@ -187,7 +201,7 @@ function BookInner() {
             </div>
             <div className="form-row">
               <label>
-                WhatsApp (optional)
+                {t("booking.whatsapp")} ({t("booking.optional")})
                 <input
                   type="tel"
                   value={form.whatsapp}
@@ -195,7 +209,7 @@ function BookInner() {
                 />
               </label>
               <label>
-                Country
+                {t("booking.country")}
                 <input
                   value={form.country}
                   onChange={(e) => setForm({ ...form, country: e.target.value })}
@@ -203,7 +217,7 @@ function BookInner() {
               </label>
             </div>
             <label>
-              Estimated arrival (optional)
+              {t("booking.estimatedArrival")} ({t("booking.optional")})
               <input
                 type="time"
                 value={form.estimatedArrival}
@@ -213,7 +227,7 @@ function BookInner() {
               />
             </label>
             <label>
-              Special requests
+              {t("booking.specialRequests")}
               <textarea
                 rows={4}
                 value={form.specialRequests}
@@ -230,34 +244,44 @@ function BookInner() {
                   setForm({ ...form, termsAccepted: e.target.checked })
                 }
               />
-              I accept the Highbury Lounge booking terms. Payment is arranged after confirmation.
+              {t("booking.termsLabel")}
             </label>
             <button className="button primary" type="submit" disabled={!room}>
-              Review booking
+              {t("booking.reviewBooking")}
             </button>
           </form>
         ) : (
           <div className="confirm-panel">
-            <h2>Booking summary</h2>
+            <h2>{t("booking.bookingSummary")}</h2>
             <ul>
               <li>
-                Guest: {form.firstName} {form.lastName}
+                {t("booking.guest")}: {form.firstName} {form.lastName}
               </li>
-              <li>Email: {form.email}</li>
-              <li>Phone: {form.phone}</li>
-              <li>Room: {room?.name}</li>
               <li>
-                Stay: {checkIn} to {checkOut}
+                {t("booking.email")}: {form.email}
               </li>
-              <li>Guests: {guestLabel}</li>
-              <li>Total due later: {formatMoney(room?.estimatedTotal ?? 0)}</li>
+              <li>
+                {t("booking.phone")}: {form.phone}
+              </li>
+              <li>
+                {t("booking.room")}: {room?.name}
+              </li>
+              <li>
+                {t("booking.stay")}: {formatDate(checkIn, i18n.language)}{" "}
+                {t("booking.to")} {formatDate(checkOut, i18n.language)}
+              </li>
+              <li>
+                {t("booking.guests")}: {guestLabel}
+              </li>
+              <li>
+                {t("booking.totalDueLater")}:{" "}
+                {formatMoney(room?.estimatedTotal ?? 0, "USD", i18n.language)}
+              </li>
             </ul>
-            <p className="muted">
-              Submitting creates a <strong>Pending</strong> reservation. No payment is taken online yet.
-            </p>
+            <p className="muted">{t("booking.pendingNote")}</p>
             <div className="hero-actions">
               <button className="button ghost" type="button" onClick={() => setStep("form")}>
-                Edit details
+                {t("booking.editDetails")}
               </button>
               <button
                 className="button primary"
@@ -265,7 +289,7 @@ function BookInner() {
                 onClick={() => void submitBooking()}
                 disabled={submitting}
               >
-                {submitting ? "Submitting…" : "Confirm reservation"}
+                {submitting ? t("booking.submitting") : t("booking.confirmReservation")}
               </button>
             </div>
           </div>
@@ -275,9 +299,18 @@ function BookInner() {
   );
 }
 
+function LoadingFallback() {
+  const { t } = useTranslation();
+  return (
+    <main className="booking-flow">
+      <p>{t("booking.loading")}</p>
+    </main>
+  );
+}
+
 export default function BookPage() {
   return (
-    <Suspense fallback={<main className="booking-flow"><p>Loading…</p></main>}>
+    <Suspense fallback={<LoadingFallback />}>
       <BookInner />
     </Suspense>
   );

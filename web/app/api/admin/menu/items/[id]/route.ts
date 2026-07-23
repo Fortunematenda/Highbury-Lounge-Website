@@ -11,6 +11,7 @@ import { writeAuditLog } from "@/lib/audit";
 import { jsonError } from "@/lib/format";
 import { isMenuItemType, isPriceUnit } from "@/lib/menu-constants";
 import { slugify } from "@/lib/slug";
+import { normalizeTranslationsJson } from "@/lib/i18n/content";
 import { deleteStoredObject } from "@/lib/uploads";
 
 function parseBool(value: unknown, fallback: boolean) {
@@ -150,6 +151,7 @@ export async function PATCH(
           displayOrder: existing.displayOrder,
           publicVisible: existing.publicVisible,
           adminNotes: existing.adminNotes,
+          translationsJson: existing.translationsJson,
           createdById: user.id,
           updatedById: user.id,
         })
@@ -385,6 +387,10 @@ export async function PATCH(
           body.adminNotes !== undefined
             ? String(body.adminNotes || "") || null
             : existing.adminNotes,
+        translationsJson:
+          body.translationsJson !== undefined
+            ? (normalizeTranslationsJson(body.translationsJson) ?? null)
+            : existing.translationsJson,
         updatedById: user.id,
         updatedAt: sql`CURRENT_TIMESTAMP`,
       })

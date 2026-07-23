@@ -1,6 +1,13 @@
-export function formatMoney(amount: number, currency = "USD") {
+import { INTL_LOCALE, type AppLocale } from "./i18n/locales";
+
+export function formatMoney(
+  amount: number,
+  currency = "USD",
+  locale: AppLocale | string = "en",
+) {
+  const intlLocale = INTL_LOCALE[locale as AppLocale] ?? "en-US";
   try {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat(intlLocale, {
       style: "currency",
       currency,
       minimumFractionDigits: 2,
@@ -10,12 +17,13 @@ export function formatMoney(amount: number, currency = "USD") {
   }
 }
 
-export function formatDate(isoDate: string) {
+export function formatDate(isoDate: string, locale: AppLocale | string = "en") {
   if (!isoDate) return "";
   const d = new Date(`${isoDate}T12:00:00`);
-  return new Intl.DateTimeFormat("en-GB", {
+  const intlLocale = INTL_LOCALE[locale as AppLocale] ?? "en-GB";
+  return new Intl.DateTimeFormat(intlLocale, {
     day: "numeric",
-    month: "short",
+    month: locale === "zh-CN" ? "long" : "short",
     year: "numeric",
   }).format(d);
 }

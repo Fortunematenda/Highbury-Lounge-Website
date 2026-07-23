@@ -5,13 +5,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { SiteSearch } from "@/app/components/SiteSearch";
 import { SiteFooter } from "@/app/components/SiteFooter";
+import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
+import { I18nProvider, useTranslation } from "@/lib/i18n/I18nProvider";
+import type { AppLocale } from "@/lib/i18n/locales";
 
 const NAV = [
-  { href: "/#stay", label: "Stay" },
-  { href: "/#meet", label: "Meet & celebrate" },
-  { href: "/#dine", label: "Dine" },
-  { href: "/#gallery", label: "Gallery" },
-  { href: "/#contact", label: "Contact" },
+  { href: "/#stay", key: "nav.stay" },
+  { href: "/#meet", key: "nav.meet" },
+  { href: "/#dine", key: "nav.dine" },
+  { href: "/#gallery", key: "nav.gallery" },
+  { href: "/#contact", key: "nav.contact" },
 ] as const;
 
 const SEARCH_ROOMS = [
@@ -48,13 +51,13 @@ const SEARCH_ROOMS = [
 ];
 
 type Props = {
-  /** Transparent over hero on home; solid bar on inner pages */
   variant?: "hero" | "solid";
 };
 
 export function SiteHeader({ variant = "solid" }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useTranslation("common");
   const [menuOpen, setMenuOpen] = useState(false);
   const [headerState, setHeaderState] = useState<"top" | "sticky">(
     variant === "solid" ? "sticky" : "top",
@@ -123,7 +126,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
       <Link
         className="brand brand-with-logo"
         href="/"
-        aria-label="Highbury Lounge home"
+        aria-label={t("brand.homeAria")}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -143,16 +146,20 @@ export function SiteHeader({ variant = "solid" }: Props) {
             href={item.href}
             onClick={(event) => {
               event.preventDefault();
-              const hash = item.href.slice(1); // "#stay"
+              const hash = item.href.slice(1);
               goHomeSection(hash);
             }}
           >
-            {item.label}
+            {t(item.key)}
           </a>
         ))}
+        <div className="nav-language-mobile">
+          <LanguageSelector variant="compact" />
+        </div>
       </nav>
 
       <div className="header-actions">
+        <LanguageSelector variant="header" />
         <SiteSearch rooms={SEARCH_ROOMS} />
         <button
           type="button"
@@ -166,14 +173,20 @@ export function SiteHeader({ variant = "solid" }: Props) {
           <span />
         </button>
         <button type="button" className="header-cta" onClick={openBooking}>
-          Book your stay
+          {t("nav.bookStay")}
         </button>
       </div>
     </header>
   );
 }
 
-export function PublicChrome({ children }: { children: ReactNode }) {
+export function PublicChrome({
+  children,
+  initialLocale,
+}: {
+  children: ReactNode;
+  initialLocale?: AppLocale | null;
+}) {
   const pathname = usePathname();
   if (pathname?.startsWith("/admin")) {
     return <>{children}</>;
@@ -181,10 +194,10 @@ export function PublicChrome({ children }: { children: ReactNode }) {
 
   const onHome = pathname === "/";
   return (
-    <>
+    <I18nProvider initialLocale={initialLocale}>
       <SiteHeader variant={onHome ? "hero" : "solid"} />
       <div className={onHome ? undefined : "has-site-header"}>{children}</div>
       <SiteFooter />
-    </>
+    </I18nProvider>
   );
 }

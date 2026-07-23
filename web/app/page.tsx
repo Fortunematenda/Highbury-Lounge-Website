@@ -8,8 +8,25 @@ import {
 } from "@/app/components/PublicMenuSection";
 import { PreviewMediaGallery } from "@/app/components/PreviewMediaGallery";
 import { formatMoney } from "@/lib/format";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type PublicFoodItem = PublicMenuItem & { category?: string };
+
+const FOOD_SERVICE_KEYS = [
+  "dineIn",
+  "collection",
+  "roomService",
+  "conferenceCatering",
+] as const;
+
+type FoodServiceKey = (typeof FOOD_SERVICE_KEYS)[number];
+
+const FOOD_SERVICE_I18N: Record<FoodServiceKey, string> = {
+  dineIn: "menu.serviceDineIn",
+  collection: "menu.serviceCollection",
+  roomService: "menu.serviceRoomService",
+  conferenceCatering: "menu.serviceConferenceCatering",
+};
 
 const rooms = [
   {
@@ -166,6 +183,7 @@ function defaultStayDates() {
 
 export default function Home() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const stayDefaults = defaultStayDates();
   const [roomPreview, setRoomPreview] = useState<(typeof rooms)[number] | null>(null);
   const [conferencePreview, setConferencePreview] = useState<(typeof conferenceSpaces)[number] | null>(null);
@@ -176,7 +194,7 @@ export default function Home() {
   const [foodQuantity, setFoodQuantity] = useState("1");
   const [foodOrderDate, setFoodOrderDate] = useState("");
   const [foodOrderTime, setFoodOrderTime] = useState("");
-  const [foodService, setFoodService] = useState("Dine in");
+  const [foodService, setFoodService] = useState<FoodServiceKey>("dineIn");
   const [checkIn, setCheckIn] = useState(stayDefaults.checkIn);
   const [checkOut, setCheckOut] = useState(stayDefaults.checkOut);
   const [adults, setAdults] = useState("2");
@@ -219,15 +237,15 @@ export default function Home() {
 
   const searchRooms = () => {
     if (!checkIn || !checkOut) {
-      focusBookingStrip("Please select both your check-in and check-out dates.");
+      focusBookingStrip(t("validation.selectBothDates"));
       return;
     }
     if (checkOut <= checkIn) {
-      focusBookingStrip("Check-out must be after your check-in date.");
+      focusBookingStrip(t("validation.checkoutAfterCheckin"));
       return;
     }
     if (Number(adults) < 1) {
-      focusBookingStrip("At least one adult is required.");
+      focusBookingStrip(t("validation.atLeastOneAdult"));
       return;
     }
     setSearchError("");
@@ -247,7 +265,7 @@ export default function Home() {
       searchRooms();
       return;
     }
-    focusBookingStrip("Select your dates below, then search available rooms.");
+    focusBookingStrip(t("validation.selectDatesBelow"));
   };
 
   const openConferenceRequest = (space?: (typeof conferenceSpaces)[number]) => {
@@ -268,35 +286,37 @@ export default function Home() {
     setFoodOrderSubmitted(true);
   };
 
+  const foodServiceLabel = t(FOOD_SERVICE_I18N[foodService]);
+
   return (
     <main>
       <section className="hero" id="home">
         <img src="/images/hero-venue.jpg" alt="Aerial view of Highbury Lounge gardens and event venue" />
         <div className="hero-shade" />
         <div className="hero-copy">
-          <p className="eyebrow light">A warm welcome to Kadoma</p>
-          <h1>Where every stay becomes a story.</h1>
-          <p className="hero-text">
-            Comfortable rooms, beautiful gardens and memorable celebrations—all in one welcoming destination.
-          </p>
+          <p className="eyebrow light">{t("home.eyebrow")}</p>
+          <h1>{t("home.heroTitle")}</h1>
+          <p className="hero-text">{t("home.heroText")}</p>
           <div className="hero-actions">
             <button
               type="button"
               className="button primary"
               onClick={() => openBooking()}
             >
-              Check availability
+              {t("home.checkAvailability")}
             </button>
-            <a className="button ghost" href="#meet">Explore the venue <span>↗</span></a>
+            <a className="button ghost" href="#meet">
+              {t("home.exploreVenue")} <span>↗</span>
+            </a>
           </div>
         </div>
         <div className="booking-strip" id="booking-search">
           <label>
-            <span>Check in</span>
+            <span>{t("booking.checkIn")}</span>
             <input
               ref={checkInRef}
               type="date"
-              aria-label="Check in date"
+              aria-label={t("home.checkInDateAria")}
               min={today}
               value={checkIn}
               onChange={(event) => {
@@ -306,10 +326,10 @@ export default function Home() {
             />
           </label>
           <label>
-            <span>Check out</span>
+            <span>{t("booking.checkOut")}</span>
             <input
               type="date"
-              aria-label="Check out date"
+              aria-label={t("home.checkOutDateAria")}
               min={checkIn || today}
               value={checkOut}
               onChange={(event) => {
@@ -319,31 +339,49 @@ export default function Home() {
             />
           </label>
           <label>
-            <span>Adults</span>
-            <select aria-label="Number of adults" value={adults} onChange={(event) => setAdults(event.target.value)}>
+            <span>{t("booking.adults")}</span>
+            <select
+              aria-label={t("home.adultsAria")}
+              value={adults}
+              onChange={(event) => setAdults(event.target.value)}
+            >
               {[1, 2, 3, 4, 5, 6].map((n) => (
-                <option key={n} value={n}>{n} Adult{n === 1 ? "" : "s"}</option>
+                <option key={n} value={n}>
+                  {n} {t("booking.adults")}
+                </option>
               ))}
             </select>
           </label>
           <label>
-            <span>Children</span>
-            <select aria-label="Number of children" value={children} onChange={(event) => setChildren(event.target.value)}>
+            <span>{t("booking.children")}</span>
+            <select
+              aria-label={t("home.childrenAria")}
+              value={children}
+              onChange={(event) => setChildren(event.target.value)}
+            >
               {[0, 1, 2, 3, 4].map((n) => (
-                <option key={n} value={n}>{n} Child{n === 1 ? "" : "ren"}</option>
+                <option key={n} value={n}>
+                  {n} {t("booking.children")}
+                </option>
               ))}
             </select>
           </label>
           <label>
-            <span>Rooms</span>
-            <select aria-label="Number of rooms" value={roomsCount} onChange={(event) => setRoomsCount(event.target.value)}>
+            <span>{t("booking.rooms")}</span>
+            <select
+              aria-label={t("home.roomsAria")}
+              value={roomsCount}
+              onChange={(event) => setRoomsCount(event.target.value)}
+            >
               {[1, 2, 3, 4].map((n) => (
-                <option key={n} value={n}>{n} Room{n === 1 ? "" : "s"}</option>
+                <option key={n} value={n}>
+                  {n} {n === 1 ? t("booking.room") : t("booking.rooms")}
+                </option>
               ))}
             </select>
           </label>
           <button type="button" onClick={searchRooms}>
-            Search rooms
+            {t("booking.searchRooms")}
           </button>
           {searchError ? (
             <p className="search-error" role="alert">
@@ -355,18 +393,15 @@ export default function Home() {
 
       <section className="intro section">
         <div>
-          <p className="eyebrow">Rest · Gather · Celebrate</p>
-          <h2>Hospitality with heart, moments made beautifully.</h2>
+          <p className="eyebrow">{t("home.introEyebrow")}</p>
+          <h2>{t("home.introTitle")}</h2>
         </div>
         <div className="intro-copy">
-          <p>
-            Highbury Lounge brings together restful accommodation, flexible conference spaces,
-            generous food and tranquil gardens in the heart of Kadoma.
-          </p>
+          <p>{t("home.introText")}</p>
           <div className="feature-row">
-            <span>✓ Secure parking</span>
-            <span>✓ Breakfast available</span>
-            <span>✓ Event-ready gardens</span>
+            <span>✓ {t("home.featureParking")}</span>
+            <span>✓ {t("home.featureBreakfast")}</span>
+            <span>✓ {t("home.featureGardens")}</span>
           </div>
         </div>
       </section>
@@ -374,10 +409,10 @@ export default function Home() {
       <section className="section rooms-section" id="stay">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Stay at Highbury</p>
-            <h2>Rooms designed for an easy stay.</h2>
+            <p className="eyebrow">{t("home.stayEyebrow")}</p>
+            <h2>{t("home.stayTitle")}</h2>
           </div>
-          <p className="price-note">Choose the room style that best suits your stay. Rates are shown per night.</p>
+          <p className="price-note">{t("home.stayNote")}</p>
         </div>
         <div className="room-grid">
           {rooms.map((room) => (
@@ -389,12 +424,14 @@ export default function Home() {
                   <p>{room.detail}</p>
                 </div>
                 <div className="room-price">
-                  <span>From</span>
-                  <strong>US${room.price}</strong>
-                  <small>/ night*</small>
+                  <span>{t("booking.from")}</span>
+                  <strong>{formatMoney(room.price, "USD", i18n.language)}</strong>
+                  <small>{t("home.nightRate")}</small>
                 </div>
               </div>
-              <button onClick={() => setRoomPreview(room)}>Preview room <span>→</span></button>
+              <button onClick={() => setRoomPreview(room)}>
+                {t("rooms.previewRoom")} <span>→</span>
+              </button>
             </article>
           ))}
         </div>
@@ -403,22 +440,22 @@ export default function Home() {
       <section className="experience" id="meet">
         <div className="experience-image">
           <img src="/images/conference.jpg" alt="Highbury Lounge conference room prepared for a meeting" />
-          <div className="capacity-badge"><strong>Flexible</strong><span>meeting setups</span></div>
+          <div className="capacity-badge">
+            <strong>{t("home.flexibleBadge")}</strong>
+            <span>{t("home.meetingSetups")}</span>
+          </div>
         </div>
         <div className="experience-copy">
-          <p className="eyebrow">Meet & connect</p>
-          <h2>A smart setting for meetings that matter.</h2>
-          <p>
-            From focused team sessions to workshops and corporate functions, our adaptable venue
-            gives every gathering the room, service and calm it needs.
-          </p>
+          <p className="eyebrow">{t("home.meetEyebrow")}</p>
+          <h2>{t("home.meetTitle")}</h2>
+          <p>{t("home.meetText")}</p>
           <ul>
-            <li><span>01</span> Conference and boardroom layouts</li>
-            <li><span>02</span> Catering packages for every agenda</li>
-            <li><span>03</span> Accommodation for travelling delegates</li>
+            <li><span>01</span> {t("home.meetItem1")}</li>
+            <li><span>02</span> {t("home.meetItem2")}</li>
+            <li><span>03</span> {t("home.meetItem3")}</li>
           </ul>
           <button className="text-link text-link-button" onClick={() => openConferenceRequest()}>
-            Request a conference quote →
+            {t("home.requestQuote")} →
           </button>
         </div>
       </section>
@@ -426,10 +463,10 @@ export default function Home() {
       <section className="section conference-section">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Conference spaces</p>
-            <h2>A professional space for every agenda.</h2>
+            <p className="eyebrow">{t("home.conferenceEyebrow")}</p>
+            <h2>{t("home.conferenceTitle")}</h2>
           </div>
-          <p className="price-note">Choose a setup and speak to our team about dates, catering and equipment.</p>
+          <p className="price-note">{t("home.conferenceNote")}</p>
         </div>
         <div className="conference-grid">
           {conferenceSpaces.map((space) => (
@@ -440,7 +477,7 @@ export default function Home() {
                 <h3>{space.name}</h3>
                 <p>{space.detail}</p>
                 <button className="conference-preview-button" onClick={() => setConferencePreview(space)}>
-                  Preview venue <b>→</b>
+                  {t("previewVenue")} <b>→</b>
                 </button>
               </div>
             </article>
@@ -452,25 +489,22 @@ export default function Home() {
         <img src="/images/events.jpg" alt="A beautifully set event at Highbury Lounge" />
         <div className="celebrate-shade" />
         <div>
-          <p className="eyebrow light">Celebrate at Highbury</p>
-          <h2>Beautiful spaces for your biggest moments.</h2>
-          <p>Weddings, birthdays, graduations and private events, made memorable in our garden venue.</p>
+          <p className="eyebrow light">{t("home.celebrateEyebrow")}</p>
+          <h2>{t("home.celebrateTitle")}</h2>
+          <p>{t("home.celebrateText")}</p>
           <a className="button cream" href="https://wa.me/263786957068?text=Hello%20Highbury%20Lounge%2C%20I%20would%20like%20an%20event%20quote." target="_blank" rel="noreferrer">
-            Plan your event
+            {t("home.planEvent")}
           </a>
         </div>
       </section>
 
       <section className="section dining-section" id="dine">
         <div className="dining-copy">
-          <p className="eyebrow">Taste Highbury</p>
-          <h2>Good food, generously served.</h2>
-          <p>
-            Start the day with breakfast, enjoy a satisfying lunch or gather over dinner.
-            Our kitchen serves familiar favourites with a fresh local touch.
-          </p>
+          <p className="eyebrow">{t("home.dineEyebrow")}</p>
+          <h2>{t("home.dineTitle")}</h2>
+          <p>{t("home.dineText")}</p>
           <button className="text-link text-link-button" onClick={() => openFoodOrder()}>
-            Pre-order your meal →
+            {t("home.preOrderMeal")} →
           </button>
         </div>
         <div className="dining-images">
@@ -503,8 +537,8 @@ export default function Home() {
       <section className="section gallery-section" id="gallery">
         <div className="section-head">
           <div>
-            <p className="eyebrow">A glimpse of Highbury</p>
-            <h2>Come for the stay. Remember the feeling.</h2>
+            <p className="eyebrow">{t("home.galleryEyebrow")}</p>
+            <h2>{t("home.galleryTitle")}</h2>
           </div>
         </div>
         <div className="gallery-grid">
@@ -517,32 +551,32 @@ export default function Home() {
 
       <section className="contact-section" id="contact">
         <div>
-          <p className="eyebrow light">Your Kadoma escape</p>
-          <h2>Ready to make yourself at home?</h2>
-          <p>Book a room, request a conference quote or start planning your next celebration.</p>
+          <p className="eyebrow light">{t("home.contactEyebrow")}</p>
+          <h2>{t("home.contactTitle")}</h2>
+          <p>{t("home.contactText")}</p>
           <div className="contact-actions">
-            <button className="button cream" onClick={() => openBooking()}>Book now</button>
-            <a className="button ghost" href="https://wa.me/263786957068" target="_blank" rel="noreferrer">WhatsApp us</a>
+            <button className="button cream" onClick={() => openBooking()}>{t("home.bookNow")}</button>
+            <a className="button ghost" href="https://wa.me/263786957068" target="_blank" rel="noreferrer">{t("actions.whatsapp")}</a>
           </div>
         </div>
         <address>
-          <span>Visit</span>
-          <strong>7504 Greenfield Cherries<br />Kadoma, Zimbabwe</strong>
-          <span>Call or WhatsApp</span>
-          <a href="tel:+263786957068">+263 78 695 7068</a>
-          <span>Email</span>
-          <a href="mailto:test@higbury.com">test@higbury.com</a>
+          <span>{t("contact.visit")}</span>
+          <strong>{t("contact.addressLine1")}<br />{t("contact.addressLine2")}</strong>
+          <span>{t("contact.call")}</span>
+          <a href="tel:+263786957068">{t("contact.phoneDisplay")}</a>
+          <span>{t("contact.email")}</span>
+          <a href="mailto:test@higbury.com">{t("contact.emailDisplay")}</a>
         </address>
       </section>
 
-      <a className="whatsapp-float" href="https://wa.me/263786957068" target="_blank" rel="noreferrer" aria-label="Chat with Highbury Lounge on WhatsApp">
-        <span>Chat with us</span> ↗
+      <a className="whatsapp-float" href="https://wa.me/263786957068" target="_blank" rel="noreferrer" aria-label={t("home.whatsappAria")}>
+        <span>{t("whatsapp.chat")}</span> ↗
       </a>
 
       {roomPreview && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setRoomPreview(null)}>
           <section className="preview-modal" role="dialog" aria-modal="true" aria-labelledby="room-preview-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close modal-close-light" onClick={() => setRoomPreview(null)} aria-label="Close room preview">×</button>
+            <button className="modal-close modal-close-light" onClick={() => setRoomPreview(null)} aria-label={t("home.closeRoomPreview")}>×</button>
             <PreviewMediaGallery
               images={roomPreview.images?.length ? roomPreview.images : [roomPreview.image]}
               alt={roomPreview.name}
@@ -550,18 +584,21 @@ export default function Home() {
             />
             <div className="preview-content">
               <div>
-                <p className="eyebrow">Your Highbury stay</p>
+                <p className="eyebrow">{t("home.stayPreviewEyebrow")}</p>
                 <h2 id="room-preview-title">{roomPreview.name}</h2>
                 <p>{roomPreview.detail}</p>
                 <div className="preview-features">
-                  <span>✓ Private room</span><span>✓ Secure parking</span><span>✓ Wi-Fi access</span><span>✓ Breakfast available</span>
+                  <span>✓ {t("home.featurePrivateRoom")}</span>
+                  <span>✓ {t("home.featureParking")}</span>
+                  <span>✓ {t("home.featureWifi")}</span>
+                  <span>✓ {t("home.featureBreakfast")}</span>
                 </div>
               </div>
               <aside>
-                <small>From</small>
-                <strong>US${roomPreview.price}</strong>
-                <span>per night</span>
-                <button className="button primary" onClick={() => { setRoomPreview(null); openBooking(); }}>Reserve now</button>
+                <small>{t("booking.from")}</small>
+                <strong>{formatMoney(roomPreview.price, "USD", i18n.language)}</strong>
+                <span>{t("booking.perNight")}</span>
+                <button className="button primary" onClick={() => { setRoomPreview(null); openBooking(); }}>{t("booking.reserveNow")}</button>
               </aside>
             </div>
           </section>
@@ -571,11 +608,11 @@ export default function Home() {
       {conferencePreview && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setConferencePreview(null)}>
           <section className="preview-modal" role="dialog" aria-modal="true" aria-labelledby="conference-preview-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close modal-close-light" onClick={() => setConferencePreview(null)} aria-label="Close venue preview">×</button>
+            <button className="modal-close modal-close-light" onClick={() => setConferencePreview(null)} aria-label={t("conference.closeVenuePreview")}>×</button>
             <img className="preview-hero" src={conferencePreview.image} alt={conferencePreview.name} />
             <div className="preview-content">
               <div>
-                <p className="eyebrow">Conference venue</p>
+                <p className="eyebrow">{t("conference.venueEyebrow")}</p>
                 <h2 id="conference-preview-title">{conferencePreview.name}</h2>
                 <p>{conferencePreview.detail}</p>
                 <div className="preview-features">
@@ -583,10 +620,10 @@ export default function Home() {
                 </div>
               </div>
               <aside>
-                <small>Capacity</small>
+                <small>{t("conference.capacity")}</small>
                 <strong>{conferencePreview.maxGuests}</strong>
-                <span>maximum guests</span>
-                <button className="button primary" onClick={() => openConferenceRequest(conferencePreview)}>Request this venue</button>
+                <span>{t("conference.maximumGuests")}</span>
+                <button className="button primary" onClick={() => openConferenceRequest(conferencePreview)}>{t("conference.requestThisVenue")}</button>
               </aside>
             </div>
           </section>
@@ -596,7 +633,7 @@ export default function Home() {
       {foodPreview && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setFoodPreview(null)}>
           <section className="preview-modal food-preview-modal" role="dialog" aria-modal="true" aria-labelledby="food-preview-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close modal-close-light" onClick={() => setFoodPreview(null)} aria-label="Close food preview">×</button>
+            <button className="modal-close modal-close-light" onClick={() => setFoodPreview(null)} aria-label={t("menu.closeFoodPreview")}>×</button>
             <PreviewMediaGallery
               images={[
                 ...(foodPreview.images ?? []).map((img) => img.imageUrl),
@@ -607,19 +644,21 @@ export default function Home() {
             />
             <div className="preview-content">
               <div>
-                <p className="eyebrow">Kitchen</p>
+                <p className="eyebrow">{t("menu.kitchenEyebrow")}</p>
                 <h2 id="food-preview-title">{foodPreview.name}</h2>
                 <p>{foodPreview.shortDescription || foodPreview.description}</p>
                 <div className="preview-features">
-                  <span>✓ Freshly prepared</span><span>✓ Pre-order available</span>
-                  <span>✓ Dine in or collect</span><span>✓ Group orders welcome</span>
+                  <span>✓ {t("menu.freshlyPrepared")}</span>
+                  <span>✓ {t("menu.preOrderAvailable")}</span>
+                  <span>✓ {t("menu.dineInOrCollect")}</span>
+                  <span>✓ {t("menu.groupOrdersWelcome")}</span>
                 </div>
               </div>
               <aside>
-                <small>Price</small>
-                <strong>{formatMoney(foodPreview.promotionalPrice ?? foodPreview.price, foodPreview.currency || "USD")}</strong>
-                <span>per serving</span>
-                <button className="button primary" onClick={() => openFoodOrder(foodPreview)}>Pre-order this dish</button>
+                <small>{t("menu.price")}</small>
+                <strong>{formatMoney(foodPreview.promotionalPrice ?? foodPreview.price, foodPreview.currency || "USD", i18n.language)}</strong>
+                <span>{t("menu.perServing")}</span>
+                <button className="button primary" onClick={() => openFoodOrder(foodPreview)}>{t("menu.preOrderDish")}</button>
               </aside>
             </div>
           </section>
@@ -629,69 +668,73 @@ export default function Home() {
       {foodOrderOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setFoodOrderOpen(false)}>
           <section className="conference-form-modal food-order-modal" role="dialog" aria-modal="true" aria-labelledby="food-order-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setFoodOrderOpen(false)} aria-label="Close food pre-order form">×</button>
+            <button className="modal-close" onClick={() => setFoodOrderOpen(false)} aria-label={t("menu.closeFoodOrder")}>×</button>
             {!foodOrderSubmitted ? (
               <>
                 <div className="form-heading">
-                  <p className="eyebrow">Order ahead</p>
-                  <h2 id="food-order-title">Food pre-order</h2>
-                  <p>Choose your meal and preferred service time. Our kitchen team will confirm your order and final availability.</p>
+                  <p className="eyebrow">{t("menu.orderAhead")}</p>
+                  <h2 id="food-order-title">{t("menu.planningTitle")}</h2>
+                  <p>{t("menu.planningBody")}</p>
                 </div>
                 <form onSubmit={submitFoodOrder}>
                   <fieldset>
-                    <legend>Your meal</legend>
+                    <legend>{t("menu.yourMeal")}</legend>
                     <div className="form-row">
-                      <label>Menu item
+                      <label>{t("menu.menuItem")}
                         <select value={selectedFood} onChange={(event) => setSelectedFood(event.target.value)}>
                           {menuOptions.map((item) => (
-                            <option key={item.id} value={item.name}>{item.name} — {formatMoney(item.promotionalPrice ?? item.price, item.currency || "USD")}</option>
+                            <option key={item.id} value={item.name}>
+                              {item.name} — {formatMoney(item.promotionalPrice ?? item.price, item.currency || "USD", i18n.language)}
+                            </option>
                           ))}
                         </select>
                       </label>
-                      <label>Quantity
+                      <label>{t("menu.quantity")}
                         <input type="number" min="1" max="100" value={foodQuantity} onChange={(event) => setFoodQuantity(event.target.value)} required />
                       </label>
                     </div>
                     <div className="form-row three">
-                      <label>Required date<input type="date" min={today} value={foodOrderDate} onChange={(event) => setFoodOrderDate(event.target.value)} required /></label>
-                      <label>Preferred time<input type="time" value={foodOrderTime} onChange={(event) => setFoodOrderTime(event.target.value)} required /></label>
-                      <label>Service
-                        <select value={foodService} onChange={(event) => setFoodService(event.target.value)}>
-                          <option>Dine in</option><option>Collection</option><option>Room service</option><option>Conference catering</option>
+                      <label>{t("menu.requiredDate")}<input type="date" min={today} value={foodOrderDate} onChange={(event) => setFoodOrderDate(event.target.value)} required /></label>
+                      <label>{t("menu.preferredTime")}<input type="time" value={foodOrderTime} onChange={(event) => setFoodOrderTime(event.target.value)} required /></label>
+                      <label>{t("menu.service")}
+                        <select value={foodService} onChange={(event) => setFoodService(event.target.value as FoodServiceKey)}>
+                          {FOOD_SERVICE_KEYS.map((key) => (
+                            <option key={key} value={key}>{t(FOOD_SERVICE_I18N[key])}</option>
+                          ))}
                         </select>
                       </label>
                     </div>
                   </fieldset>
                   <fieldset>
-                    <legend>Your details</legend>
+                    <legend>{t("menu.yourDetails")}</legend>
                     <div className="form-row">
-                      <label>Full name<input type="text" placeholder="Your full name" required /></label>
-                      <label>Phone / WhatsApp<input type="tel" placeholder="+263..." required /></label>
+                      <label>{t("menu.fullName")}<input type="text" placeholder={t("menu.placeholderFullName")} required /></label>
+                      <label>{t("menu.phoneWhatsApp")}<input type="tel" placeholder={t("menu.placeholderPhone")} required /></label>
                     </div>
                     <div className="form-row">
-                      <label>Email address<input type="email" placeholder="you@example.com" /></label>
-                      <label>Room or booking reference<input type="text" placeholder="Optional" /></label>
+                      <label>{t("menu.emailAddress")}<input type="email" placeholder={t("menu.placeholderEmail")} /></label>
+                      <label>{t("menu.roomOrBookingRef")}<input type="text" placeholder={t("menu.placeholderOptional")} /></label>
                     </div>
-                    <label>Dietary needs or order notes<textarea rows={4} placeholder="Tell us about allergies, dietary needs, sides or special instructions." /></label>
+                    <label>{t("menu.dietaryNotes")}<textarea rows={4} placeholder={t("menu.placeholderDietary")} /></label>
                   </fieldset>
                   <div className="form-footer">
-                    <p>Your order is confirmed after the Highbury team checks kitchen availability and contacts you.</p>
-                    <button className="button primary" type="submit">Send pre-order</button>
+                    <p>{t("menu.foodOrderFooter")}</p>
+                    <button className="button primary" type="submit">{t("menu.submitPreOrder")}</button>
                   </div>
                 </form>
               </>
             ) : (
               <div className="success conference-success">
                 <span>✓</span>
-                <h2>Pre-order prepared</h2>
-                <p>Your request for {foodQuantity} × {selectedFood} is ready to send to the Highbury kitchen team for confirmation.</p>
+                <h2>{t("menu.preOrderPrepared")}</h2>
+                <p>{t("menu.preOrderSuccess", { quantity: foodQuantity, item: selectedFood })}</p>
                 <a
                   className="button primary"
-                  href={`https://wa.me/263786957068?text=${encodeURIComponent(`Hello Highbury Lounge, I would like to pre-order ${foodQuantity} x ${selectedFood} for ${foodOrderDate} at ${foodOrderTime}. Service: ${foodService}.`)}`}
+                  href={`https://wa.me/263786957068?text=${encodeURIComponent(`Hello Highbury Lounge, I would like to pre-order ${foodQuantity} x ${selectedFood} for ${foodOrderDate} at ${foodOrderTime}. Service: ${foodServiceLabel}.`)}`}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Confirm on WhatsApp
+                  {t("menu.confirmWhatsApp")}
                 </a>
               </div>
             )}

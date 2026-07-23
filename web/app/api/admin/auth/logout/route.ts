@@ -4,6 +4,7 @@ import {
   SESSION_COOKIE,
   destroySession,
   getSessionUser,
+  sessionCookieOptions,
 } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
 
@@ -13,12 +14,8 @@ export async function POST(request: Request) {
   const user = await getSessionUser(token);
   await destroySession(token);
   jar.set({
-    name: SESSION_COOKIE,
+    ...sessionCookieOptions("", 0),
     value: "",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
     maxAge: 0,
   });
 

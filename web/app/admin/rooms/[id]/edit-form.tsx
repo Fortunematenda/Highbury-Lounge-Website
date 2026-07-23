@@ -1,7 +1,16 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AdminLangTabs,
+  buildTranslationDraft,
+} from "@/app/admin/components/AdminLangTabs";
+import {
+  stringifyTranslations,
+  type ContentTranslations,
+} from "@/lib/i18n/content";
+import type { AppLocale } from "@/lib/i18n/locales";
 
 type Room = {
   id: number;
@@ -21,12 +30,39 @@ type Room = {
   isActive: boolean;
   isFeatured: boolean;
   displayOrder: number;
+  translationsJson?: string | null;
 };
 
 export function EditRoomForm({ room }: { room: Room }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lang, setLang] = useState<AppLocale>("en");
+  const [translations, setTranslations] = useState<ContentTranslations>(() =>
+    buildTranslationDraft(
+      {
+        name: room.name,
+        description: room.description ?? "",
+        shortDescription: room.shortDescription ?? "",
+      },
+      room.translationsJson,
+    ),
+  );
+
+  const current = translations[lang] ?? {};
+
+  function updateField(
+    field: "name" | "description" | "shortDescription",
+    value: string,
+  ) {
+    setTranslations((prev) => ({
+      ...prev,
+      [lang]: {
+        ...prev[lang],
+        [field]: value,
+      },
+    }));
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -34,12 +70,31 @@ export function EditRoomForm({ room }: { room: Room }) {
     setError("");
     const fd = new FormData(e.currentTarget);
     const payload = Object.fromEntries(fd.entries());
+    const en = translations.en ?? {};
+    const englishName = (en.name || room.name).trim();
+    if (!englishName) {
+      setError("English name is required.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/admin/rooms/${room.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...payload,
+          name: englishName,
+          shortDescription: en.shortDescription ?? "",
+          description: en.description ?? "",
+          translationsJson: stringifyTranslations({
+            ...translations,
+            en: {
+              name: englishName,
+              shortDescription: en.shortDescription ?? "",
+              description: en.description ?? "",
+            },
+          }),
           pricePerNight: Number(payload.pricePerNight),
           promotionalPrice: payload.promotionalPrice
             ? Number(payload.promotionalPrice)
@@ -75,13 +130,30 @@ export function EditRoomForm({ room }: { room: Room }) {
     router.refresh();
   }
 
+  const langHint = useMemo(() => {
+    if (lang === "en") return "English fields are required and used as the default.";
+    return "Optional translation. Leave blank to fall back to English.";
+  }, [lang]);
+
   return (
     <>
       {error && <div className="admin-error">{error}</div>}
       <form className="admin-form admin-card" onSubmit={onSubmit}>
+        <AdminLangTabs
+          lang={lang}
+          onChange={setLang}
+          translations={translations}
+        />
+        <p className="page-sub">{langHint}</p>
+
         <label>
-          Name
-          <input className="admin-input" name="name" defaultValue={room.name} required />
+          Name {lang === "en" ? "*" : ""}
+          <input
+            className="admin-input"
+            value={current.name ?? ""}
+            required={lang === "en"}
+            onChange={(e) => updateField("name", e.target.value)}
+          />
         </label>
         <label>
           Slug
@@ -91,17 +163,17 @@ export function EditRoomForm({ room }: { room: Room }) {
           Short description
           <input
             className="admin-input"
-            name="shortDescription"
-            defaultValue={room.shortDescription ?? ""}
+            value={current.shortDescription ?? ""}
+            onChange={(e) => updateField("shortDescription", e.target.value)}
           />
         </label>
         <label>
           Description
           <textarea
             className="admin-input"
-            name="description"
             rows={4}
-            defaultValue={room.description ?? ""}
+            value={current.description ?? ""}
+            onChange={(e) => updateField("description", e.target.value)}
           />
         </label>
         <div className="admin-form-row">

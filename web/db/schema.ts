@@ -84,6 +84,8 @@ export const roomTypes = sqliteTable(
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     isFeatured: integer("is_featured", { mode: "boolean" }).notNull().default(false),
     displayOrder: integer("display_order").notNull().default(0),
+    /** JSON: { en?: {name,description,shortDescription}, "zh-CN"?: {...}, sn?: {...}, nd?: {...} } */
+    translationsJson: text("translations_json"),
     ...timestamps,
   },
   (t) => [
@@ -156,6 +158,8 @@ export const bookings = sqliteTable(
     paymentStatus: text("payment_status").notNull().default("Unpaid"),
     expiresAt: text("expires_at"),
     source: text("source").default("website"),
+    /** Guest UI language: en | zh-CN | sn | nd */
+    preferredLanguage: text("preferred_language").default("en"),
     ...timestamps,
   },
   (t) => [
@@ -302,6 +306,7 @@ export const conferencePackages = sqliteTable("conference_packages", {
   featuresJson: text("features_json"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   displayOrder: integer("display_order").notNull().default(0),
+  translationsJson: text("translations_json"),
   ...timestamps,
 });
 
@@ -365,6 +370,7 @@ export const menuCategories = sqliteTable(
     displayOrder: integer("display_order").notNull().default(0),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     archivedAt: text("archived_at"),
+    translationsJson: text("translations_json"),
     ...timestamps,
   },
   (t) => [
@@ -385,6 +391,7 @@ export const menuItems = sqliteTable(
     sku: text("sku"),
     shortDescription: text("short_description"),
     description: text("description"),
+    translationsJson: text("translations_json"),
     /** Standard price (legacy column name kept for compatibility) */
     price: real("price").notNull(),
     promotionalPrice: real("promotional_price"),

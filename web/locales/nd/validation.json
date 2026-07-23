@@ -1,0 +1,20 @@
+{
+  "required": "Le nkundla iyadingeka.",
+  "invalidEmail": "Sicela ufake i-imeyili elungileyo.",
+  "invalidPhone": "Sicela ufake inombolo yocingo elungileyo.",
+  "checkoutAfterCheckin": "I-check-out kumele ibe emva kosuku lwe-check-in.",
+  "selectGuest": "Sicela ukhethe okungenani isivakashi esisodwa.",
+  "roomUnavailable": "Leli kamelo alisasitholakali ngezinsuku zakho.",
+  "unableSubmit": "Asikwazi ukuthumela. Sicela uzame futhi.",
+  "networkError": "Iphutha lenetwork. Hlola uxhumano lwakho uzame futhi.",
+  "tryAgain": "Kukhona okungahambanga kahle. Sicela uzame futhi.",
+  "invalidQuantity": "Sicela ufake inani elilungileyo.",
+  "bookingNotFound": "I-booking ayitholakalanga.",
+  "acceptTerms": "Sicela wamukele imithetho yokubhuka ukuze uqhubeke.",
+  "waitBeforeSubmit": "Sicela ulinde isikhashana ngaphambi kokuthumela futhi.",
+  "missingFields": "Sicela ugcwalise zonke inkundla ezidingekayo.",
+  "atLeastOneAdult": "Okungenani umuntu omdala oyedwa uyadingeka.",
+  "unableCreateBooking": "Asikwazi ukwenza i-booking. Sicela uzame futhi.",
+  "selectBothDates": "Sicela ukhethe zinsuku zombili ze-check-in ne-check-out.",
+  "selectDatesBelow": "Khetha izinsuku zakho ngezansi, bese usesha amakamelo atholakalayo."
+}

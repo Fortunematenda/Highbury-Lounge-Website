@@ -1,6 +1,7 @@
 import { getDb } from "@/db";
 import { notifications } from "@/db/schema";
 import { getSettingsMap } from "@/lib/settings";
+import { LOCALE_NATIVE_NAMES, isAppLocale, type AppLocale } from "@/lib/i18n/locales";
 
 export type NotificationContext = {
   guestName: string;
@@ -12,12 +13,17 @@ export type NotificationContext = {
   guests?: string;
   total?: string;
   status?: string;
+  preferredLanguage?: string;
 };
 
-const TEMPLATES: Record<
-  string,
-  { subject: string; body: (ctx: NotificationContext, contact: ContactBlock) => string }
-> = {
+type ContactBlock = { block: string };
+
+type Template = {
+  subject: string;
+  body: (ctx: NotificationContext, contact: ContactBlock) => string;
+};
+
+const EN_TEMPLATES: Record<string, Template> = {
   booking_received: {
     subject: "Reservation received — {{reference}}",
     body: (ctx, c) =>
@@ -70,10 +76,30 @@ const TEMPLATES: Record<
   },
 };
 
-type ContactBlock = { block: string };
+const ZH_TEMPLATES: Partial<Record<string, Template>> = {
+  booking_received: {
+    subject: "已收到预订 — {{reference}}",
+    body: (ctx, c) =>
+      `尊敬的 ${ctx.guestName}：\n\n感谢您选择 Highbury Lounge。我们已收到您的预订申请 ${ctx.reference}。\n\n客房：${ctx.roomName}\n日期：${ctx.checkIn} 至 ${ctx.checkOut}\n客人：${ctx.guests}\n预估总额：${ctx.total}\n状态：${ctx.status}（待确认）\n\n这不是付款确认。我们的团队将尽快审核空房情况并与您联系。\n\n${c.block}`,
+  },
+  booking_confirmed: {
+    subject: "预订已确认 — {{reference}}",
+    body: (ctx, c) =>
+      `尊敬的 ${ctx.guestName}：\n\n您的预订 ${ctx.reference} 已确认。\n\n客房：${ctx.roomName}\n日期：${ctx.checkIn} 至 ${ctx.checkOut}\n客人：${ctx.guests}\n总额：${ctx.total}\n状态：${ctx.status}\n\n${c.block}`,
+  },
+};
 
 function fillSubject(template: string, ctx: NotificationContext) {
   return template.replace("{{reference}}", ctx.reference);
+}
+
+function resolveTemplate(templateKey: string, locale?: string): Template {
+  if (locale?.startsWith("zh") && ZH_TEMPLATES[templateKey]) {
+    return ZH_TEMPLATES[templateKey]!;
+  }
+  const en = EN_TEMPLATES[templateKey];
+  if (!en) throw new Error(`Unknown notification template: ${templateKey}`);
+  return en;
 }
 
 export async function queueNotification(params: {
@@ -83,6 +109,7 @@ export async function queueNotification(params: {
   context: NotificationContext;
   relatedType?: string;
   relatedId?: number;
+  locale?: string;
 }) {
   const settings = await getSettingsMap();
   const contact: ContactBlock = {
@@ -94,13 +121,21 @@ export async function queueNotification(params: {
     ].join("\n"),
   };
 
-  const template = TEMPLATES[params.templateKey];
-  if (!template) {
-    throw new Error(`Unknown notification template: ${params.templateKey}`);
-  }
-
+  const template = resolveTemplate(params.templateKey, params.locale);
   const subject = fillSubject(template.subject, params.context);
-  const bodyText = template.body(params.context, contact);
+  let bodyText = template.body(params.context, contact);
+
+  // Admin-facing English note when guest used another language
+  if (
+    params.context.preferredLanguage &&
+    params.context.preferredLanguage !== "en"
+  ) {
+    const code = params.context.preferredLanguage;
+    const label = isAppLocale(code)
+      ? LOCALE_NATIVE_NAMES[code as AppLocale]
+      : code;
+    bodyText += `\n\n[Admin note — English]\nGuest preferred language: ${label} (${code})\nBooking reference: ${params.context.reference}\n`;
+  }
 
   const smtpConfigured = Boolean(
     process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
@@ -109,7 +144,7 @@ export async function queueNotification(params: {
   const db = getDb();
   let status: "queued" | "sent" | "failed" | "unconfigured" = "queued";
   let errorMessage: string | null = null;
-  let sentAt: string | null = null;
+  const sentAt: string | null = null;
 
   if (!smtpConfigured) {
     status = "unconfigured";
@@ -117,7 +152,6 @@ export async function queueNotification(params: {
       "SMTP is not configured. Notification saved but not delivered.";
   } else {
     try {
-      // Placeholder for future SMTP / provider integration
       status = "failed";
       errorMessage =
         "SMTP credentials present but no transport is wired yet. Notification saved.";

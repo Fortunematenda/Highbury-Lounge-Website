@@ -34,6 +34,8 @@ export type CreateBookingInput = {
   children: number;
   roomsBooked?: number;
   guest: GuestPayload;
+  /** Guest UI language code: en | zh-CN | sn | nd */
+  preferredLanguage?: string;
 };
 
 function bookingReference(): string {
@@ -153,6 +155,7 @@ export async function createBooking(input: CreateBookingInput) {
       paymentStatus: "Unpaid",
       expiresAt: expiresAt.toISOString(),
       source: "website",
+      preferredLanguage: input.preferredLanguage || "en",
     })
     .returning();
 
@@ -196,6 +199,7 @@ export async function createBooking(input: CreateBookingInput) {
     templateKey: "booking_received",
     recipientEmail: input.guest.email.trim().toLowerCase(),
     recipientName: `${input.guest.firstName} ${input.guest.lastName}`.trim(),
+    locale: input.preferredLanguage || "en",
     context: {
       guestName: `${input.guest.firstName} ${input.guest.lastName}`.trim(),
       reference,
@@ -205,6 +209,7 @@ export async function createBooking(input: CreateBookingInput) {
       guests: `${input.adults} adult(s), ${input.children} child(ren)`,
       total: `${currency} ${totalAmount.toFixed(2)}`,
       status: "Pending",
+      preferredLanguage: input.preferredLanguage || "en",
     },
     relatedType: "booking",
     relatedId: booking.id,

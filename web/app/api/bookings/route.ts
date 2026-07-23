@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         estimatedArrival?: string;
         termsAccepted?: boolean;
       };
+      preferredLanguage?: string;
       idempotencyKey?: string;
     };
 
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       adults: body.adults ?? 1,
       children: body.children ?? 0,
       roomsBooked: body.roomsBooked ?? 1,
+      preferredLanguage: body.preferredLanguage || "en",
       guest: {
         firstName: body.guest.firstName ?? "",
         lastName: body.guest.lastName ?? "",

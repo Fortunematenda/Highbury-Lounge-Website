@@ -41,6 +41,7 @@ export async function GET() {
     const grouped = categories
       .map((category) => ({
         ...category,
+        translationsJson: category.translationsJson,
         items: items
           .filter((item) => item.categoryId === category.id)
           .map((item) => ({
@@ -49,6 +50,7 @@ export async function GET() {
             slug: item.slug,
             shortDescription: item.shortDescription,
             description: item.description,
+            translationsJson: item.translationsJson,
             price: item.price,
             promotionalPrice: item.promotionalPrice,
             currency: item.currency,

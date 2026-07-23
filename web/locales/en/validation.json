@@ -1,0 +1,20 @@
+{
+  "required": "This field is required.",
+  "invalidEmail": "Please enter a valid email address.",
+  "invalidPhone": "Please enter a valid phone number.",
+  "checkoutAfterCheckin": "Check-out must be after your check-in date.",
+  "selectGuest": "Please select at least one guest.",
+  "roomUnavailable": "This room is no longer available for your dates.",
+  "unableSubmit": "Unable to submit. Please try again.",
+  "networkError": "Network error. Please check your connection and try again.",
+  "tryAgain": "Something went wrong. Please try again.",
+  "invalidQuantity": "Please enter a valid quantity.",
+  "bookingNotFound": "Booking not found.",
+  "acceptTerms": "Please accept the booking terms to continue.",
+  "waitBeforeSubmit": "Please wait a moment before submitting again.",
+  "missingFields": "Please complete all required fields.",
+  "atLeastOneAdult": "At least one adult is required.",
+  "unableCreateBooking": "Unable to create booking. Please try again.",
+  "selectBothDates": "Please select both your check-in and check-out dates.",
+  "selectDatesBelow": "Select your dates below, then search available rooms."
+}

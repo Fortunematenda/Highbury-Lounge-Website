@@ -5,6 +5,7 @@ import { menuCategories } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { jsonError } from "@/lib/format";
 import { isMenuItemType } from "@/lib/menu-constants";
+import { normalizeTranslationsJson } from "@/lib/i18n/content";
 import { slugify } from "@/lib/slug";
 
 export async function GET(request: Request) {
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
         itemType,
         displayOrder: Number(body.displayOrder ?? 0),
         isActive: body.isActive !== false && body.isActive !== "false",
+        translationsJson:
+          normalizeTranslationsJson(body.translationsJson) ?? null,
       })
       .returning();
 

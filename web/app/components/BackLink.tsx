@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type Props = {
   href?: string;
@@ -13,10 +14,12 @@ type Props = {
 
 export function BackLink({
   href = "/",
-  label = "Back",
+  label,
   preferHistory = true,
 }: Props) {
   const router = useRouter();
+  const { t } = useTranslation();
+  const resolvedLabel = label ?? t("actions.back");
 
   function onClick(event: MouseEvent<HTMLAnchorElement>) {
     if (!preferHistory) return;
@@ -30,7 +33,7 @@ export function BackLink({
   return (
     <Link className="back-link" href={href} onClick={onClick}>
       <span aria-hidden="true">←</span>
-      {label}
+      {resolvedLabel}
     </Link>
   );
 }

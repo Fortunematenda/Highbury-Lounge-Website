@@ -1,0 +1,20 @@
+{
+  "required": "此为必填项。",
+  "invalidEmail": "请输入有效的电子邮箱地址。",
+  "invalidPhone": "请输入有效的电话号码。",
+  "checkoutAfterCheckin": "退房日期必须晚于入住日期。",
+  "selectGuest": "请至少选择一位客人。",
+  "roomUnavailable": "该客房在您所选日期已不可用。",
+  "unableSubmit": "无法提交。请重试。",
+  "networkError": "网络错误。请检查连接后重试。",
+  "tryAgain": "出现问题。请重试。",
+  "invalidQuantity": "请输入有效数量。",
+  "bookingNotFound": "未找到该预订。",
+  "acceptTerms": "请接受预订条款以继续。",
+  "waitBeforeSubmit": "请稍候再重新提交。",
+  "missingFields": "请填写所有必填项。",
+  "atLeastOneAdult": "至少需要一位成人。",
+  "unableCreateBooking": "无法创建预订。请重试。",
+  "selectBothDates": "请选择入住和退房日期。",
+  "selectDatesBelow": "请先在下方选择日期，然后搜索可订客房。"
+}

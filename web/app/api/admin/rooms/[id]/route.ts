@@ -70,6 +70,12 @@ export async function PATCH(
       patch.isFeatured = body.isFeatured === true || body.isFeatured === "true";
     }
     if (body.displayOrder != null) patch.displayOrder = Number(body.displayOrder);
+    if (body.translationsJson !== undefined) {
+      patch.translationsJson =
+        typeof body.translationsJson === "string"
+          ? body.translationsJson
+          : JSON.stringify(body.translationsJson ?? {});
+    }
 
     await db.update(roomTypes).set(patch).where(eq(roomTypes.id, roomId));
 

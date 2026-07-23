@@ -155,6 +155,7 @@ export type AvailableRoom = {
   name: string;
   slug: string;
   shortDescription: string | null;
+  translationsJson: string | null;
   description: string | null;
   pricePerNight: number;
   promotionalPrice: number | null;
@@ -233,6 +234,7 @@ export async function findAvailableRooms(params: {
       slug: room.slug,
       shortDescription: room.shortDescription,
       description: room.description,
+      translationsJson: room.translationsJson ?? null,
       pricePerNight: room.pricePerNight,
       promotionalPrice: room.promotionalPrice,
       effectivePrice,
