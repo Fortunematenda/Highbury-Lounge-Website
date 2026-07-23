@@ -1,0 +1,29 @@
+services:
+  highbury-web:
+    build: .
+    container_name: highbury-lounge-web
+    ports:
+      - "8095:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - WRANGLER_LOG_PATH=.wrangler/wrangler.log
+    volumes:
+      - highbury-wrangler:/app/.wrangler
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  highbury-wrangler:
+
+networks:
+  default:
+    name: highbury-lounge-network
