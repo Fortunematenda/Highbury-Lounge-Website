@@ -1,0 +1,17 @@
+{
+  "name": "highbury-lounge-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "web"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "build:web": "npm run build -w web"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
