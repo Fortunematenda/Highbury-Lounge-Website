@@ -11,17 +11,46 @@ import { adminUsers } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { jsonError } from "@/lib/format";
 
+async function readCredentials(request: Request) {
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const body = await request.json();
+    return {
+      email: String(body.email ?? ""),
+      password: String(body.password ?? ""),
+      mode: "json" as const,
+    };
+  }
+
+  const form = await request.formData();
+  return {
+    email: String(form.get("email") ?? ""),
+    password: String(form.get("password") ?? ""),
+    mode: "form" as const,
+  };
+}
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const email = String(body.email ?? "");
-    const password = String(body.password ?? "");
+    const { email, password, mode } = await readCredentials(request);
     if (!email.trim() || !password) {
+      if (mode === "form") {
+        return NextResponse.redirect(
+          new URL("/admin/login?error=missing", request.url),
+          303,
+        );
+      }
       return jsonError("Email and password are required.", 400);
     }
 
     const user = await authenticateAdmin(email, password);
     if (!user) {
+      if (mode === "form") {
+        return NextResponse.redirect(
+          new URL("/admin/login?error=invalid", request.url),
+          303,
+        );
+      }
       return jsonError("Invalid email or password.", 401);
     }
 
@@ -43,8 +72,15 @@ export async function POST(request: Request) {
       entityId: user.id,
     });
 
-    // Set cookie on the Response object — cookies().set() alone is unreliable
-    // under vinext/wrangler and the browser never receives Set-Cookie.
+    if (mode === "form") {
+      const response = NextResponse.redirect(
+        new URL("/admin", request.url),
+        303,
+      );
+      applySessionCookie(response, token);
+      return response;
+    }
+
     const response = NextResponse.json({
       ok: true,
       user: {

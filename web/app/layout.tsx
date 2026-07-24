@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { PublicChrome } from "@/app/components/SiteHeader";
 import { isAppLocale, type AppLocale } from "@/lib/i18n/locales";
 import "./globals.css";
@@ -21,6 +21,28 @@ export const metadata: Metadata = {
   },
 };
 
+function resolvePathname(headerStore: Headers) {
+  const candidates = [
+    headerStore.get("x-matched-path"),
+    headerStore.get("x-invoke-path"),
+    headerStore.get("x-pathname"),
+    headerStore.get("next-url"),
+    headerStore.get("x-url"),
+    headerStore.get("x-forwarded-uri"),
+    headerStore.get("x-original-url"),
+  ].filter(Boolean) as string[];
+
+  for (const raw of candidates) {
+    try {
+      if (raw.startsWith("http")) return new URL(raw).pathname;
+      if (raw.startsWith("/")) return raw.split("?")[0];
+    } catch {
+      /* ignore */
+    }
+  }
+  return "";
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -31,11 +53,17 @@ export default async function RootLayout({
   const initialLocale: AppLocale | null = isAppLocale(cookieLocale)
     ? cookieLocale
     : null;
+  const pathname = resolvePathname(await headers());
+  const isAdmin = pathname.startsWith("/admin");
 
   return (
     <html lang={initialLocale ?? "en"}>
       <body className="antialiased">
-        <PublicChrome initialLocale={initialLocale}>{children}</PublicChrome>
+        {isAdmin ? (
+          children
+        ) : (
+          <PublicChrome initialLocale={initialLocale}>{children}</PublicChrome>
+        )}
       </body>
     </html>
   );

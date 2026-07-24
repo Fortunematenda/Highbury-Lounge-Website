@@ -1,15 +1,31 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  missing: "Email and password are required.",
+  invalid: "Invalid email or password.",
+  session:
+    "Signed in but the session cookie was not kept. Use http:// (not https://) and set COOKIE_SECURE=false.",
+};
 
 export default function LoginForm() {
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
+  const initialError = useMemo(
+    () => (urlError ? ERROR_MESSAGES[urlError] || "Login failed." : null),
+    [urlError],
+  );
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setError(null);
     setLoading(true);
     try {
@@ -30,16 +46,16 @@ export default function LoginForm() {
         cache: "no-store",
       });
       if (!me.ok) {
-        setError(
-          "Login succeeded but the session cookie was not kept. Use http:// (not https://) and ensure COOKIE_SECURE=false on the server.",
-        );
+        setError(ERROR_MESSAGES.session);
         return;
       }
 
       window.location.assign("/admin");
       return;
     } catch {
-      setError("Unable to reach the server.");
+      // Fall back to a normal form POST if fetch/JS path fails.
+      form.submit();
+      return;
     } finally {
       setLoading(false);
     }
@@ -58,12 +74,22 @@ export default function LoginForm() {
         </div>
         <h1 className="admin-login-title">Admin portal</h1>
         <p className="page-sub">Sign in to manage Highbury Lounge</p>
-        {error ? <div className="admin-error">{error}</div> : null}
-        <form className="admin-form" onSubmit={onSubmit}>
+        {error ? (
+          <div className="admin-error" role="alert">
+            {error}
+          </div>
+        ) : null}
+        <form
+          className="admin-form"
+          method="post"
+          action="/api/admin/auth/login"
+          onSubmit={onSubmit}
+        >
           <label>
             Email
             <input
               className="admin-input"
+              name="email"
               type="email"
               autoComplete="username"
               required
@@ -75,6 +101,7 @@ export default function LoginForm() {
             Password
             <input
               className="admin-input"
+              name="password"
               type="password"
               autoComplete="current-password"
               required

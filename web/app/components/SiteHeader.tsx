@@ -187,8 +187,8 @@ export function PublicChrome({
   children: ReactNode;
   initialLocale?: AppLocale | null;
 }) {
-  const pathname = usePathname();
-  if (pathname?.startsWith("/admin")) {
+  const pathname = usePathname() || "";
+  if (pathname.startsWith("/admin")) {
     return <>{children}</>;
   }
 
