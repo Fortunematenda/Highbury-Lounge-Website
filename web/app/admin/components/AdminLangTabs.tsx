@@ -14,9 +14,14 @@ type Props = {
   missingHint?: boolean;
 };
 
-export function AdminLangTabs({ lang, onChange, translations, missingHint = true }: Props) {
+export function AdminLangTabs({
+  lang,
+  onChange,
+  translations,
+  missingHint = true,
+}: Props) {
   return (
-    <div className="admin-tabs admin-lang-tabs" role="tablist" aria-label="Content language">
+    <div className="admin-tabs admin-lang-tabs" role="tablist" aria-label="Languages">
       {LOCALES.map((code) => {
         const has =
           code === "en" ||
@@ -26,21 +31,29 @@ export function AdminLangTabs({ lang, onChange, translations, missingHint = true
               translations[code]?.shortDescription ||
               translations[code]?.features,
           );
+        const incomplete = missingHint && code !== "en" && !has;
         return (
           <button
             key={code}
             type="button"
             role="tab"
             aria-selected={lang === code}
-            className={`admin-tab${lang === code ? " active" : ""}`}
+            className={`admin-tab${lang === code ? " active" : ""}${incomplete ? " is-incomplete" : ""}`}
             onClick={() => onChange(code)}
+            title={
+              code === "en"
+                ? "Primary language"
+                : incomplete
+                  ? "Not translated yet"
+                  : undefined
+            }
           >
-            {LOCALE_LABELS[code]}
-            {missingHint && code !== "en" && !has ? (
-              <span className="admin-lang-missing" title="Not translated yet">
-                {" "}
-                ·
-              </span>
+            <span>{LOCALE_LABELS[code]}</span>
+            {code === "en" ? (
+              <em className="admin-lang-primary">Primary</em>
+            ) : null}
+            {incomplete ? (
+              <span className="admin-lang-dot" aria-label="Not translated yet" />
             ) : null}
           </button>
         );

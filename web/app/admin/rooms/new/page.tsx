@@ -2,6 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ImageIcon, Save, Settings2, Users, Wallet } from "lucide-react";
+import {
+  DetailFieldGrid,
+  DetailFieldSpan,
+  DetailPageShell,
+  DetailSectionCard,
+  UnsavedChangesGuard,
+} from "@/app/admin/components/detail-page";
 import {
   RoomImageGallery,
   uploadRoomImageFiles,
@@ -12,6 +20,7 @@ export default function NewRoomPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -53,6 +62,7 @@ export default function NewRoomPage() {
               ? `Room created, but image upload failed: ${uploadErr.message}`
               : "Room created, but image upload failed.",
           );
+          setDirty(false);
           router.push(`/admin/rooms/${data.room.id}`);
           router.refresh();
           return;
@@ -60,86 +70,183 @@ export default function NewRoomPage() {
       }
 
       setSuccess("Created successfully.");
+      setDirty(false);
       window.setTimeout(() => {
         router.push(`/admin/rooms/${data.room.id}`);
         router.refresh();
       }, 900);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "Could not create room");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="admin-page">
-      <h1>Add room type</h1>
-      {error && <div className="admin-error">{error}</div>}
+    <DetailPageShell
+      pageTitle="Add room"
+      breadcrumbs={[
+        { label: "Rooms", href: "/admin/rooms" },
+        { label: "Add room" },
+      ]}
+      title="Add room"
+      description="Create a new room listing with pricing, capacity and photos."
+      backAction={{ label: "Back to rooms", href: "/admin/rooms" }}
+    >
+      <UnsavedChangesGuard dirty={dirty} />
+      {error ? (
+        <div className="admin-error" role="alert">
+          {error}
+        </div>
+      ) : null}
       {success ? (
         <div className="admin-success" role="status">
           {success}
         </div>
       ) : null}
-      <form className="admin-form admin-card" onSubmit={onSubmit}>
-        <label>
-          Name
-          <input className="admin-input" name="name" required />
-        </label>
-        <label>
-          Slug (optional)
-          <input className="admin-input" name="slug" />
-        </label>
-        <label>
-          Short description
-          <input className="admin-input" name="shortDescription" />
-        </label>
-        <label>
-          Description
-          <textarea className="admin-input" name="description" rows={4} />
-        </label>
-        <div className="admin-form-row">
-          <label>
-            Price / night
-            <input className="admin-input" name="pricePerNight" type="number" step="0.01" required />
-          </label>
-          <label>
-            Promo price
-            <input className="admin-input" name="promotionalPrice" type="number" step="0.01" />
-          </label>
-          <label>
-            Inventory
-            <input className="admin-input" name="inventoryCount" type="number" defaultValue={1} required />
-          </label>
-        </div>
-        <div className="admin-form-row">
-          <label>
-            Max adults
-            <input className="admin-input" name="maxAdults" type="number" defaultValue={2} />
-          </label>
-          <label>
-            Max children
-            <input className="admin-input" name="maxChildren" type="number" defaultValue={0} />
-          </label>
-          <label>
-            Max guests
-            <input className="admin-input" name="maxGuests" type="number" defaultValue={2} />
-          </label>
-        </div>
-        <label>
-          Bed type
-          <input className="admin-input" name="bedType" />
-        </label>
-        <RoomImageGallery onPendingFilesChange={setPendingImages} />
-        <label className="admin-check">
-          <input type="checkbox" name="isActive" defaultChecked /> Active
-        </label>
-        <label className="admin-check">
-          <input type="checkbox" name="isFeatured" /> Featured
-        </label>
-        <button className="admin-btn" type="submit" disabled={loading}>
-          {loading ? "Creating…" : "Create room type"}
-        </button>
+
+      <form
+        className="detail-form-stack"
+        onSubmit={onSubmit}
+        onChange={() => setDirty(true)}
+      >
+        <DetailSectionCard title="Basic information" icon={Users}>
+          <DetailFieldGrid columns={2}>
+            <label>
+              Name *
+              <input className="admin-input" name="name" required />
+            </label>
+            <label>
+              Page address
+              <input
+                className="admin-input"
+                name="slug"
+                placeholder="Optional — generated from the name"
+              />
+            </label>
+            <DetailFieldSpan>
+              <label>
+                Short description
+                <input className="admin-input" name="shortDescription" />
+              </label>
+            </DetailFieldSpan>
+            <DetailFieldSpan>
+              <label>
+                Description
+                <textarea
+                  className="admin-input"
+                  name="description"
+                  rows={4}
+                />
+              </label>
+            </DetailFieldSpan>
+          </DetailFieldGrid>
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Pricing & inventory" icon={Wallet}>
+          <DetailFieldGrid columns={3}>
+            <label>
+              Price / night *
+              <input
+                className="admin-input"
+                name="pricePerNight"
+                type="number"
+                step="0.01"
+                required
+              />
+            </label>
+            <label>
+              Promo price
+              <input
+                className="admin-input"
+                name="promotionalPrice"
+                type="number"
+                step="0.01"
+              />
+            </label>
+            <label>
+              Inventory *
+              <input
+                className="admin-input"
+                name="inventoryCount"
+                type="number"
+                defaultValue={1}
+                required
+              />
+            </label>
+          </DetailFieldGrid>
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Capacity" icon={Users}>
+          <DetailFieldGrid columns={3}>
+            <label>
+              Max adults
+              <input
+                className="admin-input"
+                name="maxAdults"
+                type="number"
+                defaultValue={2}
+              />
+            </label>
+            <label>
+              Max children
+              <input
+                className="admin-input"
+                name="maxChildren"
+                type="number"
+                defaultValue={0}
+              />
+            </label>
+            <label>
+              Max guests
+              <input
+                className="admin-input"
+                name="maxGuests"
+                type="number"
+                defaultValue={2}
+              />
+            </label>
+            <label>
+              Bed type
+              <input className="admin-input" name="bedType" />
+            </label>
+          </DetailFieldGrid>
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Gallery" icon={ImageIcon}>
+          <RoomImageGallery
+            onPendingFilesChange={(files) => {
+              setPendingImages(files);
+              setDirty(true);
+            }}
+          />
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Publishing" icon={Settings2}>
+          <div className="room-toggle-list">
+            <label className="room-toggle">
+              <span>
+                <strong>Active</strong>
+                <small>Show this room on the website</small>
+              </span>
+              <input type="checkbox" name="isActive" defaultChecked />
+            </label>
+            <label className="room-toggle">
+              <span>
+                <strong>Featured</strong>
+                <small>Highlight on homepage listings</small>
+              </span>
+              <input type="checkbox" name="isFeatured" />
+            </label>
+          </div>
+          <div className="detail-inline-actions">
+            <button className="admin-btn" type="submit" disabled={loading}>
+              <Save size={16} aria-hidden />
+              {loading ? "Creating…" : "Create room"}
+            </button>
+          </div>
+        </DetailSectionCard>
       </form>
-    </div>
+    </DetailPageShell>
   );
 }

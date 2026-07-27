@@ -578,7 +578,7 @@ export function AdminDashboardClient() {
               View bookings
             </Link>
             <Link className="admin-btn secondary" href="/admin/rooms/new">
-              Add room type
+              Add room
             </Link>
             <Link className="admin-btn secondary" href="/admin/blocks">
               Block room

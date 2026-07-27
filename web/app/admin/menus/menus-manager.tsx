@@ -1303,7 +1303,7 @@ export function MenusManager() {
                 setPage(1);
               }}
             >
-              <option value="displayOrder">Display order</option>
+              <option value="displayOrder">Sort order</option>
               <option value="name">Name</option>
               <option value="price">Price</option>
               <option value="updated">Recently updated</option>
@@ -1846,8 +1846,8 @@ export function MenusManager() {
               />
               <p className="page-sub">
                 {itemLang === "en"
-                  ? "English fields are required and used as the default."
-                  : "Optional translation. Leave blank to fall back to English."}
+                  ? "English is the primary language for this item."
+                  : "Optional. Empty fields fall back to English."}
               </p>
 
               <div className="admin-form-row">
@@ -1868,7 +1868,7 @@ export function MenusManager() {
                 </label>
                 {itemLang === "en" ? (
                   <label>
-                    Slug
+                    Page address
                     <input
                       className="admin-input"
                       value={itemForm.slug}
@@ -1880,7 +1880,7 @@ export function MenusManager() {
                   </label>
                 ) : (
                   <p className="admin-muted">
-                    Slug, pricing, and availability stay shared across languages.
+                    Pricing and availability are shared across all languages.
                   </p>
                 )}
               </div>
@@ -2177,7 +2177,7 @@ export function MenusManager() {
 
               <div className="admin-form-row">
                 <label>
-                  Display order
+                  Sort order
                   <input
                     className="admin-input"
                     type="number"
@@ -2425,8 +2425,8 @@ export function MenusManager() {
               />
               <p className="page-sub">
                 {categoryLang === "en"
-                  ? "English fields are required and used as the default."
-                  : "Optional translation. Leave blank to fall back to English."}
+                  ? "English is the primary language for this category."
+                  : "Optional. Empty fields fall back to English."}
               </p>
               <label>
                 Name {categoryLang === "en" ? "*" : ""}
@@ -2445,7 +2445,7 @@ export function MenusManager() {
               </label>
               {categoryLang === "en" ? (
                 <label>
-                  Slug
+                  Page address
                   <input
                     className="admin-input"
                     value={categoryForm.slug}
@@ -2497,7 +2497,7 @@ export function MenusManager() {
                       </select>
                     </label>
                     <label>
-                      Display order
+                      Sort order
                       <input
                         className="admin-input"
                         type="number"

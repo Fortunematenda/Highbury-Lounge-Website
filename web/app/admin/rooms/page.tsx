@@ -23,7 +23,7 @@ export default async function AdminRoomsPage() {
           <p className="page-sub">Room types and inventory</p>
         </div>
         <Link className="admin-btn" href="/admin/rooms/new">
-          Add room type
+          Add room
         </Link>
       </header>
       <RoomsList rooms={rooms} />

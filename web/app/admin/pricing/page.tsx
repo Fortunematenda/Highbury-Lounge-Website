@@ -28,7 +28,7 @@ export default async function PricingPage() {
     <div className="admin-page">
       <h1>Pricing</h1>
       <p className="page-sub">
-        Standard and promotional prices live on each room type. Pricing rules support seasonal/weekend/extra guest charges.
+        Standard and promotional prices live on each room. Pricing rules support seasonal, weekend and extra-guest charges.
       </p>
       <PricingLists rooms={rooms} rules={rules} />
     </div>

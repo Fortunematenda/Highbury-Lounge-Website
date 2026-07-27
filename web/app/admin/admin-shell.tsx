@@ -11,6 +11,7 @@ import {
 import type { AdminSessionUser } from "@/lib/auth";
 import { AdminGlobalSearch } from "@/app/admin/components/AdminGlobalSearch";
 import { AdminNotificationsBell } from "@/app/admin/components/AdminNotificationsBell";
+import { resolveAdminRouteMeta } from "@/app/admin/lib/admin-route-meta";
 import {
   BarChart3,
   BedDouble,
@@ -92,18 +93,6 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-function pageTitle(pathname: string) {
-  if (pathname === "/admin") return "Dashboard";
-  for (const group of NAV_GROUPS) {
-    for (const item of group.items) {
-      if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
-        return item.label;
-      }
-    }
-  }
-  return "Admin";
-}
-
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -125,10 +114,26 @@ export function AdminShell({
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [overrideTitle, setOverrideTitle] = useState<string | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const backHref = adminBackHref(pathname);
   const backLabel = adminBackLabel(pathname);
-  const title = useMemo(() => pageTitle(pathname), [pathname]);
+  const routeMeta = useMemo(() => resolveAdminRouteMeta(pathname), [pathname]);
+  const title = overrideTitle || routeMeta.title;
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setOverrideTitle(null));
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
+  useEffect(() => {
+    function onTitle(event: Event) {
+      const custom = event as CustomEvent<{ title?: string }>;
+      if (custom.detail?.title) setOverrideTitle(custom.detail.title);
+    }
+    window.addEventListener("admin:page-title", onTitle);
+    return () => window.removeEventListener("admin:page-title", onTitle);
+  }, []);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {

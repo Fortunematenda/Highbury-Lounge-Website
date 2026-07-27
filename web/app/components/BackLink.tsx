@@ -43,6 +43,14 @@ export function adminBackHref(pathname: string | null | undefined): string | nul
     return null;
   }
 
+  // Detail pages use DetailPageShell back actions instead of the generic link.
+  if (
+    /^\/admin\/(rooms|bookings|conference)\/[^/]+$/.test(pathname) ||
+    pathname === "/admin/rooms/new"
+  ) {
+    return null;
+  }
+
   const segments = pathname.split("/").filter(Boolean);
   // /admin/rooms -> /admin
   // /admin/rooms/12 -> /admin/rooms

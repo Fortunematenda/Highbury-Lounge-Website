@@ -71,7 +71,7 @@ export default async function SettingsPage({
 
       {!smtpOk ? (
         <div className="admin-warn">
-          Email delivery is inactive until SMTP environment variables are set.
+          Email delivery is inactive until outgoing mail settings are configured.
         </div>
       ) : null}
 

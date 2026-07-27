@@ -231,7 +231,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
   }
 
   const langHint = useMemo(() => {
-    if (lang === "en") return "English fields are required and used as the default.";
+    if (lang === "en") return "English is the primary language for this package.";
     return "Optional translation. Leave blank to fall back to English.";
   }, [lang]);
 
@@ -352,7 +352,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
             aria-modal="true"
             style={{ width: "min(560px, 100%)" }}
           >
-            <h3>{isCreate ? "Add package" : `Edit package · ${editing.slug}`}</h3>
+            <h3>{isCreate ? "Add package" : `Edit ${editing.name}`}</h3>
             {error ? <div className="admin-error">{error}</div> : null}
             {success ? (
               <div className="admin-success" role="status">
@@ -387,7 +387,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
               {lang === "en" ? (
                 <>
                   <label>
-                    Features (one per line or JSON array)
+                    Included features (one per line)
                     <textarea
                       className="admin-textarea"
                       rows={2}
@@ -417,7 +417,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
                       />
                     </label>
                     <label>
-                      Display order
+                      Sort order
                       <input
                         className="admin-input"
                         type="number"
