@@ -10,6 +10,7 @@ import {
 export default function NewRoomPage() {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
 
@@ -17,6 +18,7 @@ export default function NewRoomPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const payload = Object.fromEntries(fd.entries());
     try {
@@ -57,8 +59,11 @@ export default function NewRoomPage() {
         }
       }
 
-      router.push(`/admin/rooms/${data.room.id}`);
-      router.refresh();
+      setSuccess("Created successfully.");
+      window.setTimeout(() => {
+        router.push(`/admin/rooms/${data.room.id}`);
+        router.refresh();
+      }, 900);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -70,6 +75,11 @@ export default function NewRoomPage() {
     <div className="admin-page">
       <h1>Add room type</h1>
       {error && <div className="admin-error">{error}</div>}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
       <form className="admin-form admin-card" onSubmit={onSubmit}>
         <label>
           Name
@@ -127,7 +137,7 @@ export default function NewRoomPage() {
           <input type="checkbox" name="isFeatured" /> Featured
         </label>
         <button className="admin-btn" type="submit" disabled={loading}>
-          {loading ? "Saving…" : "Create room type"}
+          {loading ? "Creating…" : "Create room type"}
         </button>
       </form>
     </div>

@@ -23,12 +23,14 @@ export function BookingStatusActions({
   const router = useRouter();
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<string | null>(null);
 
   async function applyStatus(status: string) {
     setPending(status);
     setError("");
+    setSuccess("");
     try {
       const res = await fetch(`/api/admin/bookings/${bookingId}/status`, {
         method: "POST",
@@ -39,6 +41,8 @@ export function BookingStatusActions({
       if (!res.ok) throw new Error(data.error || "Update failed");
       setConfirmStatus(null);
       setNote("");
+      setSuccess("Saved successfully.");
+      window.setTimeout(() => setSuccess(""), 3500);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed");
@@ -57,6 +61,11 @@ export function BookingStatusActions({
       <h2>Status actions</h2>
       <p className="page-sub">Current: {currentStatus}</p>
       {error && <div className="admin-error">{error}</div>}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
       <label>
         Admin note (optional)
         <textarea

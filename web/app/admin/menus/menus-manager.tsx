@@ -696,7 +696,7 @@ export function MenusManager() {
       );
       if (!res.ok) throw new Error(await readError(res));
       setCategoryModalOpen(false);
-      flash(editingCategoryId ? "Category updated." : "Category created.");
+      flash(editingCategoryId ? "Saved successfully." : "Created successfully.");
       await loadCategories(tab === "archived");
       await loadStats();
     } catch (err) {
@@ -840,19 +840,17 @@ export function MenusManager() {
             }
             setItemImages(uploaded);
             clearPendingImages();
-            flash(
-              `Item created with ${uploaded.length} image${uploaded.length === 1 ? "" : "s"}.`,
-            );
+            flash("Created successfully.");
           } finally {
             setUploading(false);
           }
         } else {
           setItemImages([]);
-          flash("Item created.");
+          flash("Created successfully.");
         }
         setItemModalOpen(false);
       } else {
-        flash("Item updated.");
+        flash("Saved successfully.");
         setItemModalOpen(false);
       }
       await Promise.all([fetchItems(page, tab), loadStats()]);
@@ -1138,7 +1136,11 @@ export function MenusManager() {
       </header>
 
       {error ? <div className="admin-error">{error}</div> : null}
-      {success ? <div className="admin-success">{success}</div> : null}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
 
       <div className="admin-stat-grid">
         <div className="admin-stat-card">

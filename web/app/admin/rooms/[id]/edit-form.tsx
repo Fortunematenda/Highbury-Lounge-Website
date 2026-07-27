@@ -50,6 +50,7 @@ export function EditRoomForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [featuredImage, setFeaturedImage] = useState<string | null>(
     room.featuredImage,
@@ -85,6 +86,7 @@ export function EditRoomForm({
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const payload = Object.fromEntries(fd.entries());
     const en = translations.en ?? {};
@@ -128,6 +130,8 @@ export function EditRoomForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
+      setSuccess("Saved successfully.");
+      window.setTimeout(() => setSuccess(""), 3500);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
@@ -156,6 +160,11 @@ export function EditRoomForm({
   return (
     <>
       {error && <div className="admin-error">{error}</div>}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
       <form className="admin-form admin-card" onSubmit={onSubmit}>
         <AdminLangTabs
           lang={lang}

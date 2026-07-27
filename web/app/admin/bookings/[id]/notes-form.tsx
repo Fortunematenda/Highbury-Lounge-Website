@@ -32,7 +32,7 @@ export function BookingNotesForm({
         setError(data.error || "Save failed");
         return;
       }
-      setMessage("Notes saved.");
+      setMessage("Saved successfully.");
       router.refresh();
     } catch {
       setError("Network error");
@@ -45,7 +45,11 @@ export function BookingNotesForm({
     <form className="admin-card" onSubmit={onSubmit}>
       <h2>Internal notes</h2>
       {error ? <div className="admin-error">{error}</div> : null}
-      {message ? <p className="page-sub">{message}</p> : null}
+      {message ? (
+        <div className="admin-success" role="status">
+          {message}
+        </div>
+      ) : null}
       <textarea
         className="admin-textarea"
         value={notes}

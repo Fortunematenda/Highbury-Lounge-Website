@@ -24,10 +24,12 @@ export function ConferenceStatusForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const res = await fetch(`/api/admin/conference/${enquiryId}`, {
       method: "PATCH",
@@ -46,6 +48,8 @@ export function ConferenceStatusForm({
       setError(data.error || "Update failed");
       return;
     }
+    setSuccess("Saved successfully.");
+    window.setTimeout(() => setSuccess(""), 3500);
     router.refresh();
   }
 
@@ -53,6 +57,11 @@ export function ConferenceStatusForm({
     <form className="admin-card admin-form" onSubmit={onSubmit}>
       <h2>Update enquiry</h2>
       {error && <div className="admin-error">{error}</div>}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
       <label>
         Status
         <select className="admin-input" name="status" defaultValue={currentStatus}>

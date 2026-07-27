@@ -51,14 +51,18 @@ export function ConferenceUpdateForm({
       setError(data.error || "Update failed");
       return;
     }
-    setMessage("Saved.");
+    setMessage("Saved successfully.");
     router.refresh();
   }
 
   return (
     <form className="admin-form" onSubmit={onSubmit}>
       {error ? <div className="admin-error">{error}</div> : null}
-      {message ? <p className="admin-muted">{message}</p> : null}
+      {message ? (
+        <div className="admin-success" role="status">
+          {message}
+        </div>
+      ) : null}
       <label>
         Status
         <select

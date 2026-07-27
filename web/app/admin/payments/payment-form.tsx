@@ -16,12 +16,12 @@ export function PaymentForm({
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
+  const [success, setSuccess] = useState("");
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setOk(false);
+    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const res = await fetch("/api/admin/payments", {
       method: "POST",
@@ -43,7 +43,8 @@ export function PaymentForm({
       setError(data.error || "Could not record payment.");
       return;
     }
-    setOk(true);
+    setSuccess("Created successfully.");
+    window.setTimeout(() => setSuccess(""), 3500);
     e.currentTarget.reset();
     router.refresh();
   }
@@ -52,7 +53,11 @@ export function PaymentForm({
     <form className="admin-card admin-form" onSubmit={onSubmit}>
       <h2>Record payment</h2>
       {error ? <div className="admin-error">{error}</div> : null}
-      {ok ? <p className="admin-muted">Payment recorded.</p> : null}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
       <label>
         Booking
         <select className="admin-select" name="bookingId" required>

@@ -37,6 +37,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
   const [features, setFeatures] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
 
   const current = translations[lang] ?? {};
@@ -80,6 +81,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
     if (!editing) return;
     setBusy(true);
     setError("");
+    setSuccess("");
     const en = translations.en ?? {};
     const englishName = (en.name || editing.name).trim();
     if (!englishName) {
@@ -110,8 +112,12 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Update failed");
-      setEditing(null);
-      router.refresh();
+      setSuccess("Saved successfully.");
+      window.setTimeout(() => {
+        setEditing(null);
+        setSuccess("");
+        router.refresh();
+      }, 900);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -175,6 +181,11 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
           >
             <h3>Edit package · {editing.slug}</h3>
             {error ? <div className="admin-error">{error}</div> : null}
+            {success ? (
+              <div className="admin-success" role="status">
+                {success}
+              </div>
+            ) : null}
             <form className="admin-form" onSubmit={(e) => void onSave(e)}>
               <AdminLangTabs
                 lang={lang}

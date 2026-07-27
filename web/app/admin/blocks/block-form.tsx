@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 export function BlockForm({ rooms }: { rooms: { id: number; name: string }[] }) {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const res = await fetch("/api/admin/blocks", {
       method: "POST",
@@ -29,6 +31,8 @@ export function BlockForm({ rooms }: { rooms: { id: number; name: string }[] }) 
       return;
     }
     e.currentTarget.reset();
+    setSuccess("Created successfully.");
+    window.setTimeout(() => setSuccess(""), 3500);
     router.refresh();
   }
 
@@ -36,6 +40,11 @@ export function BlockForm({ rooms }: { rooms: { id: number; name: string }[] }) 
     <form className="admin-card admin-form" onSubmit={onSubmit}>
       <h2>Create block</h2>
       {error && <div className="admin-error">{error}</div>}
+      {success ? (
+        <div className="admin-success" role="status">
+          {success}
+        </div>
+      ) : null}
       <label>
         Room type
         <select className="admin-input" name="roomTypeId" required>

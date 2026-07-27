@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdminPage } from "@/lib/admin-page";
 import { writeAuditLog } from "@/lib/audit";
@@ -43,17 +44,29 @@ async function saveSettings(formData: FormData) {
     details: { keys: Object.keys(values) },
   });
   revalidatePath("/admin/settings");
+  redirect("/admin/settings?saved=1");
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
   await requireAdminPage(["administrator"]);
   const settings = await getSettingsMap();
   const smtpOk = isSmtpConfigured();
+  const { saved } = await searchParams;
 
   return (
     <>
       <h1>Settings</h1>
       <p className="page-sub">Business details, booking rules, and policies</p>
+
+      {saved === "1" ? (
+        <div className="admin-success" role="status">
+          Saved successfully.
+        </div>
+      ) : null}
 
       {!smtpOk ? (
         <div className="admin-warn">
