@@ -538,6 +538,11 @@
   margin-bottom: 4px;
 }
 
+.admin-back-link {
+  margin: 0 0 12px;
+  color: var(--wine);
+}
+
 .admin-card {
   background: white;
   border: 1px solid var(--line);
@@ -1176,6 +1181,31 @@
   text-transform: uppercase;
   padding: 3px 7px;
   border-radius: 999px;
+}
+
+.room-image-field {
+  margin: 8px 0 16px;
+}
+
+.room-image-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.room-image-preview {
+  max-width: 280px;
+  margin-bottom: 12px;
+}
+
+.room-image-preview img {
+  aspect-ratio: 4 / 3;
+}
+
+.room-image-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
 }
 
 @media (max-width: 960px) {

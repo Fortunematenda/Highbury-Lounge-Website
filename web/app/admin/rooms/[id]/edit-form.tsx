@@ -6,6 +6,7 @@ import {
   AdminLangTabs,
   buildTranslationDraft,
 } from "@/app/admin/components/AdminLangTabs";
+import { RoomImageGallery } from "@/app/admin/rooms/room-image-field";
 import {
   stringifyTranslations,
   type ContentTranslations,
@@ -33,10 +34,26 @@ type Room = {
   translationsJson?: string | null;
 };
 
-export function EditRoomForm({ room }: { room: Room }) {
+type RoomImageRow = {
+  id: number;
+  url: string;
+  altText: string | null;
+  displayOrder: number;
+};
+
+export function EditRoomForm({
+  room,
+  images = [],
+}: {
+  room: Room;
+  images?: RoomImageRow[];
+}) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [featuredImage, setFeaturedImage] = useState<string | null>(
+    room.featuredImage,
+  );
   const [lang, setLang] = useState<AppLocale>("en");
   const [translations, setTranslations] = useState<ContentTranslations>(() =>
     buildTranslationDraft(
@@ -87,6 +104,7 @@ export function EditRoomForm({ room }: { room: Room }) {
           name: englishName,
           shortDescription: en.shortDescription ?? "",
           description: en.description ?? "",
+          featuredImage,
           translationsJson: stringifyTranslations({
             ...translations,
             en: {
@@ -231,14 +249,12 @@ export function EditRoomForm({ room }: { room: Room }) {
           Room size
           <input className="admin-input" name="roomSize" defaultValue={room.roomSize ?? ""} />
         </label>
-        <label>
-          Featured image URL
-          <input
-            className="admin-input"
-            name="featuredImage"
-            defaultValue={room.featuredImage ?? ""}
-          />
-        </label>
+        <RoomImageGallery
+          roomId={room.id}
+          initialImages={images}
+          featuredImage={featuredImage}
+          onFeaturedChange={setFeaturedImage}
+        />
         <label>
           Display order
           <input

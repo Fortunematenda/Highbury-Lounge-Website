@@ -2,11 +2,16 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  RoomImageGallery,
+  uploadRoomImageFiles,
+} from "@/app/admin/rooms/room-image-field";
 
 export default function NewRoomPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,6 +25,7 @@ export default function NewRoomPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...payload,
+          featuredImage: null,
           pricePerNight: Number(payload.pricePerNight),
           promotionalPrice: payload.promotionalPrice
             ? Number(payload.promotionalPrice)
@@ -35,6 +41,22 @@ export default function NewRoomPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not create room");
+
+      if (pendingImages.length > 0) {
+        try {
+          await uploadRoomImageFiles(data.room.id, pendingImages);
+        } catch (uploadErr) {
+          setError(
+            uploadErr instanceof Error
+              ? `Room created, but image upload failed: ${uploadErr.message}`
+              : "Room created, but image upload failed.",
+          );
+          router.push(`/admin/rooms/${data.room.id}`);
+          router.refresh();
+          return;
+        }
+      }
+
       router.push(`/admin/rooms/${data.room.id}`);
       router.refresh();
     } catch (err) {
@@ -97,10 +119,7 @@ export default function NewRoomPage() {
           Bed type
           <input className="admin-input" name="bedType" />
         </label>
-        <label>
-          Featured image URL
-          <input className="admin-input" name="featuredImage" defaultValue="/images/deluxe-room.jpg" />
-        </label>
+        <RoomImageGallery onPendingFilesChange={setPendingImages} />
         <label className="admin-check">
           <input type="checkbox" name="isActive" defaultChecked /> Active
         </label>

@@ -3,23 +3,22 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
-import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type Props = {
   href?: string;
   label?: string;
   /** Prefer browser history when possible */
   preferHistory?: boolean;
+  className?: string;
 };
 
 export function BackLink({
   href = "/",
-  label,
+  label = "Back",
   preferHistory = true,
+  className = "back-link",
 }: Props) {
   const router = useRouter();
-  const { t } = useTranslation();
-  const resolvedLabel = label ?? t("actions.back");
 
   function onClick(event: MouseEvent<HTMLAnchorElement>) {
     if (!preferHistory) return;
@@ -31,9 +30,35 @@ export function BackLink({
   }
 
   return (
-    <Link className="back-link" href={href} onClick={onClick}>
+    <Link className={className} href={href} onClick={onClick}>
       <span aria-hidden="true">←</span>
-      {resolvedLabel}
+      {label}
     </Link>
   );
+}
+
+/** Resolve a sensible parent path for admin nested routes. */
+export function adminBackHref(pathname: string | null | undefined): string | null {
+  if (!pathname || pathname === "/admin/login") {
+    return null;
+  }
+  if (pathname === "/admin") {
+    return "/";
+  }
+
+  const segments = pathname.split("/").filter(Boolean);
+  // /admin/rooms -> /admin
+  // /admin/rooms/12 -> /admin/rooms
+  // /admin/rooms/new -> /admin/rooms
+  if (segments[0] !== "admin") return "/admin";
+  if (segments.length === 2) return "/admin";
+  if (segments.length >= 3) {
+    return `/${segments.slice(0, 2).join("/")}`;
+  }
+  return "/admin";
+}
+
+export function adminBackLabel(pathname: string | null | undefined): string {
+  if (pathname === "/admin") return "Back to website";
+  return "Back";
 }

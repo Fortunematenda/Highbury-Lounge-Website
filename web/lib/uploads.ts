@@ -43,7 +43,10 @@ function getUploadsBucket(): R2Bucket {
   return bucket;
 }
 
-export async function storeMenuImage(file: File) {
+export async function storeUploadedImage(
+  file: File,
+  folder: "menu-items" | "rooms" = "menu-items",
+) {
   if (!file || file.size <= 0) {
     throw new UploadError("Empty or missing image file.");
   }
@@ -57,7 +60,7 @@ export async function storeMenuImage(file: File) {
   }
 
   const ext = EXT_BY_MIME[file.type] || "bin";
-  const storageKey = `menu-items/${randomToken(16)}.${ext}`;
+  const storageKey = `${folder}/${randomToken(16)}.${ext}`;
   const bucket = getUploadsBucket();
   const bytes = await file.arrayBuffer();
 
@@ -78,6 +81,20 @@ export async function storeMenuImage(file: File) {
     mimeType: file.type,
     fileSize: file.size,
   };
+}
+
+/** Kept for existing menu upload routes */
+export async function storeMenuImage(file: File) {
+  return storeUploadedImage(file, "menu-items");
+}
+
+export function storageKeyFromUploadUrl(imageUrl: string | null | undefined) {
+  if (!imageUrl) return null;
+  const base = publicUploadBaseUrl();
+  if (!imageUrl.startsWith(`${base}/`)) return null;
+  const key = imageUrl.slice(base.length + 1);
+  if (!key || key.includes("..")) return null;
+  return key;
 }
 
 export async function deleteStoredObject(storageKey: string) {

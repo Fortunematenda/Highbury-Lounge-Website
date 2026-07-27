@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BackLink, adminBackHref, adminBackLabel } from "@/app/components/BackLink";
 import type { AdminSessionUser } from "@/lib/auth";
 
 const NAV = [
@@ -33,6 +34,8 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const backHref = adminBackHref(pathname);
+  const backLabel = adminBackLabel(pathname);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -127,7 +130,17 @@ export function AdminShell({
           </form>
         </div>
       </aside>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main">
+        {backHref ? (
+          <BackLink
+            className="back-link admin-back-link"
+            href={backHref}
+            label={backLabel}
+            preferHistory={false}
+          />
+        ) : null}
+        {children}
+      </main>
     </div>
   );
 }
