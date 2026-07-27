@@ -18,6 +18,7 @@ import {
 import {
   DetailFieldGrid,
   DetailFieldSpan,
+  DetailMetadataCard,
   DetailPageShell,
   DetailSectionCard,
   DetailStickyActionBar,
@@ -76,10 +77,16 @@ export function MenuItemForm({
   mode,
   categories,
   initial,
+  lastChange,
 }: {
   mode: "create" | "edit";
   categories: CategoryOption[];
   initial?: MenuItemPayload | null;
+  lastChange?: {
+    label: string;
+    email: string | null;
+    at: string;
+  } | null;
 }) {
   const router = useRouter();
   const [lang, setLang] = useState<AppLocale>("en");
@@ -275,6 +282,32 @@ export function MenuItemForm({
         ) : undefined
       }
       backAction={{ label: "Back to menus", href: "/admin/menus" }}
+      sidebar={
+        mode === "edit" ? (
+          <DetailMetadataCard
+            items={[
+              {
+                label: "Last changed by",
+                value: lastChange ? (
+                  <>
+                    {lastChange.label}
+                    {lastChange.email ? (
+                      <>
+                        <br />
+                        <span className="admin-muted">{lastChange.email}</span>
+                      </>
+                    ) : null}
+                    <br />
+                    <span className="admin-muted">{lastChange.at}</span>
+                  </>
+                ) : (
+                  "No changes recorded yet"
+                ),
+              },
+            ]}
+          />
+        ) : undefined
+      }
     >
       <UnsavedChangesGuard dirty={dirty} />
       {error ? (

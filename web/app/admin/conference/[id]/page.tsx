@@ -158,7 +158,13 @@ export default async function ConferenceDetailPage({
         </DetailSectionCard>
 
         <DetailSectionCard title="Update status" icon={ClipboardList}>
-          <ConferenceStatusForm enquiryId={e.id} currentStatus={e.status} />
+          <ConferenceStatusForm
+            enquiryId={e.id}
+            currentStatus={e.status}
+            initialQuotationAmount={e.quotationAmount}
+            initialQuotationNotes={e.quotationNotes}
+            initialAdminNotes={e.adminNotes}
+          />
         </DetailSectionCard>
       </div>
     </DetailPageShell>

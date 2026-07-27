@@ -9,6 +9,7 @@ import {
   adminBackLabel,
 } from "@/app/components/BackLink";
 import type { AdminSessionUser } from "@/lib/auth";
+import { AdminBrandLogo } from "@/app/admin/components/AdminBrandLogo";
 import { AdminGlobalSearch } from "@/app/admin/components/AdminGlobalSearch";
 import { AdminNotificationsBell } from "@/app/admin/components/AdminNotificationsBell";
 import { resolveAdminRouteMeta } from "@/app/admin/lib/admin-route-meta";
@@ -240,12 +241,7 @@ export function AdminShell({
 
       <aside id="admin-sidebar" className="admin-sidebar" aria-label="Admin navigation">
         <div className="admin-brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="admin-brand-logo"
-            src="/images/highbury-lounge-logo-light.png?v=4"
-            alt="Highbury Lounge"
-          />
+          <AdminBrandLogo />
           <span className="admin-brand-text">Admin portal</span>
         </div>
 
@@ -316,61 +312,74 @@ export function AdminShell({
 
       <div className="admin-workspace">
         <header className="admin-appbar">
-          <div className="admin-appbar-left">
-            <button
-              type="button"
-              className="admin-menu-toggle"
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={menuOpen}
-              aria-controls="admin-sidebar"
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              {menuOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-            <div>
-              <p className="admin-appbar-eyebrow">Highbury Lounge</p>
-              <p className="admin-appbar-title">{title}</p>
-            </div>
-          </div>
-
-          <div className="admin-appbar-right">
-            <AdminGlobalSearch />
-            <AdminNotificationsBell />
-            <div className="admin-profile" ref={profileRef}>
+          <div className="admin-appbar-row">
+            <div className="admin-appbar-left">
               <button
                 type="button"
-                className="admin-profile-trigger"
-                aria-expanded={profileOpen}
-                aria-haspopup="menu"
-                onClick={() => setProfileOpen((open) => !open)}
+                className="admin-menu-toggle"
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={menuOpen}
+                aria-controls="admin-sidebar"
+                onClick={() => setMenuOpen((open) => !open)}
               >
-                <span className="admin-user-avatar" aria-hidden>
-                  {initials(user.fullName)}
-                </span>
-                <span className="admin-profile-name">{user.fullName}</span>
+                {menuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
-              {profileOpen ? (
-                <div className="admin-profile-menu" role="menu">
-                  <div className="admin-profile-meta">
-                    <strong>{user.fullName}</strong>
-                    <span>{user.email}</span>
-                    <span>{user.roleName}</span>
-                  </div>
-                  <Link
-                    href="/admin/settings"
-                    role="menuitem"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    Settings
-                  </Link>
-                  <form action="/api/admin/auth/logout" method="post">
-                    <button type="submit" role="menuitem">
-                      <LogOut size={14} aria-hidden /> Log out
-                    </button>
-                  </form>
-                </div>
-              ) : null}
+              <Link href="/admin" className="admin-appbar-brand" title="Highbury Lounge">
+                <AdminBrandLogo
+                  className="admin-appbar-logo"
+                  preferDark
+                />
+              </Link>
+              <div className="admin-appbar-title-block">
+                <p className="admin-appbar-eyebrow">Highbury Lounge</p>
+                <p className="admin-appbar-title">{title}</p>
+              </div>
             </div>
+
+            <div className="admin-appbar-right">
+              <div className="admin-search-desktop">
+                <AdminGlobalSearch variant="button" />
+              </div>
+              <AdminNotificationsBell />
+              <div className="admin-profile" ref={profileRef}>
+                <button
+                  type="button"
+                  className="admin-profile-trigger"
+                  aria-expanded={profileOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setProfileOpen((open) => !open)}
+                >
+                  <span className="admin-user-avatar" aria-hidden>
+                    {initials(user.fullName)}
+                  </span>
+                  <span className="admin-profile-name">{user.fullName}</span>
+                </button>
+                {profileOpen ? (
+                  <div className="admin-profile-menu" role="menu">
+                    <div className="admin-profile-meta">
+                      <strong>{user.fullName}</strong>
+                      <span>{user.email}</span>
+                      <span>{user.roleName}</span>
+                    </div>
+                    <Link
+                      href="/admin/settings"
+                      role="menuitem"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                    <form action="/api/admin/auth/logout" method="post">
+                      <button type="submit" role="menuitem">
+                        <LogOut size={14} aria-hidden /> Log out
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+          <div className="admin-appbar-search-mobile">
+            <AdminGlobalSearch variant="inline" />
           </div>
         </header>
 

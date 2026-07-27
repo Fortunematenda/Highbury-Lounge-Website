@@ -18,6 +18,7 @@ import {
   DetailDangerZone,
   DetailFieldGrid,
   DetailFieldSpan,
+  DetailMetadataCard,
   DetailPageShell,
   DetailSectionCard,
   DetailStickyActionBar,
@@ -61,9 +62,15 @@ export type PackageRecord = {
 export function PackageForm({
   mode,
   initial,
+  lastChange,
 }: {
   mode: "create" | "edit";
   initial?: PackageRecord | null;
+  lastChange?: {
+    label: string;
+    email: string | null;
+    at: string;
+  } | null;
 }) {
   const router = useRouter();
   const [lang, setLang] = useState<AppLocale>("en");
@@ -267,6 +274,33 @@ export function PackageForm({
         ) : undefined
       }
       backAction={{ label: "Back to packages", href: "/admin/packages" }}
+      sidebar={
+        mode === "edit" ? (
+          <DetailMetadataCard
+            items={[
+              {
+                label: "Last changed by",
+                value: lastChange ? (
+                  <>
+                    {lastChange.label}
+                    {lastChange.email ? (
+                      <>
+                        <br />
+                        <span className="admin-muted">{lastChange.email}</span>
+                      </>
+                    ) : null}
+                    <br />
+                    <span className="admin-muted">{lastChange.at}</span>
+                  </>
+                ) : (
+                  "No changes recorded yet"
+                ),
+              },
+              { label: "Page address", value: initial?.slug },
+            ]}
+          />
+        ) : undefined
+      }
     >
       <UnsavedChangesGuard dirty={dirty} />
       {error ? (

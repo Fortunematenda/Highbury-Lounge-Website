@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AdminBrandLogo } from "@/app/admin/components/AdminBrandLogo";
 
 const ERROR_MESSAGES: Record<string, string> = {
   missing: "Email and password are required.",
@@ -65,12 +66,7 @@ export default function LoginForm() {
     <div className="admin-login-page">
       <div className="admin-login-card">
         <div className="admin-login-brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            className="admin-login-logo"
-            src="/images/highbury-lounge-logo.png"
-            alt="Highbury Lounge"
-          />
+          <AdminBrandLogo className="admin-login-logo" preferDark />
         </div>
         <h1 className="admin-login-title">Admin portal</h1>
         <p className="page-sub">Sign in to manage Highbury Lounge</p>

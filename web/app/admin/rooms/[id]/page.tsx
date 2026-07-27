@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { roomImages, roomTypes } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
+import { formatAuditActorLabel, getLatestEntityChange } from "@/lib/audit";
 import { formatMoney } from "@/lib/format";
 import { EditRoomForm } from "./edit-form";
 
@@ -35,6 +36,8 @@ export default async function EditRoomPage({
   const cover =
     room.featuredImage || images.find((img) => img.url)?.url || null;
 
+  const lastChange = await getLatestEntityChange("room_type", roomId);
+
   return (
     <EditRoomForm
       room={room}
@@ -50,6 +53,11 @@ export default async function EditRoomPage({
         photoCount: images.length,
         updatedAt: room.updatedAt,
         createdAt: room.createdAt,
+        lastChangedBy: lastChange
+          ? formatAuditActorLabel(lastChange.actor)
+          : null,
+        lastChangedAt: lastChange?.createdAt ?? null,
+        lastChangedEmail: lastChange?.actor?.email ?? null,
       }}
     />
   );

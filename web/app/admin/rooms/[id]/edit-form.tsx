@@ -81,6 +81,9 @@ export function EditRoomForm({
     photoCount: number;
     createdAt?: string;
     updatedAt?: string;
+    lastChangedBy?: string | null;
+    lastChangedAt?: string | null;
+    lastChangedEmail?: string | null;
   };
 }) {
   const router = useRouter();
@@ -257,6 +260,30 @@ export function EditRoomForm({
             items={[
               { label: "Created", value: summary.createdAt },
               { label: "Last updated", value: summary.updatedAt },
+              {
+                label: "Last changed by",
+                value: summary.lastChangedBy ? (
+                  <>
+                    {summary.lastChangedBy}
+                    {summary.lastChangedEmail ? (
+                      <>
+                        <br />
+                        <span className="admin-muted">
+                          {summary.lastChangedEmail}
+                        </span>
+                      </>
+                    ) : null}
+                    {summary.lastChangedAt ? (
+                      <>
+                        <br />
+                        <span className="admin-muted">
+                          {summary.lastChangedAt}
+                        </span>
+                      </>
+                    ) : null}
+                  </>
+                ) : null,
+              },
               { label: "Page address", value: room.slug },
             ]}
           />

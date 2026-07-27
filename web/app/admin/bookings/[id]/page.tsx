@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getDb } from "@/db";
 import {
+  adminUsers,
   bookingGuests,
   bookings,
   bookingStatusHistory,
@@ -17,6 +18,10 @@ import {
   roomTypes,
 } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
+import {
+  formatAuditActorLabel,
+  getLatestEntityChange,
+} from "@/lib/audit";
 import { formatDate, formatMoney } from "@/lib/format";
 import { LOCALE_NATIVE_NAMES, isAppLocale } from "@/lib/i18n/locales";
 import {
@@ -60,8 +65,21 @@ export default async function AdminBookingDetailPage({
     .limit(1);
 
   const history = await db
-    .select()
+    .select({
+      id: bookingStatusHistory.id,
+      previousStatus: bookingStatusHistory.previousStatus,
+      newStatus: bookingStatusHistory.newStatus,
+      note: bookingStatusHistory.note,
+      createdAt: bookingStatusHistory.createdAt,
+      adminUserId: bookingStatusHistory.adminUserId,
+      adminName: adminUsers.fullName,
+      adminEmail: adminUsers.email,
+    })
     .from(bookingStatusHistory)
+    .leftJoin(
+      adminUsers,
+      eq(bookingStatusHistory.adminUserId, adminUsers.id),
+    )
     .where(eq(bookingStatusHistory.bookingId, bookingId))
     .orderBy(asc(bookingStatusHistory.createdAt));
 
@@ -70,10 +88,23 @@ export default async function AdminBookingDetailPage({
     .from(payments)
     .where(eq(payments.bookingId, bookingId));
 
+  const lastChange = await getLatestEntityChange("booking", bookingId);
+
   const b = booking.booking;
   const guestName = guest
     ? `${guest.firstName} ${guest.lastName}`.trim()
     : "Guest";
+
+  const paidTotal = paymentRows
+    .filter((p) => p.status === "Paid")
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  const clientBalance = Math.round((b.totalAmount - paidTotal) * 100) / 100;
+  const balanceLabel =
+    clientBalance <= 0
+      ? "Settled"
+      : clientBalance >= b.totalAmount
+        ? "Full balance due"
+        : "Balance due";
 
   return (
     <DetailPageShell
@@ -121,6 +152,27 @@ export default async function AdminBookingDetailPage({
                 </dd>
               </div>
               <div>
+                <dt>Paid</dt>
+                <dd>{formatMoney(paidTotal, b.currency)}</dd>
+              </div>
+              <div>
+                <dt>Client balance</dt>
+                <dd>
+                  <strong
+                    className={
+                      clientBalance > 0
+                        ? "admin-balance-due"
+                        : "admin-balance-paid"
+                    }
+                  >
+                    {formatMoney(Math.max(0, clientBalance), b.currency)}
+                  </strong>
+                  <div className="admin-muted" style={{ fontWeight: 500 }}>
+                    {balanceLabel}
+                  </div>
+                </dd>
+              </div>
+              <div>
                 <dt>Payment</dt>
                 <dd>{b.paymentStatus}</dd>
               </div>
@@ -130,6 +182,16 @@ export default async function AdminBookingDetailPage({
             items={[
               { label: "Created", value: b.createdAt },
               { label: "Last updated", value: b.updatedAt },
+              {
+                label: "Last changed by",
+                value: lastChange?.actor
+                  ? `${formatAuditActorLabel(lastChange.actor)}${
+                      lastChange.actor.email
+                        ? ` · ${lastChange.actor.email}`
+                        : ""
+                    }`
+                  : null,
+              },
             ]}
           />
         </>
@@ -243,6 +305,24 @@ export default async function AdminBookingDetailPage({
               </dd>
             </div>
             <div>
+              <dt>Amount paid</dt>
+              <dd>{formatMoney(paidTotal, b.currency)}</dd>
+            </div>
+            <div>
+              <dt>Client balance</dt>
+              <dd>
+                <strong
+                  className={
+                    clientBalance > 0
+                      ? "admin-balance-due"
+                      : "admin-balance-paid"
+                  }
+                >
+                  {formatMoney(Math.max(0, clientBalance), b.currency)}
+                </strong>
+              </dd>
+            </div>
+            <div>
               <dt>Payment status</dt>
               <dd>
                 <StatusBadge status={b.paymentStatus} />
@@ -250,7 +330,8 @@ export default async function AdminBookingDetailPage({
             </div>
           </dl>
           <p className="page-sub">
-            Record manual payments from the Payments page.
+            Record manual payments from the Payments page.{" "}
+            <Link href="/admin/payments/new">Record a payment</Link>
           </p>
         </DetailSectionCard>
 
@@ -258,7 +339,7 @@ export default async function AdminBookingDetailPage({
           <BookingStatusActions bookingId={b.id} currentStatus={b.status} />
         </DetailSectionCard>
 
-        <DetailSectionCard title="Internal notes" icon={StickyNote}>
+        <DetailSectionCard title="Additional notes" icon={StickyNote}>
           <BookingNotesForm bookingId={b.id} initialNotes={b.adminNotes || ""} />
         </DetailSectionCard>
 
@@ -270,22 +351,57 @@ export default async function AdminBookingDetailPage({
                 {h.createdAt}: {h.previousStatus || "—"} →{" "}
                 <strong>{h.newStatus}</strong>
                 {h.note ? ` — ${h.note}` : ""}
+                {h.adminName ? (
+                  <span className="admin-muted">
+                    {" "}
+                    · by {h.adminName}
+                    {h.adminEmail ? ` (${h.adminEmail})` : ""}
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
         </DetailSectionCard>
 
         <DetailSectionCard title="Payments" icon={CreditCard}>
+          <dl className="admin-dl" style={{ marginBottom: 12 }}>
+            <div>
+              <dt>Booking total</dt>
+              <dd>{formatMoney(b.totalAmount, b.currency)}</dd>
+            </div>
+            <div>
+              <dt>Paid to date</dt>
+              <dd>{formatMoney(paidTotal, b.currency)}</dd>
+            </div>
+            <div>
+              <dt>Client balance</dt>
+              <dd>
+                <strong
+                  className={
+                    clientBalance > 0
+                      ? "admin-balance-due"
+                      : "admin-balance-paid"
+                  }
+                >
+                  {formatMoney(Math.max(0, clientBalance), b.currency)}
+                </strong>
+              </dd>
+            </div>
+          </dl>
           {paymentRows.length === 0 ? (
             <p>
               No payments recorded.{" "}
-              <Link href="/admin/payments">Record a payment</Link>
+              <Link href="/admin/payments/new">Record a payment</Link>
             </p>
           ) : (
             <ul className="admin-list">
               {paymentRows.map((p) => (
                 <li key={p.id}>
                   {formatMoney(p.amount, p.currency)} via {p.method} — {p.status}
+                  {p.paymentDate ? ` · ${p.paymentDate}` : ""}
+                  {p.transactionReference
+                    ? ` · Ref ${p.transactionReference}`
+                    : ""}
                 </li>
               ))}
             </ul>

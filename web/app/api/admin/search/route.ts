@@ -50,6 +50,9 @@ export async function GET(request: Request) {
           like(bookingGuests.phone, pattern),
           like(bookingGuests.firstName, pattern),
           like(bookingGuests.lastName, pattern),
+          like(roomTypes.name, pattern),
+          like(roomTypes.slug, pattern),
+          sql`(${bookingGuests.firstName} || ' ' || ${bookingGuests.lastName}) like ${pattern}`,
         ),
       )
       .orderBy(desc(bookings.createdAt))
@@ -153,7 +156,7 @@ export async function GET(request: Request) {
         id: `menu-${item.id}`,
         title: item.name,
         description: `${item.itemType} · ${item.isAvailable ? "Available" : "Unavailable"}`,
-        href: `/admin/menus`,
+        href: `/admin/menus/items/${item.id}`,
         group: "Menu products",
       });
     }

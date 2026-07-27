@@ -1,41 +1,101 @@
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { AuthError, requireAdmin } from "@/lib/auth";
 import { getDb } from "@/db";
 import {
   adminNotifications,
+  bookingExtras,
   bookingGuests,
   bookings,
   conferenceEnquiries,
   payments,
+  roomBlocks,
   roomTypes,
 } from "@/db/schema";
-import { todayISODate } from "@/lib/availability";
+import {
+  ACTIVE_BOOKING_STATUSES,
+  dateOverlapSql,
+  todayISODate,
+} from "@/lib/availability";
 import { jsonError } from "@/lib/format";
 
-function daysAgoISO(days: number) {
-  const d = new Date();
-  d.setHours(12, 0, 0, 0);
-  d.setDate(d.getDate() - days);
+type RangeKey = "today" | "7" | "30" | "month" | "year";
+
+function addDaysISO(iso: string, days: number) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-function emptyTrend(days: number) {
+function daysAgoISO(days: number, from = todayISODate()) {
+  return addDaysISO(from, -days);
+}
+
+function emptyTrend(start: string, end: string) {
   const points: Array<{ date: string; value: number }> = [];
-  for (let i = days - 1; i >= 0; i -= 1) {
-    points.push({ date: daysAgoISO(i), value: 0 });
+  let cursor = start;
+  while (cursor <= end) {
+    points.push({ date: cursor, value: 0 });
+    cursor = addDaysISO(cursor, 1);
+    if (points.length > 400) break;
   }
   return points;
+}
+
+function resolveRange(raw: string | null): {
+  key: RangeKey;
+  since: string;
+  label: string;
+  trendDays: number;
+} {
+  const today = todayISODate();
+  const key = (raw ?? "30") as RangeKey | string;
+  if (key === "today" || key === "1") {
+    return { key: "today", since: today, label: "Today", trendDays: 1 };
+  }
+  if (key === "7") {
+    return { key: "7", since: daysAgoISO(6), label: "7 Days", trendDays: 7 };
+  }
+  if (key === "month") {
+    const since = `${today.slice(0, 8)}01`;
+    const day = Number(today.slice(8, 10));
+    return { key: "month", since, label: "This Month", trendDays: Math.max(1, day) };
+  }
+  if (key === "year") {
+    const since = `${today.slice(0, 4)}-01-01`;
+    const start = new Date(`${since}T12:00:00Z`);
+    const end = new Date(`${today}T12:00:00Z`);
+    const trendDays = Math.max(
+      1,
+      Math.round((end.getTime() - start.getTime()) / 86400000) + 1,
+    );
+    return {
+      key: "year",
+      since,
+      label: "This Year",
+      trendDays: Math.min(trendDays, 366),
+    };
+  }
+  return { key: "30", since: daysAgoISO(29), label: "30 Days", trendDays: 30 };
 }
 
 export async function GET(request: Request) {
   try {
     const user = await requireAdmin();
-    const range = Number(new URL(request.url).searchParams.get("range") ?? "30") || 30;
-    const days = [7, 30, 90, 365].includes(range) ? range : 30;
-    const since = daysAgoISO(days);
-    const previousSince = daysAgoISO(days * 2);
+    const url = new URL(request.url);
+    const rangeInfo = resolveRange(url.searchParams.get("range"));
+    const { since, key: rangeKey, label: rangeLabel, trendDays } = rangeInfo;
+    const previousSpanDays = Math.max(
+      1,
+      Math.round(
+        (new Date(`${todayISODate()}T12:00:00Z`).getTime() -
+          new Date(`${since}T12:00:00Z`).getTime()) /
+          86400000,
+      ) + 1,
+    );
+    const previousSince = daysAgoISO(previousSpanDays * 2 - 1);
     const db = getDb();
     const today = todayISODate();
+    const tomorrow = addDaysISO(today, 1);
 
     const [totals] = await db.select({ value: sql<number>`count(*)` }).from(bookings);
     const [pending] = await db
@@ -46,13 +106,10 @@ export async function GET(request: Request) {
       .select({ value: sql<number>`count(*)` })
       .from(bookings)
       .where(eq(bookings.status, "Confirmed"));
-    const [occupied] = await db
+    const [cancelled] = await db
       .select({ value: sql<number>`count(*)` })
       .from(bookings)
-      .where(eq(bookings.status, "Checked In"));
-    const [conferenceCount] = await db
-      .select({ value: sql<number>`count(*)` })
-      .from(conferenceEnquiries);
+      .where(inArray(bookings.status, ["Cancelled", "Declined"]));
 
     const revenueRows = await db
       .select({ total: bookings.totalAmount })
@@ -62,12 +119,112 @@ export async function GET(request: Request) {
       );
     const revenue = revenueRows.reduce((sum, r) => sum + (r.total || 0), 0);
 
-    const inventory = await db.select({ qty: roomTypes.inventoryCount }).from(roomTypes);
-    const totalRooms = inventory.reduce((s, r) => s + r.qty, 0);
-    const occupiedCount = Number(occupied?.value ?? 0);
-    const availableRooms = Math.max(0, totalRooms - occupiedCount);
+    const activeRooms = await db
+      .select()
+      .from(roomTypes)
+      .where(eq(roomTypes.isActive, true))
+      .orderBy(asc(roomTypes.displayOrder), asc(roomTypes.name));
+
+    const totalActiveRooms = activeRooms.reduce(
+      (sum, room) => sum + room.inventoryCount,
+      0,
+    );
+
+    let occupiedUnits = 0;
+    let maintenanceUnits = 0;
+    let availableRooms = 0;
+    const availableRoomList: Array<{
+      id: number;
+      roomNumber: string;
+      name: string;
+      roomType: string;
+      capacity: number;
+      price: number;
+      status: "Available" | "Limited" | "Full" | "Maintenance";
+      roomsRemaining: number;
+      inventoryCount: number;
+      nextBooking: string | null;
+    }> = [];
+
+    for (const room of activeRooms) {
+      const bookingRows = await db
+        .select({ rooms: bookings.roomsBooked })
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.roomTypeId, room.id),
+            inArray(bookings.status, [...ACTIVE_BOOKING_STATUSES]),
+            dateOverlapSql(bookings.checkIn, bookings.checkOut, today, tomorrow),
+          ),
+        );
+      const booked = bookingRows.reduce((sum, r) => sum + r.rooms, 0);
+
+      const blockRows = await db
+        .select({ rooms: roomBlocks.roomsBlocked })
+        .from(roomBlocks)
+        .where(
+          and(
+            eq(roomBlocks.roomTypeId, room.id),
+            dateOverlapSql(
+              roomBlocks.startDate,
+              roomBlocks.endDate,
+              today,
+              tomorrow,
+            ),
+          ),
+        );
+      const blocked = blockRows.reduce((s, r) => s + r.rooms, 0);
+
+      const remaining = Math.max(0, room.inventoryCount - booked - blocked);
+
+      occupiedUnits += Math.min(room.inventoryCount, booked);
+      maintenanceUnits += Math.min(room.inventoryCount, blocked);
+      availableRooms += remaining;
+
+      const [next] = await db
+        .select({
+          checkIn: bookings.checkIn,
+          reference: bookings.reference,
+        })
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.roomTypeId, room.id),
+            inArray(bookings.status, [...ACTIVE_BOOKING_STATUSES]),
+            gte(bookings.checkIn, today),
+          ),
+        )
+        .orderBy(asc(bookings.checkIn))
+        .limit(1);
+
+      let status: "Available" | "Limited" | "Full" | "Maintenance" = "Available";
+      if (remaining <= 0 && blocked > 0) status = "Maintenance";
+      else if (remaining <= 0) status = "Full";
+      else if (remaining < room.inventoryCount) status = "Limited";
+
+      availableRoomList.push({
+        id: room.id,
+        roomNumber: room.slug || `R-${room.id}`,
+        name: room.name,
+        roomType: room.bedType || room.name,
+        capacity: room.maxGuests,
+        price:
+          room.promotionalPrice != null && room.promotionalPrice > 0
+            ? room.promotionalPrice
+            : room.pricePerNight,
+        status,
+        roomsRemaining: remaining,
+        inventoryCount: room.inventoryCount,
+        nextBooking: next
+          ? `${next.checkIn} · ${next.reference}`
+          : null,
+      });
+    }
+
     const occupancyRate =
-      totalRooms > 0 ? Math.round((occupiedCount / totalRooms) * 1000) / 10 : 0;
+      totalActiveRooms > 0
+        ? Math.round((occupiedUnits / totalActiveRooms) * 1000) / 10
+        : 0;
 
     const periodBookings = await db
       .select({
@@ -92,8 +249,14 @@ export async function GET(request: Request) {
         ),
       );
 
-    const bookingTrendMap = new Map(emptyTrend(Math.min(days, 90)).map((p) => [p.date, 0]));
-    const revenueTrendMap = new Map(emptyTrend(Math.min(days, 90)).map((p) => [p.date, 0]));
+    const trendStart =
+      trendDays <= 1 ? today : daysAgoISO(Math.min(trendDays, 90) - 1);
+    const bookingTrendMap = new Map(
+      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+    );
+    const revenueTrendMap = new Map(
+      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+    );
     for (const row of periodBookings) {
       const day = String(row.createdAt).slice(0, 10);
       if (bookingTrendMap.has(day)) {
@@ -125,13 +288,22 @@ export async function GET(request: Request) {
 
     function pctChange(current: number, previous: number) {
       if (previous <= 0 && current <= 0) {
-        return { change: null as number | null, label: "Not enough comparison data" };
+        return {
+          change: null as number | null,
+          label: "Not enough comparison data",
+        };
       }
       if (previous <= 0) {
-        return { change: null as number | null, label: "Not enough comparison data" };
+        return {
+          change: null as number | null,
+          label: "Not enough comparison data",
+        };
       }
       const change = Math.round(((current - previous) / previous) * 1000) / 10;
-      return { change, label: `${change > 0 ? "+" : ""}${change}% vs prior period` };
+      return {
+        change,
+        label: `${change > 0 ? "+" : ""}${change}% vs prior period`,
+      };
     }
 
     const statusRows = await db
@@ -147,6 +319,11 @@ export async function GET(request: Request) {
       .from(payments)
       .where(eq(payments.status, "Paid"));
     const paidAmount = paymentRevenue.reduce((s, p) => s + (p.amount || 0), 0);
+
+    const [foodPreordersRow] = await db
+      .select({ value: sql<number>`coalesce(sum(${bookingExtras.quantity}), 0)` })
+      .from(bookingExtras);
+    const foodPreorders = Number(foodPreordersRow?.value ?? 0);
 
     const recent = await db
       .select({
@@ -173,12 +350,16 @@ export async function GET(request: Request) {
       .orderBy(desc(adminNotifications.createdAt))
       .limit(8);
 
+    const [conferenceCount] = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(conferenceEnquiries);
+
     const conferencePeriod = await db
       .select({ createdAt: conferenceEnquiries.createdAt })
       .from(conferenceEnquiries)
       .where(gte(conferenceEnquiries.createdAt, since));
     const conferenceTrendMap = new Map(
-      emptyTrend(Math.min(days, 90)).map((p) => [p.date, 0]),
+      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
     );
     for (const row of conferencePeriod) {
       const day = String(row.createdAt).slice(0, 10);
@@ -197,28 +378,39 @@ export async function GET(request: Request) {
         ),
       );
 
+    const occupancyTrend = emptyTrend(trendStart, today).map((p) => ({
+      date: p.date,
+      value: occupancyRate,
+    }));
+
     return Response.json({
       greetingName: user.fullName.split(" ")[0] || user.fullName,
-      range: days,
+      range: rangeKey,
+      rangeLabel,
       totals: {
         bookings: Number(totals?.value ?? 0),
         confirmedBookings: Number(confirmed?.value ?? 0),
         pendingBookings: Number(pending?.value ?? 0),
+        cancelledBookings: Number(cancelled?.value ?? 0),
         availableRooms,
         occupancyRate,
         revenue,
         conferenceRequests: Number(conferenceCount?.value ?? 0),
-        foodPreorders: 0,
-        occupiedRooms: occupiedCount,
-        totalRooms,
+        foodPreorders,
+        occupiedRooms: occupiedUnits,
+        maintenanceRooms: maintenanceUnits,
+        totalRooms: totalActiveRooms,
       },
       comparisons: {
         bookings: pctChange(periodCount, previousCount),
         revenue: pctChange(periodRevenue, previousRevenue),
-        conference: pctChange(conferencePeriod.length, conferencePrevious.length),
+        conference: pctChange(
+          conferencePeriod.length,
+          conferencePrevious.length,
+        ),
         occupancy: {
           change: null as number | null,
-          label: "Not enough comparison data",
+          label: `${occupiedUnits} occupied of ${totalActiveRooms} active units`,
         },
       },
       trends: {
@@ -230,14 +422,11 @@ export async function GET(request: Request) {
           date,
           value,
         })),
-        occupancyTrend: emptyTrend(Math.min(days, 30)).map((p) => ({
-          date: p.date,
-          value: occupancyRate,
-        })),
+        occupancyTrend,
         conferenceTrend: [...conferenceTrendMap.entries()].map(
           ([date, value]) => ({ date, value }),
         ),
-        preorderTrend: emptyTrend(Math.min(days, 30)),
+        preorderTrend: emptyTrend(trendStart, today),
       },
       bookingStatusBreakdown: statusRows.map((r) => ({
         status: r.status,
@@ -246,9 +435,8 @@ export async function GET(request: Request) {
       revenueSources: [
         { source: "Room bookings", amount: revenue },
         { source: "Recorded payments", amount: paidAmount },
-        { source: "Conference bookings", amount: 0 },
-        { source: "Food pre-orders", amount: 0 },
       ],
+      availableRoomList,
       recentBookings: recent,
       recentNotifications,
       today,

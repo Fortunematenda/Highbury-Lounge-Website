@@ -2,6 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AdminFormField,
+  AdminTextarea,
+} from "@/app/admin/components/form-fields";
 
 export function BookingNotesForm({
   bookingId,
@@ -42,23 +46,33 @@ export function BookingNotesForm({
   }
 
   return (
-    <form className="admin-card" onSubmit={onSubmit}>
-      <h2>Internal notes</h2>
-      {error ? <div className="admin-error">{error}</div> : null}
+    <form className="detail-inline-form" onSubmit={onSubmit}>
+      {error ? (
+        <div className="admin-error" role="alert">
+          {error}
+        </div>
+      ) : null}
       {message ? (
         <div className="admin-success" role="status">
           {message}
         </div>
       ) : null}
-      <textarea
-        className="admin-textarea"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        rows={4}
-      />
-      <button className="admin-btn" type="submit" disabled={busy} style={{ marginTop: 10 }}>
-        {busy ? "Saving…" : "Save notes"}
-      </button>
+      <AdminFormField
+        label="Additional notes"
+        hint="Visible only to staff. Keep operational notes short and clear."
+      >
+        <AdminTextarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={5}
+          placeholder="Add internal notes about this booking…"
+        />
+      </AdminFormField>
+      <div className="detail-inline-actions">
+        <button className="admin-btn" type="submit" disabled={busy}>
+          {busy ? "Saving…" : "Save notes"}
+        </button>
+      </div>
     </form>
   );
 }

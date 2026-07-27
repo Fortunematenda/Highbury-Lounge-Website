@@ -90,16 +90,18 @@ export function ConferenceUpdateForm({
       <label>
         Quotation notes
         <textarea
-          className="admin-textarea"
+          className="admin-textarea admin-textarea-fixed"
           name="quotationNotes"
+          rows={5}
           defaultValue={initial.quotationNotes}
         />
       </label>
       <label>
         Admin notes
         <textarea
-          className="admin-textarea"
+          className="admin-textarea admin-textarea-fixed"
           name="adminNotes"
+          rows={5}
           defaultValue={initial.adminNotes}
         />
       </label>

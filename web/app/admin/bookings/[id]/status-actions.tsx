@@ -2,6 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AdminFormField,
+  AdminTextarea,
+} from "@/app/admin/components/form-fields";
 
 const ACTIONS = [
   "Confirmed",
@@ -57,35 +61,41 @@ export function BookingStatusActions({
   }
 
   return (
-    <div className="admin-card">
-      <h2>Status actions</h2>
-      <p className="page-sub">Current: {currentStatus}</p>
-      {error && <div className="admin-error">{error}</div>}
+    <div className="detail-inline-form">
+      <p className="page-sub detail-inline-hint">Current status: {currentStatus}</p>
+      {error ? (
+        <div className="admin-error" role="alert">
+          {error}
+        </div>
+      ) : null}
       {success ? (
         <div className="admin-success" role="status">
           {success}
         </div>
       ) : null}
-      <label>
-        Admin note (optional)
-        <textarea
-          className="admin-input"
-          rows={3}
+      <AdminFormField label="Additional notes" hint="Optional note saved with the status change.">
+        <AdminTextarea
+          rows={4}
           value={note}
           onChange={(e) => setNote(e.target.value)}
+          placeholder="Reason or follow-up note…"
         />
-      </label>
+      </AdminFormField>
       <div className="admin-action-grid">
         {ACTIONS.filter((s) => s !== currentStatus).map((status) => (
           <form key={status} onSubmit={(e) => onAsk(e, status)}>
-            <button className="admin-btn secondary" type="submit" disabled={!!pending}>
+            <button
+              className="admin-btn secondary"
+              type="submit"
+              disabled={!!pending}
+            >
               Mark as {status}
             </button>
           </form>
         ))}
       </div>
 
-      {confirmStatus && (
+      {confirmStatus ? (
         <div className="admin-modal-backdrop" role="presentation">
           <div className="admin-modal" role="dialog" aria-modal="true">
             <h3>Confirm status change</h3>
@@ -111,7 +121,7 @@ export function BookingStatusActions({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

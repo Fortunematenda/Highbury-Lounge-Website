@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { conferencePackages } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
+import { formatAuditActorLabel, getLatestEntityChange } from "@/lib/audit";
 import { PackageForm } from "../package-form";
 
 export const dynamic = "force-dynamic";
@@ -24,5 +25,21 @@ export default async function EditPackagePage({
     .limit(1);
   if (!row) notFound();
 
-  return <PackageForm mode="edit" initial={row} />;
+  const lastChange = await getLatestEntityChange("conference_package", id);
+
+  return (
+    <PackageForm
+      mode="edit"
+      initial={row}
+      lastChange={
+        lastChange
+          ? {
+              label: formatAuditActorLabel(lastChange.actor),
+              email: lastChange.actor?.email ?? null,
+              at: lastChange.createdAt,
+            }
+          : null
+      }
+    />
+  );
 }

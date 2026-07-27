@@ -1,23 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   BedDouble,
   CalendarCheck2,
@@ -27,27 +11,47 @@ import {
   TrendingUp,
   UtensilsCrossed,
   Wallet,
-  Building2,
   CircleHelp,
+  Ban,
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+
+const DashboardCharts = lazy(() =>
+  import("./dashboard-charts").then((m) => ({ default: m.DashboardCharts })),
+);
 
 type TrendPoint = { date: string; value: number };
 type Comparison = { change: number | null; label: string };
 
+type AvailableRoomRow = {
+  id: number;
+  roomNumber: string;
+  name: string;
+  roomType: string;
+  capacity: number;
+  price: number;
+  status: "Available" | "Limited" | "Full" | "Maintenance";
+  roomsRemaining: number;
+  inventoryCount: number;
+  nextBooking: string | null;
+};
+
 type DashboardData = {
   greetingName: string;
-  range: number;
+  range: string;
+  rangeLabel: string;
   totals: {
     bookings: number;
     confirmedBookings: number;
     pendingBookings: number;
+    cancelledBookings: number;
     availableRooms: number;
     occupancyRate: number;
     revenue: number;
     conferenceRequests: number;
     foodPreorders: number;
     occupiedRooms: number;
+    maintenanceRooms: number;
     totalRooms: number;
   };
   comparisons: {
@@ -65,6 +69,7 @@ type DashboardData = {
   };
   bookingStatusBreakdown: Array<{ status: string; count: number }>;
   revenueSources: Array<{ source: string; amount: number }>;
+  availableRoomList: AvailableRoomRow[];
   recentBookings: Array<{
     id: number;
     reference: string;
@@ -90,13 +95,12 @@ type DashboardData = {
 };
 
 const RANGES = [
-  { value: 7, label: "7 days" },
-  { value: 30, label: "30 days" },
-  { value: 90, label: "90 days" },
-  { value: 365, label: "12 months" },
+  { value: "today", label: "Today", short: "Today" },
+  { value: "7", label: "7 Days", short: "7D" },
+  { value: "30", label: "30 Days", short: "30D" },
+  { value: "month", label: "This Month", short: "Month" },
+  { value: "year", label: "This Year", short: "Year" },
 ] as const;
-
-const CHART_COLORS = ["#70163f", "#a91f62", "#c47a2c", "#4b6b58", "#64748b", "#1d4ed8"];
 
 function greetingForHour(date = new Date()) {
   const hour = date.getHours();
@@ -116,39 +120,31 @@ function Sparkline({
   color: string;
   label: string;
 }) {
+  const [Chart, setChart] = useState<React.ComponentType<{
+    data: TrendPoint[];
+    type: "area" | "line" | "bar";
+    color: string;
+  }> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void import("./dashboard-charts").then((mod) => {
+      if (!cancelled) setChart(() => mod.SparklineChart);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   if (!data.length) {
+    return <div className="admin-kpi-spark empty" aria-hidden />;
+  }
+  if (!Chart) {
     return <div className="admin-kpi-spark empty" aria-hidden />;
   }
   return (
     <div className="admin-kpi-spark" aria-label={label}>
-      <ResponsiveContainer width="100%" height={44}>
-        {type === "bar" ? (
-          <BarChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-            <Bar dataKey="value" fill={color} radius={[2, 2, 0, 0]} />
-          </BarChart>
-        ) : type === "line" ? (
-          <LineChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={2}
-              dot={false}
-            />
-          </LineChart>
-        ) : (
-          <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              fill={color}
-              fillOpacity={0.18}
-              strokeWidth={2}
-            />
-          </AreaChart>
-        )}
-      </ResponsiveContainer>
+      <Chart data={data} type={type} color={color} />
     </div>
   );
 }
@@ -181,27 +177,36 @@ function KpiCard({
           <p className="admin-kpi-title">
             {title}
             <span className="admin-kpi-tip" title={tip} aria-label={tip}>
-              <CircleHelp size={13} aria-hidden />
+              <CircleHelp size={12} aria-hidden />
             </span>
           </p>
           <strong className="admin-kpi-value">{value}</strong>
         </div>
         <span className="admin-kpi-icon" style={{ color }}>
-          <Icon size={18} aria-hidden />
+          <Icon size={16} aria-hidden />
         </span>
       </div>
       <div className="admin-kpi-meta">
         {comparison?.change == null ? (
-          <span className="admin-kpi-compare muted">{comparison?.label ?? "Not enough comparison data"}</span>
+          <span className="admin-kpi-compare muted">
+            {comparison?.label ?? "Not enough comparison data"}
+          </span>
         ) : (
-          <span className={`admin-kpi-compare${up ? " up" : ""}${down ? " down" : ""}`}>
-            {up ? <TrendingUp size={14} aria-hidden /> : null}
-            {down ? <TrendingDown size={14} aria-hidden /> : null}
+          <span
+            className={`admin-kpi-compare${up ? " up" : ""}${down ? " down" : ""}`}
+          >
+            {up ? <TrendingUp size={13} aria-hidden /> : null}
+            {down ? <TrendingDown size={13} aria-hidden /> : null}
             {comparison.label}
           </span>
         )}
       </div>
-      <Sparkline data={spark} type={sparkType} color={color} label={`${title} trend`} />
+      <Sparkline
+        data={spark}
+        type={sparkType}
+        color={color}
+        label={`${title} trend`}
+      />
     </article>
   );
 }
@@ -217,8 +222,10 @@ function SkeletonGrid() {
 }
 
 export function AdminDashboardClient() {
-  const [range, setRange] = useState(30);
-  const [overviewMode, setOverviewMode] = useState<"bookings" | "revenue">("bookings");
+  const [range, setRange] = useState<string>("30");
+  const [overviewMode, setOverviewMode] = useState<"bookings" | "revenue">(
+    "bookings",
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState<DashboardData | null>(null);
@@ -228,16 +235,18 @@ export function AdminDashboardClient() {
     const start = window.setTimeout(() => {
       setLoading(true);
       setError("");
-      void fetch(`/api/admin/dashboard?range=${range}`, { cache: "no-store" })
+      void fetch(`/api/admin/dashboard?range=${encodeURIComponent(range)}`, {
+        cache: "no-store",
+      })
         .then(async (res) => {
           const json = await res.json();
-          if (!res.ok) throw new Error(json.error || "Failed to load dashboard");
+          if (!res.ok) throw new Error(json.error || "Unable to load dashboard.");
           if (!cancelled) setData(json);
         })
         .catch((err) => {
           if (!cancelled) {
             setError(
-              err instanceof Error ? err.message : "Failed to load dashboard",
+              err instanceof Error ? err.message : "Unable to load dashboard.",
             );
             setData(null);
           }
@@ -265,10 +274,19 @@ export function AdminDashboardClient() {
       {
         name: "Rooms",
         occupied: data.totals.occupiedRooms,
+        maintenance: data.totals.maintenanceRooms,
         available: data.totals.availableRooms,
       },
     ];
   }, [data]);
+
+  const bookableRooms = useMemo(
+    () =>
+      (data?.availableRoomList ?? []).filter(
+        (room) => room.status === "Available" || room.status === "Limited",
+      ),
+    [data],
+  );
 
   return (
     <div className="admin-page admin-dashboard">
@@ -282,21 +300,37 @@ export function AdminDashboardClient() {
             {data?.today ? ` · ${data.today}` : ""}
           </p>
         </div>
-        <div className="admin-range-tabs" role="group" aria-label="Date range">
-          {RANGES.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              className={`admin-range-tab${range === item.value ? " is-selected" : ""}`}
-              onClick={() => setRange(item.value)}
-              aria-pressed={range === item.value}
+
+        <div className="admin-range-control">
+          <label className="admin-range-select-wrap" htmlFor="admin-dash-range">
+            <span className="sr-only">Date range</span>
+            <select
+              id="admin-dash-range"
+              className="admin-range-select"
+              value={range}
+              onChange={(e) => setRange(e.target.value)}
             >
-              <span className="admin-range-full">{item.label}</span>
-              <span className="admin-range-short" aria-hidden>
-                {item.value === 365 ? "1Y" : `${item.value}D`}
-              </span>
-            </button>
-          ))}
+              {RANGES.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="admin-range-tabs" role="group" aria-label="Date range">
+            {RANGES.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                className={`admin-range-tab${range === item.value ? " is-selected" : ""}`}
+                onClick={() => setRange(item.value)}
+                aria-pressed={range === item.value}
+              >
+                <span className="admin-range-full">{item.label}</span>
+                <span className="admin-range-short">{item.short}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -339,6 +373,15 @@ export function AdminDashboardClient() {
               tip="Bookings awaiting confirmation"
             />
             <KpiCard
+              title="Cancelled bookings"
+              value={data.totals.cancelledBookings}
+              icon={Ban}
+              spark={data.trends.bookingTrend}
+              sparkType="bar"
+              color="#9f1239"
+              tip="Cancelled and declined bookings"
+            />
+            <KpiCard
               title="Occupancy rate"
               value={`${data.totals.occupancyRate}%`}
               comparison={data.comparisons.occupancy}
@@ -346,7 +389,7 @@ export function AdminDashboardClient() {
               spark={data.trends.occupancyTrend}
               sparkType="bar"
               color="#1d4ed8"
-              tip="Checked-in rooms versus inventory"
+              tip="Occupied units versus active inventory for tonight"
             />
             <KpiCard
               title="Total revenue"
@@ -359,23 +402,13 @@ export function AdminDashboardClient() {
               tip="Sum of confirmed, checked-in, and checked-out booking totals"
             />
             <KpiCard
-              title="Conference requests"
-              value={data.totals.conferenceRequests}
-              comparison={data.comparisons.conference}
-              icon={Building2}
-              spark={data.trends.conferenceTrend}
-              sparkType="area"
-              color="#7c3aed"
-              tip="Total conference enquiries received"
-            />
-            <KpiCard
               title="Food pre-orders"
               value={data.totals.foodPreorders}
               icon={UtensilsCrossed}
               spark={data.trends.preorderTrend}
               sparkType="line"
               color="#c47a2c"
-              tip="Food pre-order volume when available"
+              tip="Total quantity of booking extras / menu pre-orders"
             />
             <KpiCard
               title="Available rooms"
@@ -384,147 +417,91 @@ export function AdminDashboardClient() {
               spark={data.trends.occupancyTrend}
               sparkType="bar"
               color="#4b6b58"
-              tip="Estimated rooms not currently checked in"
+              tip={`Active inventory (${data.totals.totalRooms}) − occupied (${data.totals.occupiedRooms}) − maintenance (${data.totals.maintenanceRooms})`}
             />
           </div>
 
-          <div className="admin-chart-grid">
-            <section className="admin-card admin-chart-card">
-              <div className="admin-card-head">
-                <h2>Booking and revenue overview</h2>
-                <div className="admin-range-tabs compact">
-                  <button
-                    type="button"
-                    className={`admin-range-tab${overviewMode === "bookings" ? " is-selected" : ""}`}
-                    onClick={() => setOverviewMode("bookings")}
-                    aria-pressed={overviewMode === "bookings"}
-                  >
-                    Bookings
-                  </button>
-                  <button
-                    type="button"
-                    className={`admin-range-tab${overviewMode === "revenue" ? " is-selected" : ""}`}
-                    onClick={() => setOverviewMode("revenue")}
-                    aria-pressed={overviewMode === "revenue"}
-                  >
-                    Revenue
-                  </button>
-                </div>
+          <Suspense
+            fallback={
+              <div className="admin-chart-grid">
+                <div className="admin-card admin-chart-card skeleton" />
+                <div className="admin-card admin-chart-card skeleton" />
               </div>
-              {overviewData.every((p) => p.value === 0) ? (
-                <p className="admin-empty">No data for this period.</p>
-              ) : (
-                <div className="admin-chart-body" aria-label="Booking and revenue chart">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <AreaChart data={overviewData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eee4ea" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} minTickGap={24} />
-                      <YAxis tick={{ fontSize: 11 }} width={48} />
-                      <Tooltip />
-                      <Area
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#70163f"
-                        fill="#70163f"
-                        fillOpacity={0.15}
-                        name={overviewMode === "bookings" ? "Bookings" : "Revenue"}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </section>
+            }
+          >
+            <DashboardCharts
+              overviewMode={overviewMode}
+              onOverviewModeChange={setOverviewMode}
+              overviewData={overviewData}
+              occupancyBars={occupancyBars}
+              bookingStatusBreakdown={data.bookingStatusBreakdown}
+              revenueSources={data.revenueSources}
+              totalRooms={data.totals.totalRooms}
+            />
+          </Suspense>
 
-            <section className="admin-card admin-chart-card">
-              <div className="admin-card-head">
-                <h2>Occupancy overview</h2>
+          <section className="admin-card admin-room-availability">
+            <div className="admin-card-head">
+              <div>
+                <h2>Available rooms</h2>
+                <p className="page-sub" style={{ margin: "4px 0 0" }}>
+                  Tonight’s inventory after active bookings and maintenance
+                  blocks
+                </p>
               </div>
-              {data.totals.totalRooms === 0 ? (
-                <p className="admin-empty">No room inventory configured.</p>
-              ) : (
-                <div className="admin-chart-body" aria-label="Occupancy chart">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={occupancyBars}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eee4ea" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="occupied" stackId="a" fill="#70163f" name="Occupied" />
-                      <Bar dataKey="available" stackId="a" fill="#d6c7cf" name="Available" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </section>
-
-            <section className="admin-card admin-chart-card">
-              <div className="admin-card-head">
-                <h2>Booking status breakdown</h2>
-              </div>
-              {data.bookingStatusBreakdown.length === 0 ? (
-                <p className="admin-empty">No bookings yet.</p>
-              ) : (
-                <div className="admin-chart-body" aria-label="Booking status chart">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={data.bookingStatusBreakdown}
-                        dataKey="count"
-                        nameKey="status"
-                        innerRadius={58}
-                        outerRadius={90}
-                        paddingAngle={2}
-                      >
-                        {data.bookingStatusBreakdown.map((entry, index) => (
-                          <Cell
-                            key={entry.status}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <ul className="admin-chart-legend">
-                    {data.bookingStatusBreakdown.map((row, index) => (
-                      <li key={row.status}>
-                        <span
-                          style={{ background: CHART_COLORS[index % CHART_COLORS.length] }}
-                        />
-                        {row.status} ({row.count})
-                      </li>
+              <Link href="/admin/rooms">Manage rooms</Link>
+            </div>
+            {bookableRooms.length === 0 ? (
+              <p className="admin-empty">No rooms available.</p>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table admin-room-table">
+                  <thead>
+                    <tr>
+                      <th>Room #</th>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Capacity</th>
+                      <th>Price</th>
+                      <th>Status</th>
+                      <th>Next booking</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookableRooms.map((room) => (
+                      <tr key={room.id}>
+                        <td>{room.roomNumber}</td>
+                        <td>{room.name}</td>
+                        <td>{room.roomType}</td>
+                        <td>{room.capacity}</td>
+                        <td>{formatMoney(room.price)}</td>
+                        <td>
+                          <span
+                            className={`admin-room-status is-${room.status.toLowerCase()}`}
+                          >
+                            {room.status}
+                            {room.roomsRemaining > 0
+                              ? ` · ${room.roomsRemaining}/${room.inventoryCount}`
+                              : ""}
+                          </span>
+                        </td>
+                        <td>{room.nextBooking ?? "—"}</td>
+                        <td>
+                          <Link
+                            className="admin-btn secondary"
+                            href={`/admin/calendar?room=${room.id}`}
+                          >
+                            Book now
+                          </Link>
+                        </td>
+                      </tr>
                     ))}
-                  </ul>
-                </div>
-              )}
-            </section>
-
-            <section className="admin-card admin-chart-card">
-              <div className="admin-card-head">
-                <h2>Revenue sources</h2>
+                  </tbody>
+                </table>
               </div>
-              {data.revenueSources.every((s) => s.amount === 0) ? (
-                <p className="admin-empty">No revenue recorded yet.</p>
-              ) : (
-                <div className="admin-chart-body" aria-label="Revenue sources chart">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={data.revenueSources} layout="vertical" margin={{ left: 24 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eee4ea" />
-                      <XAxis type="number" tick={{ fontSize: 11 }} />
-                      <YAxis
-                        type="category"
-                        dataKey="source"
-                        width={120}
-                        tick={{ fontSize: 11 }}
-                      />
-                      <Tooltip formatter={(value) => formatMoney(Number(value ?? 0))} />
-                      <Bar dataKey="amount" fill="#a91f62" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </section>
-          </div>
+            )}
+          </section>
 
           <div className="admin-two-col">
             <section className="admin-card">
@@ -533,7 +510,7 @@ export function AdminDashboardClient() {
                 <Link href="/admin/bookings">View all</Link>
               </div>
               {data.recentBookings.length === 0 ? (
-                <p className="admin-empty">No bookings yet.</p>
+                <p className="admin-empty">No bookings found.</p>
               ) : (
                 <ul className="admin-list">
                   {data.recentBookings.map((booking) => (
@@ -541,8 +518,9 @@ export function AdminDashboardClient() {
                       <Link href={`/admin/bookings/${booking.id}`}>
                         {booking.reference}
                       </Link>{" "}
-                      — {booking.firstName} {booking.lastName} · {booking.roomName} ·{" "}
-                      {booking.status} · {formatMoney(booking.totalAmount, booking.currency)}
+                      — {booking.firstName} {booking.lastName} ·{" "}
+                      {booking.roomName} · {booking.status} ·{" "}
+                      {formatMoney(booking.totalAmount, booking.currency)}
                     </li>
                   ))}
                 </ul>
@@ -559,7 +537,10 @@ export function AdminDashboardClient() {
               ) : (
                 <ul className="admin-list">
                   {data.recentNotifications.map((item) => (
-                    <li key={item.id} className={item.isRead ? undefined : "is-unread"}>
+                    <li
+                      key={item.id}
+                      className={item.isRead ? undefined : "is-unread"}
+                    >
                       {item.actionUrl ? (
                         <Link href={item.actionUrl}>{item.title}</Link>
                       ) : (

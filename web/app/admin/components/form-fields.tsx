@@ -48,10 +48,11 @@ export function AdminTextInput({
 }
 
 export function AdminTextarea({
-  className = "admin-input",
+  className = "admin-textarea admin-textarea-fixed",
+  rows = 5,
   ...props
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={className} {...props} />;
+  return <textarea className={className} rows={rows} {...props} />;
 }
 
 export function AdminSelect({

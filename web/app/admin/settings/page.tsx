@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Building2, ClipboardList, ImageIcon, ScrollText, Settings2 } from "lucide-react";
 import { requireAdminPage } from "@/lib/admin-page";
 import { writeAuditLog } from "@/lib/audit";
 import { isSmtpConfigured } from "@/lib/notifications";
 import { getSettingsMap, setSettings } from "@/lib/settings";
+import {
+  DetailFieldGrid,
+  DetailPageShell,
+  DetailSectionCard,
+} from "@/app/admin/components/detail-page";
 import { SiteMediaManager } from "./site-media-manager";
 
 async function saveSettings(formData: FormData) {
@@ -59,10 +65,13 @@ export default async function SettingsPage({
   const { saved } = await searchParams;
 
   return (
-    <>
-      <h1>Settings</h1>
-      <p className="page-sub">Business details, booking rules, and policies</p>
-
+    <DetailPageShell
+      pageTitle="Settings"
+      breadcrumbs={[{ label: "Settings" }]}
+      title="Settings"
+      description="Business details, booking rules, and website policies."
+      backAction={{ label: "Back to dashboard", href: "/admin" }}
+    >
       {saved === "1" ? (
         <div className="admin-success" role="status">
           Saved successfully.
@@ -75,87 +84,81 @@ export default async function SettingsPage({
         </div>
       ) : null}
 
-      <form className="admin-form wide" action={saveSettings}>
-        <div className="admin-panel">
-          <h2>Business</h2>
-          <div className="admin-form-row">
-            <label>
-              Business name
+      <form id="settings-form" className="detail-form-stack" action={saveSettings}>
+        <DetailSectionCard title="Business" icon={Building2}>
+          <DetailFieldGrid columns={2}>
+            <label className="admin-form-field">
+              <span>Business name</span>
               <input
                 className="admin-input"
                 name="business_name"
                 defaultValue={settings.business_name ?? ""}
               />
             </label>
-            <label>
-              Currency
+            <label className="admin-form-field">
+              <span>Currency</span>
               <input
                 className="admin-input"
                 name="currency"
                 defaultValue={settings.currency ?? "USD"}
               />
             </label>
-          </div>
-          <label>
-            Address
-            <input
-              className="admin-input"
-              name="address"
-              defaultValue={settings.address ?? ""}
-            />
-          </label>
-          <div className="admin-form-row">
-            <label>
-              Phone
+            <label className="admin-form-field" style={{ gridColumn: "1 / -1" }}>
+              <span>Address</span>
+              <input
+                className="admin-input"
+                name="address"
+                defaultValue={settings.address ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>Phone</span>
               <input
                 className="admin-input"
                 name="phone"
                 defaultValue={settings.phone ?? ""}
               />
             </label>
-            <label>
-              WhatsApp
+            <label className="admin-form-field">
+              <span>WhatsApp</span>
               <input
                 className="admin-input"
                 name="whatsapp"
                 defaultValue={settings.whatsapp ?? ""}
               />
             </label>
-          </div>
-          <label>
-            Email
-            <input
-              className="admin-input"
-              name="email"
-              type="email"
-              defaultValue={settings.email ?? ""}
-            />
-          </label>
-        </div>
+            <label className="admin-form-field">
+              <span>Email</span>
+              <input
+                className="admin-input"
+                name="email"
+                type="email"
+                defaultValue={settings.email ?? ""}
+              />
+            </label>
+          </DetailFieldGrid>
+        </DetailSectionCard>
 
-        <div className="admin-panel">
-          <h2>Booking rules</h2>
-          <div className="admin-form-row">
-            <label>
-              Check-in time
+        <DetailSectionCard title="Booking rules" icon={ClipboardList}>
+          <DetailFieldGrid columns={2}>
+            <label className="admin-form-field">
+              <span>Check-in time</span>
               <input
                 className="admin-input"
                 name="check_in_time"
                 defaultValue={settings.check_in_time ?? "14:00"}
               />
             </label>
-            <label>
-              Check-out time
+            <label className="admin-form-field">
+              <span>Check-out time</span>
               <input
                 className="admin-input"
                 name="check_out_time"
                 defaultValue={settings.check_out_time ?? "10:00"}
               />
             </label>
-          </div>
-          <div className="admin-form-row">
-            <label>
-              Pending expiry (hours)
+            <label className="admin-form-field">
+              <span>Pending expiry (hours)</span>
               <input
                 className="admin-input"
                 name="pending_expiry_hours"
@@ -163,8 +166,8 @@ export default async function SettingsPage({
                 defaultValue={settings.pending_expiry_hours ?? "24"}
               />
             </label>
-            <label>
-              Tax rate (%)
+            <label className="admin-form-field">
+              <span>Tax rate (%)</span>
               <input
                 className="admin-input"
                 name="tax_rate"
@@ -173,10 +176,8 @@ export default async function SettingsPage({
                 defaultValue={settings.tax_rate ?? "0"}
               />
             </label>
-          </div>
-          <div className="admin-form-row">
-            <label>
-              Service fee rate (%)
+            <label className="admin-form-field">
+              <span>Service fee rate (%)</span>
               <input
                 className="admin-input"
                 name="service_fee_rate"
@@ -186,10 +187,12 @@ export default async function SettingsPage({
               />
             </label>
             <label
+              className="admin-form-field"
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 8,
+                display: "flex",
                 marginTop: 22,
               }}
             >
@@ -198,56 +201,61 @@ export default async function SettingsPage({
                 name="maintenance_mode"
                 defaultChecked={settings.maintenance_mode === "true"}
               />
-              Maintenance mode
+              <span>Maintenance mode</span>
+            </label>
+          </DetailFieldGrid>
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Policies" icon={ScrollText}>
+          <div className="detail-inline-form">
+            <label className="admin-form-field">
+              <span>Booking terms</span>
+              <textarea
+                className="admin-textarea admin-textarea-fixed"
+                name="booking_terms"
+                rows={5}
+                defaultValue={settings.booking_terms ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>Cancellation policy</span>
+              <textarea
+                className="admin-textarea admin-textarea-fixed"
+                name="cancellation_policy"
+                rows={5}
+                defaultValue={settings.cancellation_policy ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>Payment instructions</span>
+              <textarea
+                className="admin-textarea admin-textarea-fixed"
+                name="payment_instructions"
+                rows={5}
+                defaultValue={settings.payment_instructions ?? ""}
+              />
             </label>
           </div>
-        </div>
-
-        <div className="admin-panel">
-          <h2>Policies</h2>
-          <label>
-            Booking terms
-            <textarea
-              className="admin-textarea"
-              name="booking_terms"
-              rows={5}
-              defaultValue={settings.booking_terms ?? ""}
-            />
-          </label>
-          <label>
-            Cancellation policy
-            <textarea
-              className="admin-textarea"
-              name="cancellation_policy"
-              rows={4}
-              defaultValue={settings.cancellation_policy ?? ""}
-            />
-          </label>
-          <label>
-            Payment instructions
-            <textarea
-              className="admin-textarea"
-              name="payment_instructions"
-              rows={4}
-              defaultValue={settings.payment_instructions ?? ""}
-            />
-          </label>
-        </div>
-
-        <button className="admin-btn" type="submit">
-          Save settings
-        </button>
+          <div className="detail-inline-actions">
+            <button className="admin-btn" type="submit">
+              <Settings2 size={16} aria-hidden />
+              Save settings
+            </button>
+          </div>
+        </DetailSectionCard>
       </form>
 
-      <SiteMediaManager
-        media={{
-          hero_image: settings.hero_image ?? "/images/hero-venue.jpg",
-          meet_image: settings.meet_image ?? "/images/conference.jpg",
-          celebrate_image: settings.celebrate_image ?? "/images/events.jpg",
-          dine_image_1: settings.dine_image_1 ?? "/images/dining.jpg",
-          dine_image_2: settings.dine_image_2 ?? "/images/food.jpg",
-        }}
-      />
-    </>
+      <DetailSectionCard title="Site media" icon={ImageIcon}>
+        <SiteMediaManager
+          media={{
+            hero_image: settings.hero_image ?? "/images/hero-venue.jpg",
+            meet_image: settings.meet_image ?? "/images/conference.jpg",
+            celebrate_image: settings.celebrate_image ?? "/images/events.jpg",
+            dine_image_1: settings.dine_image_1 ?? "/images/dining.jpg",
+            dine_image_2: settings.dine_image_2 ?? "/images/food.jpg",
+          }}
+        />
+      </DetailSectionCard>
+    </DetailPageShell>
   );
 }
