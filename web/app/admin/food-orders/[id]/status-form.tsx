@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FOOD_ORDER_STATUSES } from "@/lib/food-orders";
+import { FOOD_ORDER_STATUSES } from "@/lib/food-order-status";
 
 export function FoodOrderStatusForm({
   foodOrderId,

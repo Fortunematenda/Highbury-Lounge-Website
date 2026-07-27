@@ -9,16 +9,16 @@ import {
   roomTypes,
 } from "@/db/schema";
 import { createAdminNotification } from "@/lib/admin-notifications";
+import {
+  isFoodOrderStatus,
+  type FoodOrderStatus,
+} from "@/lib/food-order-status";
 
-export const FOOD_ORDER_STATUSES = [
-  "Pending",
-  "Preparing",
-  "Ready",
-  "Delivered",
-  "Cancelled",
-] as const;
-
-export type FoodOrderStatus = (typeof FOOD_ORDER_STATUSES)[number];
+export {
+  FOOD_ORDER_STATUSES,
+  isFoodOrderStatus,
+  type FoodOrderStatus,
+} from "@/lib/food-order-status";
 
 export type FoodOrderItemInput = {
   menuItemId: number;
@@ -53,10 +53,6 @@ function foodOrderReference() {
     .toString()
     .padStart(3, "0");
   return `FO-${stamp}-${rand}`;
-}
-
-export function isFoodOrderStatus(value: string): value is FoodOrderStatus {
-  return (FOOD_ORDER_STATUSES as readonly string[]).includes(value);
 }
 
 async function resolveItems(items: FoodOrderItemInput[]) {

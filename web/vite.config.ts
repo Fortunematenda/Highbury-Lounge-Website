@@ -67,5 +67,12 @@ export default defineConfig(async () => {
         config: localBindingConfig,
       }),
     ],
+    // Prevent client bundling from failing when a shared module tree
+    // accidentally references Worker-only bindings.
+    build: {
+      rolldownOptions: {
+        external: ["cloudflare:workers"],
+      },
+    },
   };
 });
