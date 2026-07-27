@@ -27,7 +27,7 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
     packages: "Packages",
     payments: "Payments",
     menus: "Menus",
-    pricing: "Pricing",
+    pricing: "Rooms",
     gallery: "Gallery",
     guests: "Guests",
     notifications: "Notifications",

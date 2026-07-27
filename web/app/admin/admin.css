@@ -662,29 +662,28 @@
 .admin-textarea {
   border: 1px solid var(--line);
   background: var(--paper);
-  border-radius: 6px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
   font-size: 14px;
   color: var(--ink);
   min-width: 0;
 }
 
-.admin-textarea {
+.admin-shell textarea,
+.admin-textarea,
+textarea.admin-input,
+.admin-textarea.admin-textarea-fixed,
+textarea.admin-textarea-fixed {
   width: 100%;
-  min-height: 120px;
-  max-height: 120px;
-  height: 120px;
+  box-sizing: border-box;
+  min-height: 112px;
+  max-height: 112px;
+  height: 112px;
   resize: none;
   line-height: 1.45;
   overflow-y: auto;
-}
-
-.admin-textarea.admin-textarea-fixed,
-textarea.admin-textarea-fixed {
-  min-height: 120px;
-  max-height: 120px;
-  height: 120px;
-  resize: none;
+  border-radius: 10px;
+  field-sizing: fixed;
 }
 
 .detail-inline-form {
@@ -1447,20 +1446,24 @@ textarea.admin-textarea-fixed {
   }
 
   .admin-input,
-  .admin-select,
-  .admin-textarea {
+  .admin-select {
     width: 100%;
     min-height: 44px;
     font-size: 16px; /* prevents iOS zoom */
     padding: 11px 12px;
   }
 
+  .admin-shell textarea,
   .admin-textarea,
+  textarea.admin-input,
   .admin-textarea.admin-textarea-fixed,
   textarea.admin-textarea-fixed {
-    min-height: 120px;
-    max-height: 120px;
-    height: 120px;
+    width: 100%;
+    min-height: 112px;
+    max-height: 112px;
+    height: 112px;
+    font-size: 16px;
+    padding: 11px 12px;
     resize: none;
   }
 
@@ -1579,7 +1582,7 @@ textarea.admin-textarea-fixed {
   }
 }
 
-/* Mobile list cards â€” hidden on desktop */
+/* Mobile list cards ? hidden on desktop */
 .admin-mobile-only,
 .admin-mobile-cards {
   display: none;
@@ -3730,7 +3733,7 @@ textarea.admin-textarea-fixed {
 
 
 /* =========================================================
-   PMS design system — premium hotel admin (mobile-first)
+   PMS design system ? premium hotel admin (mobile-first)
    ========================================================= */
 
 .admin-shell {

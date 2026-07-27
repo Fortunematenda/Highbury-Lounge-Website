@@ -135,7 +135,7 @@ export default function NewRoomPage() {
               <label>
                 Description
                 <textarea
-                  className="admin-input"
+                  className="admin-textarea admin-textarea-fixed"
                   name="description"
                   rows={4}
                 />

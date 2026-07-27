@@ -391,12 +391,12 @@ export function EditRoomForm({
               <DetailFieldSpan>
                 <label>
                   Description
-                  <textarea
-                    className="admin-input"
-                    rows={5}
-                    value={current.description ?? ""}
-                    onChange={(e) => updateField("description", e.target.value)}
-                  />
+                <textarea
+                  className="admin-textarea admin-textarea-fixed"
+                  rows={5}
+                  value={current.description ?? ""}
+                  onChange={(e) => updateField("description", e.target.value)}
+                />
                 </label>
               </DetailFieldSpan>
             </DetailFieldGrid>

@@ -1762,7 +1762,7 @@ export function MenusManager() {
               <label>
                 Description
                 <textarea
-                  className="admin-textarea"
+                  className="admin-textarea admin-textarea-fixed"
                   rows={3}
                   value={
                     itemLang === "en"
@@ -1966,7 +1966,7 @@ export function MenusManager() {
                   <label>
                     Ingredients
                     <textarea
-                      className="admin-textarea"
+                      className="admin-textarea admin-textarea-fixed"
                       rows={2}
                       value={itemForm.ingredients}
                       onChange={(e) =>

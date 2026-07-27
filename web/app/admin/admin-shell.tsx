@@ -70,7 +70,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Content",
     items: [
       { href: "/admin/menus", label: "Menus", icon: UtensilsCrossed },
-      { href: "/admin/pricing", label: "Pricing", icon: BarChart3 },
       { href: "/admin/gallery", label: "Gallery", icon: GalleryHorizontal },
     ],
   },
