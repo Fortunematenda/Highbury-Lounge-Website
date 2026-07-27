@@ -8,6 +8,7 @@ import {
   DetailFieldSpan,
   DetailPageShell,
   DetailSectionCard,
+  DetailStickyActionBar,
   UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
@@ -247,6 +248,26 @@ export default function NewRoomPage() {
           </div>
         </DetailSectionCard>
       </form>
+
+      <DetailStickyActionBar
+        visible={dirty && !loading}
+        primaryAction={{
+          label: "Create room",
+          icon: Save,
+          onClick: () =>
+            (
+              document.querySelector(
+                ".detail-form-stack",
+              ) as HTMLFormElement | null
+            )?.requestSubmit(),
+          loading: loading,
+        }}
+        cancelAction={{
+          label: "Cancel",
+          href: "/admin/rooms",
+          variant: "ghost",
+        }}
+      />
     </DetailPageShell>
   );
 }

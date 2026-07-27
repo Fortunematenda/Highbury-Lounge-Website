@@ -82,5 +82,85 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
     };
   }
 
+  if (root === "packages" && leaf === "new") {
+    return {
+      title: "Add package",
+      breadcrumbs: [
+        { label: "Packages", href: "/admin/packages" },
+        { label: "Add package" },
+      ],
+    };
+  }
+
+  if (root === "packages" && rest.length >= 2) {
+    return {
+      title: "Edit package",
+      breadcrumbs: [
+        { label: "Packages", href: "/admin/packages" },
+        { label: "Edit package" },
+      ],
+    };
+  }
+
+  if (root === "blocks" && leaf === "new") {
+    return {
+      title: "Create block",
+      breadcrumbs: [
+        { label: "Blocks", href: "/admin/blocks" },
+        { label: "Create block" },
+      ],
+    };
+  }
+
+  if (root === "payments" && leaf === "new") {
+    return {
+      title: "Record payment",
+      breadcrumbs: [
+        { label: "Payments", href: "/admin/payments" },
+        { label: "Record payment" },
+      ],
+    };
+  }
+
+  if (root === "menus" && rest[1] === "items" && leaf === "new") {
+    return {
+      title: "Add menu product",
+      breadcrumbs: [
+        { label: "Menus & Products", href: "/admin/menus" },
+        { label: "Add product" },
+      ],
+    };
+  }
+
+  if (root === "menus" && rest[1] === "items" && rest.length >= 3) {
+    return {
+      title: "Edit menu product",
+      breadcrumbs: [
+        { label: "Menus & Products", href: "/admin/menus" },
+        { label: "Edit product" },
+      ],
+    };
+  }
+
+  if (root === "menus" && rest[1] === "categories" && leaf === "new") {
+    return {
+      title: "Add category",
+      breadcrumbs: [
+        { label: "Menus & Products", href: "/admin/menus" },
+        { label: "Add category" },
+      ],
+    };
+  }
+
+  if (root === "menus" && rest[1] === "categories" && rest.length >= 3) {
+    return {
+      title: "Edit category",
+      breadcrumbs: [
+        { label: "Menus & Products", href: "/admin/menus" },
+        { label: "Edit category" },
+      ],
+    };
+  }
+
   return { title: moduleLabel };
 }

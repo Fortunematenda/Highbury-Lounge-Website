@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomBlocks, roomTypes } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
-import { BlockForm } from "./block-form";
 import { BlocksList } from "./blocks-list";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 export default async function AdminBlocksPage() {
   await requireAdminPage(["booking_manager", "content_manager"]);
   const db = getDb();
-  const rooms = await db.select().from(roomTypes);
   const blocks = await db
     .select({
       id: roomBlocks.id,
@@ -29,10 +28,14 @@ export default async function AdminBlocksPage() {
       <header className="admin-page-header">
         <div>
           <h1>Room blocks</h1>
-          <p className="page-sub">Maintenance, private use and manual holds reduce availability</p>
+          <p className="page-sub">
+            Maintenance, private use and manual holds reduce availability
+          </p>
         </div>
+        <Link className="admin-btn" href="/admin/blocks/new">
+          Create block
+        </Link>
       </header>
-      <BlockForm rooms={rooms.map((r) => ({ id: r.id, name: r.name }))} />
       <BlocksList blocks={blocks} />
     </div>
   );

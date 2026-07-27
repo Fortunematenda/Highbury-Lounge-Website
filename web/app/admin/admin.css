@@ -3323,3 +3323,22 @@
     flex: 1;
   }
 }
+
+.admin-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sage, #4b6b58);
+}
+
+.admin-field-hint {
+  font-weight: 500;
+  color: var(--admin-muted);
+}
+
+.admin-field-error {
+  font-weight: 600;
+  color: #9f1239;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   AdminLangTabs,
   buildTranslationDraft,
@@ -138,15 +139,6 @@ type ItemFormState = {
   adminNotes: string;
 };
 
-type CategoryFormState = {
-  name: string;
-  slug: string;
-  description: string;
-  itemType: MenuItemType;
-  displayOrder: string;
-  isActive: boolean;
-};
-
 type ConfirmState = {
   title: string;
   message: string;
@@ -198,15 +190,6 @@ const emptyItemForm = (): ItemFormState => ({
   adminNotes: "",
 });
 
-const emptyCategoryForm = (): CategoryFormState => ({
-  name: "",
-  slug: "",
-  description: "",
-  itemType: "food",
-  displayOrder: "0",
-  isActive: true,
-});
-
 function itemToForm(item: MenuItem): ItemFormState {
   return {
     name: item.name,
@@ -253,19 +236,6 @@ function itemToForm(item: MenuItem): ItemFormState {
   };
 }
 
-function categoryToForm(cat: MenuCategory): CategoryFormState {
-  return {
-    name: cat.name,
-    slug: cat.slug,
-    description: cat.description ?? "",
-    itemType: (MENU_ITEM_TYPES.includes(cat.itemType as MenuItemType)
-      ? cat.itemType
-      : "food") as MenuItemType,
-    displayOrder: String(cat.displayOrder ?? 0),
-    isActive: Boolean(cat.isActive),
-  };
-}
-
 function thumbUrl(item: MenuItem): string | null {
   const featured = item.images?.find((i) => i.isFeatured);
   return featured?.imageUrl || item.images?.[0]?.imageUrl || item.imageUrl || null;
@@ -289,6 +259,7 @@ async function readError(res: Response) {
 }
 
 export function MenusManager() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabId>("overview");
   const [stats, setStats] = useState<MenuStats | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -323,20 +294,10 @@ export function MenusManager() {
   const [slugManual, setSlugManual] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
-    null,
-  );
-  const [categoryForm, setCategoryForm] =
-    useState<CategoryFormState>(emptyCategoryForm);
-  const [categorySlugManual, setCategorySlugManual] = useState(false);
   const [itemLang, setItemLang] = useState<AppLocale>("en");
   const [itemTranslations, setItemTranslations] = useState<ContentTranslations>(
     {},
   );
-  const [categoryLang, setCategoryLang] = useState<AppLocale>("en");
-  const [categoryTranslations, setCategoryTranslations] =
-    useState<ContentTranslations>({});
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [actionsOpenId, setActionsOpenId] = useState<number | null>(null);
@@ -512,97 +473,22 @@ export function MenusManager() {
     setItemModalOpen(false);
   }
 
-  function openCreateItem(preferredType?: MenuItemType) {
-    setEditingItemId(null);
-    setItemImages([]);
-    setLegacyImageUrl(null);
-    clearPendingImages();
-    setImagesExpanded(false);
-    setSlugManual(false);
-    setItemLang("en");
-    setItemTranslations(
-      buildTranslationDraft({
-        name: "",
-        description: "",
-        shortDescription: "",
-      }),
-    );
-    const form = emptyItemForm();
-    if (preferredType) form.itemType = preferredType;
-    else if (tab === "products") form.itemType = "accommodation_extra";
-    const match = activeCategories.find((c) => c.itemType === form.itemType);
-    form.categoryId = match ? String(match.id) : activeCategories[0]
-      ? String(activeCategories[0].id)
-      : "";
-    setItemForm(form);
-    setItemModalOpen(true);
+  function openCreateItem(_preferredType?: MenuItemType) {
+    router.push("/admin/menus/items/new");
   }
 
   async function openEditItem(item: MenuItem) {
-    setError("");
-    setBusy(true);
-    setItemImages([]);
-    setLegacyImageUrl(item.imageUrl ?? null);
-    clearPendingImages();
-    try {
-      const res = await fetch(`/api/admin/menu/items/${item.id}`);
-      if (!res.ok) throw new Error(await readError(res));
-      const data = await res.json();
-      const full: MenuItem = data.item;
-      const gallery = [...(full.images ?? [])].sort(
-        (a, b) => a.displayOrder - b.displayOrder,
-      );
-      setEditingItemId(full.id);
-      setItemForm(itemToForm(full));
-      setItemLang("en");
-      setItemTranslations(
-        buildTranslationDraft(
-          {
-            name: full.name,
-            description: full.description ?? "",
-            shortDescription: full.shortDescription ?? "",
-          },
-          full.translationsJson,
-        ),
-      );
-      setItemImages(gallery);
-      setLegacyImageUrl(full.imageUrl ?? item.imageUrl ?? null);
-      setImagesExpanded(false);
-      setSlugManual(Boolean(full.slug));
-      setItemModalOpen(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load item.");
-    } finally {
-      setBusy(false);
-      setActionsOpenId(null);
-    }
+    router.push(`/admin/menus/items/${item.id}`);
   }
 
   function openCreateCategory() {
-    setEditingCategoryId(null);
-    setCategorySlugManual(false);
-    setCategoryLang("en");
-    setCategoryTranslations(
-      buildTranslationDraft({ name: "", description: "" }),
-    );
-    const form = emptyCategoryForm();
-    if (tab === "products") form.itemType = "accommodation_extra";
-    setCategoryForm(form);
-    setCategoryModalOpen(true);
+    const qs =
+      tab === "products" ? "?type=accommodation_extra" : "";
+    router.push(`/admin/menus/categories/new${qs}`);
   }
 
   function openEditCategory(cat: MenuCategory) {
-    setEditingCategoryId(cat.id);
-    setCategoryForm(categoryToForm(cat));
-    setCategoryLang("en");
-    setCategoryTranslations(
-      buildTranslationDraft(
-        { name: cat.name, description: cat.description ?? "" },
-        cat.translationsJson,
-      ),
-    );
-    setCategorySlugManual(true);
-    setCategoryModalOpen(true);
+    router.push(`/admin/menus/categories/${cat.id}`);
   }
 
   function updateItemTranslationField(
@@ -623,23 +509,6 @@ export function MenusManager() {
     }));
   }
 
-  function updateCategoryTranslationField(
-    field: "name" | "description",
-    value: string,
-  ) {
-    if (categoryLang === "en") {
-      if (field === "name") updateCategoryField("name", value);
-      else updateCategoryField("description", value);
-    }
-    setCategoryTranslations((prev) => ({
-      ...prev,
-      [categoryLang]: {
-        ...prev[categoryLang],
-        [field]: value,
-      },
-    }));
-  }
-
   function updateItemField<K extends keyof ItemFormState>(
     key: K,
     value: ItemFormState[K],
@@ -651,63 +520,6 @@ export function MenusManager() {
       }
       return next;
     });
-  }
-
-  function updateCategoryField<K extends keyof CategoryFormState>(
-    key: K,
-    value: CategoryFormState[K],
-  ) {
-    setCategoryForm((prev) => {
-      const next = { ...prev, [key]: value };
-      if (key === "name" && !categorySlugManual) {
-        next.slug = slugify(String(value));
-      }
-      return next;
-    });
-  }
-
-  async function saveCategory(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const englishName = categoryForm.name.trim();
-      if (!englishName) throw new Error("English name is required.");
-      const payload = {
-        name: englishName,
-        slug: categoryForm.slug.trim() || slugify(englishName),
-        description: categoryForm.description.trim() || null,
-        itemType: categoryForm.itemType,
-        displayOrder: Number(categoryForm.displayOrder || 0),
-        isActive: categoryForm.isActive,
-        translationsJson: stringifyTranslations({
-          ...categoryTranslations,
-          en: {
-            name: englishName,
-            description: categoryForm.description.trim(),
-          },
-        }),
-      };
-      const res = await fetch(
-        editingCategoryId
-          ? `/api/admin/menu/categories/${editingCategoryId}`
-          : "/api/admin/menu/categories",
-        {
-          method: editingCategoryId ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-      if (!res.ok) throw new Error(await readError(res));
-      setCategoryModalOpen(false);
-      flash(editingCategoryId ? "Saved successfully." : "Created successfully.");
-      await loadCategories(tab === "archived");
-      await loadStats();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save category.");
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function reorderCategory(cat: MenuCategory, direction: -1 | 1) {
@@ -2393,150 +2205,6 @@ export function MenusManager() {
                 <p className="admin-muted">No images selected yet.</p>
               ) : null}
             </div>
-          </div>
-        </div>
-      ) : null}
-
-      {categoryModalOpen ? (
-        <div
-          className="admin-modal-backdrop"
-          role="presentation"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setCategoryModalOpen(false);
-          }}
-        >
-          <div
-            className="admin-modal"
-            role="dialog"
-            aria-modal="true"
-            style={{ width: "min(520px, 100%)" }}
-          >
-            <h3>
-              {editingCategoryId ? "Edit category" : "Add category"}
-            </h3>
-            <form
-              className="admin-form"
-              onSubmit={(e) => void saveCategory(e)}
-            >
-              <AdminLangTabs
-                lang={categoryLang}
-                onChange={setCategoryLang}
-                translations={categoryTranslations}
-              />
-              <p className="page-sub">
-                {categoryLang === "en"
-                  ? "English is the primary language for this category."
-                  : "Optional. Empty fields fall back to English."}
-              </p>
-              <label>
-                Name {categoryLang === "en" ? "*" : ""}
-                <input
-                  className="admin-input"
-                  required={categoryLang === "en"}
-                  value={
-                    categoryLang === "en"
-                      ? categoryForm.name
-                      : (categoryTranslations[categoryLang]?.name ?? "")
-                  }
-                  onChange={(e) =>
-                    updateCategoryTranslationField("name", e.target.value)
-                  }
-                />
-              </label>
-              {categoryLang === "en" ? (
-                <label>
-                  Page address
-                  <input
-                    className="admin-input"
-                    value={categoryForm.slug}
-                    onChange={(e) => {
-                      setCategorySlugManual(true);
-                      updateCategoryField("slug", e.target.value);
-                    }}
-                  />
-                </label>
-              ) : null}
-              <label>
-                Description
-                <textarea
-                  className="admin-textarea"
-                  rows={2}
-                  value={
-                    categoryLang === "en"
-                      ? categoryForm.description
-                      : (categoryTranslations[categoryLang]?.description ?? "")
-                  }
-                  onChange={(e) =>
-                    updateCategoryTranslationField(
-                      "description",
-                      e.target.value,
-                    )
-                  }
-                />
-              </label>
-              {categoryLang === "en" ? (
-                <>
-                  <div className="admin-form-row">
-                    <label>
-                      Item type
-                      <select
-                        className="admin-input"
-                        value={categoryForm.itemType}
-                        onChange={(e) =>
-                          updateCategoryField(
-                            "itemType",
-                            e.target.value as MenuItemType,
-                          )
-                        }
-                      >
-                        {MENU_ITEM_TYPES.map((t) => (
-                          <option key={t} value={t}>
-                            {MENU_ITEM_TYPE_LABELS[t]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Sort order
-                      <input
-                        className="admin-input"
-                        type="number"
-                        value={categoryForm.displayOrder}
-                        onChange={(e) =>
-                          updateCategoryField("displayOrder", e.target.value)
-                        }
-                      />
-                    </label>
-                  </div>
-                  <label className="menu-check">
-                    <input
-                      type="checkbox"
-                      checked={categoryForm.isActive}
-                      onChange={(e) =>
-                        updateCategoryField("isActive", e.target.checked)
-                      }
-                    />
-                    Active
-                  </label>
-                </>
-              ) : (
-                <p className="admin-muted">
-                  Type, order, and active status stay shared across languages.
-                </p>
-              )}
-              <div className="admin-actions">
-                <button className="admin-btn" type="submit" disabled={busy}>
-                  {busy ? "Saving…" : "Save category"}
-                </button>
-                <button
-                  className="admin-btn secondary"
-                  type="button"
-                  onClick={() => setCategoryModalOpen(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       ) : null}

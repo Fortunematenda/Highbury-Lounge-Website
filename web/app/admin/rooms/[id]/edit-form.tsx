@@ -24,6 +24,7 @@ import {
   DetailMetadataCard,
   DetailPageShell,
   DetailSectionCard,
+  DetailStickyActionBar,
   StatusBadge,
   UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
@@ -519,6 +520,24 @@ export function EditRoomForm({
           }}
         />
       </form>
+
+      <DetailStickyActionBar
+        visible={dirty && !loading}
+        primaryAction={{
+          label: "Save changes",
+          icon: Save,
+          onClick: () =>
+            (
+              document.getElementById("room-edit-form") as HTMLFormElement
+            )?.requestSubmit(),
+          loading: loading,
+        }}
+        cancelAction={{
+          label: "Back to rooms",
+          href: "/admin/rooms",
+          variant: "ghost",
+        }}
+      />
     </DetailPageShell>
   );
 }
