@@ -287,10 +287,14 @@ export function AdminDashboardClient() {
             <button
               key={item.value}
               type="button"
-              className={`admin-btn ghost${range === item.value ? " is-selected" : ""}`}
+              className={`admin-range-tab${range === item.value ? " is-selected" : ""}`}
               onClick={() => setRange(item.value)}
+              aria-pressed={range === item.value}
             >
-              {item.label}
+              <span className="admin-range-full">{item.label}</span>
+              <span className="admin-range-short" aria-hidden>
+                {item.value === 365 ? "1Y" : `${item.value}D`}
+              </span>
             </button>
           ))}
         </div>
@@ -391,15 +395,17 @@ export function AdminDashboardClient() {
                 <div className="admin-range-tabs compact">
                   <button
                     type="button"
-                    className={`admin-btn ghost${overviewMode === "bookings" ? " is-selected" : ""}`}
+                    className={`admin-range-tab${overviewMode === "bookings" ? " is-selected" : ""}`}
                     onClick={() => setOverviewMode("bookings")}
+                    aria-pressed={overviewMode === "bookings"}
                   >
                     Bookings
                   </button>
                   <button
                     type="button"
-                    className={`admin-btn ghost${overviewMode === "revenue" ? " is-selected" : ""}`}
+                    className={`admin-range-tab${overviewMode === "revenue" ? " is-selected" : ""}`}
                     onClick={() => setOverviewMode("revenue")}
+                    aria-pressed={overviewMode === "revenue"}
                   >
                     Revenue
                   </button>
