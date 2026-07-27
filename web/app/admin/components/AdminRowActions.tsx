@@ -3,11 +3,13 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type MouseEvent,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 export type AdminRowAction = {
@@ -18,6 +20,28 @@ export type AdminRowAction = {
   disabled?: boolean;
 };
 
+type MenuPos = {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+};
+
+function computeMenuPos(anchor: HTMLElement): MenuPos {
+  const rect = anchor.getBoundingClientRect();
+  const menuWidth = Math.min(220, window.innerWidth - 24);
+  const spaceBelow = window.innerHeight - rect.bottom - 12;
+  const spaceAbove = rect.top - 12;
+  const preferBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove;
+  const maxHeight = Math.max(120, Math.min(320, preferBelow ? spaceBelow : spaceAbove));
+  const top = preferBelow
+    ? rect.bottom + 6
+    : Math.max(12, rect.top - maxHeight - 6);
+  let left = rect.right - menuWidth;
+  left = Math.max(12, Math.min(left, window.innerWidth - menuWidth - 12));
+  return { top, left, width: menuWidth, maxHeight };
+}
+
 export function AdminRowActions({
   actions,
   label = "Row actions",
@@ -26,14 +50,41 @@ export function AdminRowActions({
   label?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<MenuPos | null>(null);
+  const [mounted, setMounted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const router = useRouter();
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const update = () => {
+      if (!buttonRef.current) return;
+      setPos(computeMenuPos(buttonRef.current));
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
     const onPointer = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
@@ -48,9 +99,51 @@ export function AdminRowActions({
 
   if (!actions.length) return null;
 
+  const menu =
+    open && mounted && pos
+      ? createPortal(
+          <div
+            ref={menuRef}
+            className="admin-kebab-menu"
+            id={menuId}
+            role="menu"
+            style={{
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              maxHeight: pos.maxHeight,
+            }}
+          >
+            {actions.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                role="menuitem"
+                className={action.danger ? "danger" : undefined}
+                disabled={action.disabled}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setOpen(false);
+                  if (action.disabled) return;
+                  if (action.href) {
+                    router.push(action.href);
+                    return;
+                  }
+                  action.onClick?.();
+                }}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <div className="admin-row-actions" data-row-actions ref={rootRef}>
       <button
+        ref={buttonRef}
         type="button"
         className="admin-kebab"
         aria-label={label}
@@ -66,31 +159,7 @@ export function AdminRowActions({
         <span />
         <span />
       </button>
-      {open ? (
-        <div className="admin-kebab-menu" id={menuId} role="menu">
-          {actions.map((action) => (
-            <button
-              key={action.label}
-              type="button"
-              role="menuitem"
-              className={action.danger ? "danger" : undefined}
-              disabled={action.disabled}
-              onClick={(event) => {
-                event.stopPropagation();
-                setOpen(false);
-                if (action.disabled) return;
-                if (action.href) {
-                  router.push(action.href);
-                  return;
-                }
-                action.onClick?.();
-              }}
-            >
-              {action.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {menu}
     </div>
   );
 }
