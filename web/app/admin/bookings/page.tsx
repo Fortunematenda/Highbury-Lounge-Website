@@ -3,7 +3,7 @@ import { and, desc, eq, like, or, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/db";
 import { bookingGuests, bookings, roomTypes } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
-import { formatDate, formatMoney, statusColor } from "@/lib/format";
+import { BookingsList } from "./bookings-list";
 
 export const dynamic = "force-dynamic";
 
@@ -122,59 +122,7 @@ export default async function AdminBookingsPage({
       </form>
 
       <section className="admin-card">
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Reference</th>
-                <th>Guest</th>
-                <th>Room</th>
-                <th>Check-in</th>
-                <th>Check-out</th>
-                <th>Guests</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={10}>No bookings match your filters.</td>
-                </tr>
-              ) : (
-                rows.map((b) => (
-                  <tr key={b.id}>
-                    <td>{b.reference}</td>
-                    <td>
-                      {b.firstName} {b.lastName}
-                    </td>
-                    <td>{b.roomName}</td>
-                    <td>{formatDate(b.checkIn)}</td>
-                    <td>{formatDate(b.checkOut)}</td>
-                    <td>
-                      {b.adults}+{b.children}
-                    </td>
-                    <td>{formatMoney(b.totalAmount, b.currency)}</td>
-                    <td>
-                      <span
-                        className="admin-badge"
-                        style={{ background: statusColor(b.status) }}
-                      >
-                        {b.status}
-                      </span>
-                    </td>
-                    <td>{formatDate(b.createdAt.slice(0, 10))}</td>
-                    <td>
-                      <Link href={`/admin/bookings/${b.id}`}>Open</Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <BookingsList rows={rows} />
         <div className="admin-pagination">
           {page > 1 && (
             <Link href={`/admin/bookings?page=${page - 1}&q=${q}&status=${status}`}>

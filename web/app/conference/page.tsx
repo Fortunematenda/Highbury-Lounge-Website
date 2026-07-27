@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/i18n/I18nProvider";
 type Package = {
   id: number;
   name: string;
+  slug?: string;
   capacity: number;
   description: string | null;
   translationsJson?: string | null;
@@ -71,9 +72,24 @@ export default function ConferencePage() {
   });
 
   useEffect(() => {
-    void fetch("/api/conference")
+    void fetch("/api/conference", { cache: "no-store" })
       .then((r) => r.json())
-      .then((data) => setPackages(data.packages ?? []))
+      .then((data) => {
+        const pkgs = (data.packages ?? []) as Package[];
+        setPackages(pkgs);
+        const params = new URLSearchParams(window.location.search);
+        const wanted = params.get("package");
+        if (!wanted) return;
+        const match = pkgs.find(
+          (pkg) =>
+            String(pkg.id) === wanted ||
+            pkg.slug === wanted ||
+            pkg.name.toLowerCase() === wanted.toLowerCase(),
+        );
+        if (match) {
+          setForm((prev) => ({ ...prev, packageId: String(match.id) }));
+        }
+      })
       .catch(() => setPackages([]));
   }, []);
 

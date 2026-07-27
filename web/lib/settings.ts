@@ -21,6 +21,11 @@ const DEFAULTS: Record<string, string> = {
   maintenance_mode: "false",
   payment_instructions:
     "Payment options will be shared once your reservation is confirmed. Online card payment will be available in a future update.",
+  hero_image: "/images/hero-venue.jpg",
+  meet_image: "/images/conference.jpg",
+  celebrate_image: "/images/events.jpg",
+  dine_image_1: "/images/dining.jpg",
+  dine_image_2: "/images/food.jpg",
 };
 
 export async function getSettingsMap(): Promise<Record<string, string>> {

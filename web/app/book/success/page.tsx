@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
 import { formatMoney } from "@/lib/format";
 import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+
+function whatsappHref(whatsapp: string, message: string) {
+  const digits = whatsapp.replace(/\D/g, "");
+  return `https://wa.me/${digits || "263786957068"}?text=${encodeURIComponent(message)}`;
+}
 
 function SuccessInner() {
   const { t, i18n } = useTranslation();
@@ -14,6 +19,16 @@ function SuccessInner() {
   const reference = params.get("reference") ?? "";
   const total = Number(params.get("total") ?? "0");
   const currency = params.get("currency") ?? "USD";
+  const [whatsapp, setWhatsapp] = useState("+263786957068");
+
+  useEffect(() => {
+    void fetch("/api/public-settings", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.settings?.whatsapp) setWhatsapp(data.settings.whatsapp);
+      })
+      .catch(() => undefined);
+  }, []);
 
   return (
     <main className="booking-flow">
@@ -38,9 +53,10 @@ function SuccessInner() {
           </Link>
           <a
             className="button ghost"
-            href={`https://wa.me/263786957068?text=${encodeURIComponent(
+            href={whatsappHref(
+              whatsapp,
               t("booking.whatsappBookingMessage", { reference }),
-            )}`}
+            )}
             target="_blank"
             rel="noreferrer"
           >
@@ -61,7 +77,7 @@ function LoadingFallback() {
   );
 }
 
-export default function BookSuccessPage() {
+export default function BookingSuccessPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <SuccessInner />

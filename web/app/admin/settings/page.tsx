@@ -4,6 +4,7 @@ import { requireAdminPage } from "@/lib/admin-page";
 import { writeAuditLog } from "@/lib/audit";
 import { isSmtpConfigured } from "@/lib/notifications";
 import { getSettingsMap, setSettings } from "@/lib/settings";
+import { SiteMediaManager } from "./site-media-manager";
 
 async function saveSettings(formData: FormData) {
   "use server";
@@ -237,6 +238,16 @@ export default async function SettingsPage({
           Save settings
         </button>
       </form>
+
+      <SiteMediaManager
+        media={{
+          hero_image: settings.hero_image ?? "/images/hero-venue.jpg",
+          meet_image: settings.meet_image ?? "/images/conference.jpg",
+          celebrate_image: settings.celebrate_image ?? "/images/events.jpg",
+          dine_image_1: settings.dine_image_1 ?? "/images/dining.jpg",
+          dine_image_2: settings.dine_image_2 ?? "/images/food.jpg",
+        }}
+      />
     </>
   );
 }

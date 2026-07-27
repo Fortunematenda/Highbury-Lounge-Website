@@ -45,7 +45,7 @@ function getUploadsBucket(): R2Bucket {
 
 export async function storeUploadedImage(
   file: File,
-  folder: "menu-items" | "rooms" = "menu-items",
+  folder: "menu-items" | "rooms" | "packages" | "gallery" | "site" = "menu-items",
 ) {
   if (!file || file.size <= 0) {
     throw new UploadError("Empty or missing image file.");

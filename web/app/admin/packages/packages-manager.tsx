@@ -6,6 +6,14 @@ import {
   AdminLangTabs,
   buildTranslationDraft,
 } from "@/app/admin/components/AdminLangTabs";
+import {
+  AdminClickableRow,
+  AdminRowActions,
+} from "@/app/admin/components/AdminRowActions";
+import {
+  AdminMobileCard,
+  AdminMobileMeta,
+} from "@/app/admin/components/AdminMobileCard";
 import { formatMoney } from "@/lib/format";
 import {
   stringifyTranslations,
@@ -27,22 +35,57 @@ type PackageRow = {
   translationsJson?: string | null;
 };
 
+const EMPTY: PackageRow = {
+  id: 0,
+  name: "",
+  slug: "",
+  description: "",
+  capacity: 20,
+  basePrice: null,
+  imageUrl: null,
+  featuresJson: "",
+  isActive: true,
+  displayOrder: 0,
+  translationsJson: null,
+};
+
 export function PackagesManager({ packages }: { packages: PackageRow[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<PackageRow | null>(null);
+  const [creating, setCreating] = useState(false);
   const [lang, setLang] = useState<AppLocale>("en");
   const [translations, setTranslations] = useState<ContentTranslations>({});
-  const [capacity, setCapacity] = useState("");
+  const [capacity, setCapacity] = useState("20");
   const [basePrice, setBasePrice] = useState("");
   const [features, setFeatures] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [displayOrder, setDisplayOrder] = useState("0");
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const current = translations[lang] ?? {};
+  const isCreate = creating;
+
+  function openCreate() {
+    setCreating(true);
+    setEditing(EMPTY);
+    setLang("en");
+    setTranslations({ en: { name: "", description: "", features: "" } });
+    setCapacity("20");
+    setBasePrice("");
+    setFeatures("");
+    setImageUrl(null);
+    setDisplayOrder("0");
+    setIsActive(true);
+    setError("");
+    setSuccess("");
+  }
 
   function openEdit(pkg: PackageRow) {
+    setCreating(false);
     setEditing(pkg);
     setLang("en");
     setTranslations(
@@ -58,8 +101,18 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
     setCapacity(String(pkg.capacity));
     setBasePrice(pkg.basePrice != null ? String(pkg.basePrice) : "");
     setFeatures(pkg.featuresJson ?? "");
+    setImageUrl(pkg.imageUrl);
+    setDisplayOrder(String(pkg.displayOrder ?? 0));
     setIsActive(pkg.isActive);
     setError("");
+    setSuccess("");
+  }
+
+  function closeModal() {
+    setEditing(null);
+    setCreating(false);
+    setError("");
+    setSuccess("");
   }
 
   function updateField(
@@ -76,6 +129,32 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
     if (lang === "en" && field === "features") setFeatures(value);
   }
 
+  async function onUploadImage(file: File) {
+    if (!editing || isCreate) {
+      setError("Save the package first, then upload an image.");
+      return;
+    }
+    setUploading(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/admin/packages/${editing.id}/image`, {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      setImageUrl(data.package?.imageUrl ?? null);
+      setSuccess("Saved successfully.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function onSave(e: FormEvent) {
     e.preventDefault();
     if (!editing) return;
@@ -89,37 +168,63 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
       setBusy(false);
       return;
     }
-    try {
-      const res = await fetch(`/api/admin/packages/${editing.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+
+    const payload = {
+      name: englishName,
+      description: en.description ?? "",
+      capacity: Number(capacity),
+      basePrice: basePrice === "" ? null : Number(basePrice),
+      featuresJson: features || en.features || null,
+      imageUrl,
+      isActive,
+      displayOrder: Number(displayOrder || 0),
+      translationsJson: stringifyTranslations({
+        ...translations,
+        en: {
           name: englishName,
           description: en.description ?? "",
-          capacity: Number(capacity),
-          basePrice: basePrice === "" ? null : Number(basePrice),
-          featuresJson: features || en.features || null,
-          isActive,
-          translationsJson: stringifyTranslations({
-            ...translations,
-            en: {
-              name: englishName,
-              description: en.description ?? "",
-              features: features || en.features || "",
-            },
-          }),
-        }),
-      });
+          features: features || en.features || "",
+        },
+      }),
+    };
+
+    try {
+      const res = await fetch(
+        isCreate ? "/api/admin/packages" : `/api/admin/packages/${editing.id}`,
+        {
+          method: isCreate ? "POST" : "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Update failed");
-      setSuccess("Saved successfully.");
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setSuccess(isCreate ? "Created successfully." : "Saved successfully.");
       window.setTimeout(() => {
-        setEditing(null);
-        setSuccess("");
+        closeModal();
         router.refresh();
       }, 900);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete(pkg: PackageRow) {
+    if (!window.confirm(`Delete package “${pkg.name}”? This cannot be undone.`)) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/packages/${pkg.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      if (editing?.id === pkg.id) closeModal();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete");
     } finally {
       setBusy(false);
     }
@@ -132,37 +237,105 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
 
   return (
     <>
+      <div className="admin-quick-actions" style={{ marginBottom: 16 }}>
+        <button type="button" className="admin-btn" onClick={openCreate}>
+          Add package
+        </button>
+      </div>
+      {error && !editing ? <div className="admin-error">{error}</div> : null}
+
       <section className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Capacity</th>
-              <th>Base price</th>
-              <th>Active</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {packages.map((r) => (
-              <tr key={r.id}>
-                <td>{r.name}</td>
-                <td>{r.capacity}</td>
-                <td>{r.basePrice != null ? formatMoney(r.basePrice) : "—"}</td>
-                <td>{r.isActive ? "Yes" : "No"}</td>
-                <td>
-                  <button
-                    type="button"
-                    className="admin-btn secondary"
-                    onClick={() => openEdit(r)}
-                  >
-                    Edit translations
-                  </button>
-                </td>
+        <div className="admin-desktop-only">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Capacity</th>
+                <th>Base price</th>
+                <th>Active</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {packages.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>No packages yet. Add one to show venues on the website.</td>
+                </tr>
+              ) : (
+                packages.map((r) => (
+                  <AdminClickableRow key={r.id} onOpen={() => openEdit(r)}>
+                    <td>
+                      {r.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={r.imageUrl}
+                          alt=""
+                          style={{ width: 56, height: 40, objectFit: "cover", borderRadius: 4 }}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>{r.name}</td>
+                    <td>{r.capacity}</td>
+                    <td>{r.basePrice != null ? formatMoney(r.basePrice) : "—"}</td>
+                    <td>{r.isActive ? "Yes" : "No"}</td>
+                    <td>
+                      <AdminRowActions
+                        label={`Actions for ${r.name}`}
+                        actions={[
+                          { label: "Edit", onClick: () => openEdit(r) },
+                          {
+                            label: "Delete",
+                            danger: true,
+                            disabled: busy,
+                            onClick: () => void onDelete(r),
+                          },
+                        ]}
+                      />
+                    </td>
+                  </AdminClickableRow>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="admin-mobile-cards">
+          {packages.length === 0 ? (
+            <p className="admin-muted">No packages yet. Add one to show venues on the website.</p>
+          ) : (
+            packages.map((r) => (
+              <AdminMobileCard
+                key={r.id}
+                title={r.name}
+                subtitle={r.isActive ? "Active" : "Inactive"}
+                onOpen={() => openEdit(r)}
+                actions={[
+                  { label: "Edit", onClick: () => openEdit(r) },
+                  {
+                    label: "Delete",
+                    danger: true,
+                    disabled: busy,
+                    onClick: () => void onDelete(r),
+                  },
+                ]}
+              >
+                <AdminMobileMeta
+                  items={[
+                    { label: "Capacity", value: r.capacity },
+                    {
+                      label: "Base price",
+                      value:
+                        r.basePrice != null ? formatMoney(r.basePrice) : "—",
+                    },
+                  ]}
+                />
+              </AdminMobileCard>
+            ))
+          )}
+        </div>
       </section>
 
       {editing ? (
@@ -170,7 +343,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
           className="admin-modal-backdrop"
           role="presentation"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setEditing(null);
+            if (e.target === e.currentTarget) closeModal();
           }}
         >
           <div
@@ -179,7 +352,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
             aria-modal="true"
             style={{ width: "min(560px, 100%)" }}
           >
-            <h3>Edit package · {editing.slug}</h3>
+            <h3>{isCreate ? "Add package" : `Edit package · ${editing.slug}`}</h3>
             {error ? <div className="admin-error">{error}</div> : null}
             {success ? (
               <div className="admin-success" role="status">
@@ -214,7 +387,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
               {lang === "en" ? (
                 <>
                   <label>
-                    Features (JSON array or plain text)
+                    Features (one per line or JSON array)
                     <textarea
                       className="admin-textarea"
                       rows={2}
@@ -243,6 +416,15 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
                         onChange={(e) => setBasePrice(e.target.value)}
                       />
                     </label>
+                    <label>
+                      Display order
+                      <input
+                        className="admin-input"
+                        type="number"
+                        value={displayOrder}
+                        onChange={(e) => setDisplayOrder(e.target.value)}
+                      />
+                    </label>
                   </div>
                   <label className="menu-check">
                     <input
@@ -250,8 +432,44 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
                       checked={isActive}
                       onChange={(e) => setIsActive(e.target.checked)}
                     />
-                    Active
+                    Active (visible on website)
                   </label>
+                  {!isCreate ? (
+                    <label>
+                      Image
+                      {imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={imageUrl}
+                          alt=""
+                          style={{
+                            display: "block",
+                            width: "100%",
+                            maxHeight: 160,
+                            objectFit: "cover",
+                            borderRadius: 6,
+                            margin: "8px 0",
+                          }}
+                        />
+                      ) : null}
+                      <input
+                        className="admin-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void onUploadImage(file);
+                          e.target.value = "";
+                        }}
+                      />
+                      {uploading ? <span className="admin-muted">Uploading…</span> : null}
+                    </label>
+                  ) : (
+                    <p className="admin-muted">
+                      Save the package first, then edit it to upload an image.
+                    </p>
+                  )}
                 </>
               ) : (
                 <p className="admin-muted">
@@ -260,12 +478,18 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
               )}
               <div className="admin-actions">
                 <button className="admin-btn" type="submit" disabled={busy}>
-                  {busy ? "Saving…" : "Save package"}
+                  {busy
+                    ? isCreate
+                      ? "Creating…"
+                      : "Saving…"
+                    : isCreate
+                      ? "Create package"
+                      : "Save package"}
                 </button>
                 <button
                   className="admin-btn secondary"
                   type="button"
-                  onClick={() => setEditing(null)}
+                  onClick={closeModal}
                 >
                   Cancel
                 </button>

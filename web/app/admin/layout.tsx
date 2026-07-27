@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Viewport } from "next";
 import { SESSION_COOKIE, getSessionUser } from "@/lib/auth";
 import { AdminShell } from "@/app/admin/admin-shell";
 import "./admin.css";
@@ -11,6 +12,12 @@ export const metadata = {
     shortcut: "/favicon.png",
     apple: "/apple-icon.png",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 function isLoginPath(pathname: string) {

@@ -521,3 +521,19 @@ export const siteSettings = sqliteTable("site_settings", {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const galleryImages = sqliteTable(
+  "gallery_images",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    imageUrl: text("image_url").notNull(),
+    altText: text("alt_text"),
+    displayOrder: integer("display_order").notNull().default(0),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [
+    index("gallery_images_order_idx").on(t.displayOrder),
+    index("gallery_images_active_idx").on(t.isActive),
+  ],
+);

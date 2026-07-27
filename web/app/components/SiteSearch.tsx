@@ -98,7 +98,7 @@ function matches(query: string, ...parts: Array<string | null | undefined>) {
   return parts.some((part) => (part || "").toLowerCase().includes(q));
 }
 
-export function SiteSearch({ rooms = [] }: Props) {
+export function SiteSearch({ rooms: roomsProp }: Props) {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const locale = i18n.language as AppLocale;
@@ -106,6 +106,14 @@ export function SiteSearch({ rooms = [] }: Props) {
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [menuHits, setMenuHits] = useState<SearchHit[]>([]);
+  const [liveRooms, setLiveRooms] = useState<
+    Array<{
+      id: string;
+      name: string;
+      detail: string;
+      translationsJson?: string | null;
+    }>
+  >([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const allowCloseRef = useRef(false);
@@ -114,6 +122,40 @@ export function SiteSearch({ rooms = [] }: Props) {
     const id = window.setTimeout(() => setMounted(true), 0);
     return () => window.clearTimeout(id);
   }, []);
+
+  useEffect(() => {
+    if (roomsProp?.length) {
+      setLiveRooms(roomsProp);
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/rooms", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setLiveRooms(
+          (data.rooms ?? []).map(
+            (room: {
+              slug: string;
+              name: string;
+              shortDescription: string | null;
+              translationsJson?: string | null;
+            }) => ({
+              id: room.slug,
+              name: room.name,
+              detail: room.shortDescription || "",
+              translationsJson: room.translationsJson,
+            }),
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setLiveRooms([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomsProp]);
 
   useEffect(() => {
     if (!open) {
@@ -157,7 +199,7 @@ export function SiteSearch({ rooms = [] }: Props) {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    void fetch("/api/menu")
+    void fetch("/api/menu", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
@@ -222,7 +264,7 @@ export function SiteSearch({ rooms = [] }: Props) {
 
   const roomHits: SearchHit[] = useMemo(
     () =>
-      rooms.map((room) => {
+      liveRooms.map((room) => {
         const localized = pickTranslated(
           locale,
           { name: room.name, description: room.detail },
@@ -236,7 +278,7 @@ export function SiteSearch({ rooms = [] }: Props) {
           kind: "Room" as const,
         };
       }),
-    [rooms, locale],
+    [liveRooms, locale],
   );
 
   const results = useMemo(() => {

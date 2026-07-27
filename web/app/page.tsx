@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PublicMenuSection,
@@ -8,7 +8,9 @@ import {
 } from "@/app/components/PublicMenuSection";
 import { PreviewMediaGallery } from "@/app/components/PreviewMediaGallery";
 import { formatMoney } from "@/lib/format";
+import { pickTranslated } from "@/lib/i18n/content";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+import type { AppLocale } from "@/lib/i18n/locales";
 
 type PublicFoodItem = PublicMenuItem & { category?: string };
 
@@ -28,139 +30,100 @@ const FOOD_SERVICE_I18N: Record<FoodServiceKey, string> = {
   conferenceCatering: "menu.serviceConferenceCatering",
 };
 
-const rooms = [
-  {
-    id: "deluxe-double",
-    name: "Highbury Deluxe King",
-    image: "/images/deluxe-room.jpg",
-    images: [
-      "/images/deluxe-room.jpg",
-      "/images/family-room.jpg",
-      "/images/pool.jpg",
-      "/images/garden.jpg",
-      "/images/dining.jpg",
-    ],
-    price: 85,
-    capacity: 2,
-    detail: "King bed · 2 guests · Breakfast included",
-  },
-  {
-    id: "executive-twin",
-    name: "Garden Executive Twin",
-    image: "/images/family-room.jpg",
-    images: [
-      "/images/family-room.jpg",
-      "/images/garden.jpg",
-      "/images/pool.jpg",
-      "/images/deluxe-room.jpg",
-      "/images/events.jpg",
-      "/images/dining.jpg",
-    ],
-    price: 110,
-    capacity: 4,
-    detail: "2 double beds · 4 guests · Garden view",
-  },
-  {
-    id: "classic-queen",
-    name: "Classic Queen Retreat",
-    image: "/images/deluxe-room.jpg",
-    images: [
-      "/images/deluxe-room.jpg",
-      "/images/garden.jpg",
-      "/images/dining.jpg",
-      "/images/pool.jpg",
-      "/images/family-room.jpg",
-    ],
-    price: 72,
-    capacity: 2,
-    detail: "Queen bed · 2 guests · Quiet garden wing",
-  },
-  {
-    id: "signature-suite",
-    name: "Highbury Signature Suite",
-    image: "/images/family-room.jpg",
-    images: [
-      "/images/family-room.jpg",
-      "/images/deluxe-room.jpg",
-      "/images/dining.jpg",
-      "/images/events.jpg",
-      "/images/garden.jpg",
-      "/images/pool.jpg",
-    ],
-    price: 135,
-    capacity: 2,
-    detail: "King bed · Lounge area · Premium breakfast",
-  },
-  {
-    id: "family-garden",
-    name: "Garden Family Residence",
-    image: "/images/family-room.jpg",
-    images: [
-      "/images/family-room.jpg",
-      "/images/garden.jpg",
-      "/images/pool.jpg",
-      "/images/events.jpg",
-      "/images/deluxe-room.jpg",
-    ],
-    price: 125,
-    capacity: 4,
-    detail: "2 double beds · 4 guests · Garden access",
-  },
-  {
-    id: "business-studio",
-    name: "Executive Business Studio",
-    image: "/images/deluxe-room.jpg",
-    images: [
-      "/images/deluxe-room.jpg",
-      "/images/conference.jpg",
-      "/images/dining.jpg",
-      "/images/family-room.jpg",
-      "/images/garden.jpg",
-    ],
-    price: 95,
-    capacity: 2,
-    detail: "King bed · Work desk · High-speed Wi-Fi",
-  },
-];
+type ApiRoom = {
+  id: number;
+  slug: string;
+  name: string;
+  shortDescription: string | null;
+  description: string | null;
+  pricePerNight: number;
+  promotionalPrice: number | null;
+  maxGuests: number;
+  bedType: string | null;
+  featuredImage: string;
+  images: string[];
+  translationsJson?: string | null;
+  isFeatured?: boolean;
+};
 
-const conferenceSpaces = [
-  {
-    id: "highbury-boardroom",
-    name: "The Highbury Boardroom",
-    image: "/images/conference.jpg",
-    detail: "A polished private setting for leadership meetings, interviews and focused strategy sessions.",
-    capacity: "Up to 16 delegates",
-    maxGuests: 16,
-    features: ["Boardroom seating", "Presentation screen", "High-speed Wi-Fi", "Tea and coffee service"],
-  },
-  {
-    id: "greenfield-hall",
-    name: "Greenfield Conference Hall",
-    image: "/images/events.jpg",
-    detail: "A flexible professional venue for workshops, presentations and company gatherings.",
-    capacity: "Up to 80 delegates",
-    maxGuests: 80,
-    features: ["Flexible seating layouts", "Projector and screen", "PA system", "Catering available"],
-  },
-  {
-    id: "garden-pavilion",
-    name: "The Garden Pavilion",
-    image: "/images/garden.jpg",
-    detail: "An airy indoor-outdoor setting for launches, networking sessions and relaxed corporate events.",
-    capacity: "Up to 120 guests",
-    maxGuests: 120,
-    features: ["Indoor-outdoor layout", "Natural garden setting", "PA system", "Custom catering"],
-  },
-  {
-    id: "strategy-suite",
-    name: "Executive Strategy Suite",
-    image: "/images/dining.jpg",
-    detail: "A comfortable premium space for planning days, private sessions and catered team meetings.",
-    capacity: "Up to 30 delegates",
-    maxGuests: 30,
-    features: ["Private meeting room", "Presentation screen", "Breakout space", "Executive catering"],
-  },
-];
+type HomeRoom = {
+  id: string;
+  name: string;
+  image: string;
+  images: string[];
+  price: number;
+  capacity: number;
+  detail: string;
+};
+
+type ApiPackage = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  capacity: number;
+  imageUrl: string | null;
+  featuresJson: string | null;
+  translationsJson?: string | null;
+};
+
+type HomeVenue = {
+  id: string;
+  packageId: number;
+  name: string;
+  image: string;
+  detail: string;
+  capacity: string;
+  maxGuests: number;
+  features: string[];
+};
+
+type PublicSettings = {
+  business_name: string;
+  address: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  hero_image: string;
+  meet_image: string;
+  celebrate_image: string;
+  dine_image_1: string;
+  dine_image_2: string;
+};
+
+type GalleryImage = {
+  id: number;
+  imageUrl: string;
+  altText: string | null;
+};
+
+function parseFeatures(raw: string | null | undefined): string[] {
+  if (!raw?.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.map(String).map((s) => s.trim()).filter(Boolean);
+    }
+  } catch {
+    // plain text from admin
+  }
+  return raw
+    .split(/\n|,/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function whatsappHref(whatsapp: string, message?: string) {
+  const digits = whatsapp.replace(/\D/g, "");
+  const base = `https://wa.me/${digits || "263786957068"}`;
+  if (!message) return base;
+  return `${base}?text=${encodeURIComponent(message)}`;
+}
+
+function telHref(phone: string) {
+  const digits = phone.replace(/[^\d+]/g, "");
+  return `tel:${digits || "+263786957068"}`;
+}
 
 function localIsoDate(date: Date) {
   const y = date.getFullYear();
@@ -184,9 +147,25 @@ function defaultStayDates() {
 export default function Home() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const locale = i18n.language as AppLocale;
   const stayDefaults = defaultStayDates();
-  const [roomPreview, setRoomPreview] = useState<(typeof rooms)[number] | null>(null);
-  const [conferencePreview, setConferencePreview] = useState<(typeof conferenceSpaces)[number] | null>(null);
+  const [apiRooms, setApiRooms] = useState<ApiRoom[]>([]);
+  const [apiPackages, setApiPackages] = useState<ApiPackage[]>([]);
+  const [settings, setSettings] = useState<PublicSettings>({
+    business_name: "Highbury Lounge",
+    address: "7504 Greenfield Cherries, Kadoma, Zimbabwe",
+    phone: "+263 78 695 7068",
+    whatsapp: "+263786957068",
+    email: "test@higbury.com",
+    hero_image: "/images/hero-venue.jpg",
+    meet_image: "/images/conference.jpg",
+    celebrate_image: "/images/events.jpg",
+    dine_image_1: "/images/dining.jpg",
+    dine_image_2: "/images/food.jpg",
+  });
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [roomPreview, setRoomPreview] = useState<HomeRoom | null>(null);
+  const [conferencePreview, setConferencePreview] = useState<HomeVenue | null>(null);
   const [foodPreview, setFoodPreview] = useState<PublicFoodItem | null>(null);
   const [foodOrderOpen, setFoodOrderOpen] = useState(false);
   const [foodOrderSubmitted, setFoodOrderSubmitted] = useState(false);
@@ -205,8 +184,28 @@ export default function Home() {
   const checkInRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    void fetch("/api/menu")
-      .then((r) => r.json())
+    const load = (path: string) =>
+      fetch(path, { cache: "no-store" }).then((r) => r.json());
+
+    void load("/api/rooms")
+      .then((data) => setApiRooms(data.rooms ?? []))
+      .catch(() => setApiRooms([]));
+
+    void load("/api/conference")
+      .then((data) => setApiPackages(data.packages ?? []))
+      .catch(() => setApiPackages([]));
+
+    void load("/api/public-settings")
+      .then((data) => {
+        if (data.settings) setSettings((prev) => ({ ...prev, ...data.settings }));
+      })
+      .catch(() => undefined);
+
+    void load("/api/gallery")
+      .then((data) => setGallery(data.images ?? []))
+      .catch(() => setGallery([]));
+
+    void load("/api/menu")
       .then((data) => {
         const flat: PublicFoodItem[] = (data.categories ?? []).flatMap(
           (c: { name: string; items: PublicFoodItem[] }) =>
@@ -217,6 +216,70 @@ export default function Home() {
       })
       .catch(() => undefined);
   }, []);
+
+  const rooms: HomeRoom[] = useMemo(() => {
+    const sorted = [...apiRooms].sort((a, b) => Number(!!b.isFeatured) - Number(!!a.isFeatured));
+    return sorted.map((room) => {
+      const localized = pickTranslated(
+        locale,
+        {
+          name: room.name,
+          description: room.description,
+          shortDescription: room.shortDescription,
+        },
+        room.translationsJson,
+      );
+      const detailParts = [
+        localized.shortDescription || localized.description,
+        room.bedType,
+        room.maxGuests ? `${room.maxGuests} guests` : null,
+      ].filter(Boolean);
+      return {
+        id: room.slug,
+        name: localized.name,
+        image: room.featuredImage || settings.hero_image || "/images/deluxe-room.jpg",
+        images: room.images?.length
+          ? room.images
+          : [room.featuredImage || "/images/deluxe-room.jpg"],
+        price: room.promotionalPrice ?? room.pricePerNight,
+        capacity: room.maxGuests,
+        detail: detailParts.join(" · ") || localized.name,
+      };
+    });
+  }, [apiRooms, locale, settings.hero_image]);
+
+  const conferenceSpaces: HomeVenue[] = useMemo(
+    () =>
+      apiPackages.map((pkg) => {
+        const localized = pickTranslated(
+          locale,
+          {
+            name: pkg.name,
+            description: pkg.description,
+            shortDescription: null,
+          },
+          pkg.translationsJson,
+        );
+        return {
+          id: pkg.slug,
+          packageId: pkg.id,
+          name: localized.name,
+          image: pkg.imageUrl || "/images/conference.jpg",
+          detail: localized.description || "",
+          capacity: `Up to ${pkg.capacity} delegates`,
+          maxGuests: pkg.capacity,
+          features: parseFeatures(pkg.featuresJson),
+        };
+      }),
+    [apiPackages, locale],
+  );
+
+  const addressLines = settings.address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const addressLine1 = addressLines[0] || settings.address;
+  const addressLine2 = addressLines.slice(1).join(", ");
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -268,8 +331,8 @@ export default function Home() {
     focusBookingStrip(t("validation.selectDatesBelow"));
   };
 
-  const openConferenceRequest = (space?: (typeof conferenceSpaces)[number]) => {
-    const qs = space ? `?package=${space.id}` : "";
+  const openConferenceRequest = (space?: HomeVenue) => {
+    const qs = space ? `?package=${encodeURIComponent(space.id)}` : "";
     router.push(`/conference${qs}`);
   };
 
@@ -291,7 +354,7 @@ export default function Home() {
   return (
     <main>
       <section className="hero" id="home">
-        <img src="/images/hero-venue.jpg" alt="Aerial view of Highbury Lounge gardens and event venue" />
+        <img src={settings.hero_image || "/images/hero-venue.jpg"} alt="Aerial view of Highbury Lounge gardens and event venue" />
         <div className="hero-shade" />
         <div className="hero-copy">
           <p className="eyebrow light">{t("home.eyebrow")}</p>
@@ -415,8 +478,11 @@ export default function Home() {
           <p className="price-note">{t("home.stayNote")}</p>
         </div>
         <div className="room-grid">
-          {rooms.map((room) => (
-            <article className="room-card" key={room.name}>
+          {rooms.length === 0 ? (
+            <p className="price-note">{t("home.stayNote")}</p>
+          ) : (
+            rooms.map((room) => (
+            <article className="room-card" key={room.id}>
               <img src={room.image} alt={room.name} />
               <div className="room-card-content">
                 <div>
@@ -433,13 +499,14 @@ export default function Home() {
                 {t("rooms.previewRoom")} <span>→</span>
               </button>
             </article>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
       <section className="experience" id="meet">
         <div className="experience-image">
-          <img src="/images/conference.jpg" alt="Highbury Lounge conference room prepared for a meeting" />
+          <img src={settings.meet_image || "/images/conference.jpg"} alt="Highbury Lounge conference room prepared for a meeting" />
           <div className="capacity-badge">
             <strong>{t("home.flexibleBadge")}</strong>
             <span>{t("home.meetingSetups")}</span>
@@ -470,7 +537,7 @@ export default function Home() {
         </div>
         <div className="conference-grid">
           {conferenceSpaces.map((space) => (
-            <article className="conference-card" key={space.name}>
+            <article className="conference-card" key={space.id}>
               <img src={space.image} alt={space.name} />
               <div>
                 <span>{space.capacity}</span>
@@ -486,13 +553,13 @@ export default function Home() {
       </section>
 
       <section className="celebrate">
-        <img src="/images/events.jpg" alt="A beautifully set event at Highbury Lounge" />
+        <img src={settings.celebrate_image || "/images/events.jpg"} alt="A beautifully set event at Highbury Lounge" />
         <div className="celebrate-shade" />
         <div>
           <p className="eyebrow light">{t("home.celebrateEyebrow")}</p>
           <h2>{t("home.celebrateTitle")}</h2>
           <p>{t("home.celebrateText")}</p>
-          <a className="button cream" href="https://wa.me/263786957068?text=Hello%20Highbury%20Lounge%2C%20I%20would%20like%20an%20event%20quote." target="_blank" rel="noreferrer">
+          <a className="button cream" href={whatsappHref(settings.whatsapp, "Hello Highbury Lounge, I would like an event quote.")} target="_blank" rel="noreferrer">
             {t("home.planEvent")}
           </a>
         </div>
@@ -508,8 +575,8 @@ export default function Home() {
           </button>
         </div>
         <div className="dining-images">
-          <img src="/images/dining.jpg" alt="A Highbury Lounge plated meal" />
-          <img src="/images/food.jpg" alt="Freshly prepared food at Highbury Lounge" />
+          <img src={settings.dine_image_1 || "/images/dining.jpg"} alt="A Highbury Lounge plated meal" />
+          <img src={settings.dine_image_2 || "/images/food.jpg"} alt="Freshly prepared food at Highbury Lounge" />
         </div>
       </section>
 
@@ -542,10 +609,19 @@ export default function Home() {
           </div>
         </div>
         <div className="gallery-grid">
-          <img className="gallery-wide" src="/images/garden.jpg" alt="Highbury Lounge garden" />
-          <img src="/images/pool.jpg" alt="Highbury Lounge swimming pool" />
-          <img src="/images/family-room.jpg" alt="Highbury Lounge guest room" />
-          <img className="gallery-wide" src="/images/events.jpg" alt="Highbury Lounge event setting" />
+          {gallery.length === 0 ? (
+            <p className="price-note">{t("home.galleryTitle")}</p>
+          ) : (
+            gallery.map((image, index) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={image.id}
+                className={index % 3 === 0 ? "gallery-wide" : undefined}
+                src={image.imageUrl}
+                alt={image.altText || "Highbury Lounge"}
+              />
+            ))
+          )}
         </div>
       </section>
 
@@ -556,20 +632,28 @@ export default function Home() {
           <p>{t("home.contactText")}</p>
           <div className="contact-actions">
             <button className="button cream" onClick={() => openBooking()}>{t("home.bookNow")}</button>
-            <a className="button ghost" href="https://wa.me/263786957068" target="_blank" rel="noreferrer">{t("actions.whatsapp")}</a>
+            <a className="button ghost" href={whatsappHref(settings.whatsapp)} target="_blank" rel="noreferrer">{t("actions.whatsapp")}</a>
           </div>
         </div>
         <address>
           <span>{t("contact.visit")}</span>
-          <strong>{t("contact.addressLine1")}<br />{t("contact.addressLine2")}</strong>
+          <strong>
+            {addressLine1}
+            {addressLine2 ? (
+              <>
+                <br />
+                {addressLine2}
+              </>
+            ) : null}
+          </strong>
           <span>{t("contact.call")}</span>
-          <a href="tel:+263786957068">{t("contact.phoneDisplay")}</a>
+          <a href={telHref(settings.phone)}>{settings.phone}</a>
           <span>{t("contact.email")}</span>
-          <a href="mailto:test@higbury.com">{t("contact.emailDisplay")}</a>
+          <a href={`mailto:${settings.email}`}>{settings.email}</a>
         </address>
       </section>
 
-      <a className="whatsapp-float" href="https://wa.me/263786957068" target="_blank" rel="noreferrer" aria-label={t("home.whatsappAria")}>
+      <a className="whatsapp-float" href={whatsappHref(settings.whatsapp)} target="_blank" rel="noreferrer" aria-label={t("home.whatsappAria")}>
         <span>{t("whatsapp.chat")}</span> ↗
       </a>
 
@@ -616,7 +700,16 @@ export default function Home() {
                 <h2 id="conference-preview-title">{conferencePreview.name}</h2>
                 <p>{conferencePreview.detail}</p>
                 <div className="preview-features">
-                  {conferencePreview.features.map((feature) => <span key={feature}>✓ {feature}</span>)}
+                  {(conferencePreview.features.length
+                    ? conferencePreview.features
+                    : [
+                        t("home.meetItem1"),
+                        t("home.meetItem2"),
+                        t("home.meetItem3"),
+                      ]
+                  ).map((feature) => (
+                    <span key={feature}>✓ {feature}</span>
+                  ))}
                 </div>
               </div>
               <aside>
@@ -730,7 +823,10 @@ export default function Home() {
                 <p>{t("menu.preOrderSuccess", { quantity: foodQuantity, item: selectedFood })}</p>
                 <a
                   className="button primary"
-                  href={`https://wa.me/263786957068?text=${encodeURIComponent(`Hello Highbury Lounge, I would like to pre-order ${foodQuantity} x ${selectedFood} for ${foodOrderDate} at ${foodOrderTime}. Service: ${foodServiceLabel}.`)}`}
+                  href={whatsappHref(
+                    settings.whatsapp,
+                    `Hello Highbury Lounge, I would like to pre-order ${foodQuantity} x ${selectedFood} for ${foodOrderDate} at ${foodOrderTime}. Service: ${foodServiceLabel}.`,
+                  )}
                   target="_blank"
                   rel="noreferrer"
                 >

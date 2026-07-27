@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { conferenceEnquiries, conferencePackages } from "@/db/schema";
 import { jsonError } from "@/lib/format";
@@ -102,8 +102,16 @@ export async function GET() {
     const packages = await db
       .select()
       .from(conferencePackages)
-      .where(eq(conferencePackages.isActive, true));
-    return Response.json({ packages });
+      .where(eq(conferencePackages.isActive, true))
+      .orderBy(asc(conferencePackages.displayOrder), asc(conferencePackages.name));
+    return Response.json(
+      { packages },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
+    );
   } catch {
     return jsonError("Unable to load conference packages.", 500);
   }

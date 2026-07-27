@@ -87,3 +87,39 @@ export async function PATCH(
     return jsonError("Could not update package.", 500);
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const user = await requireAdmin(["administrator", "content_manager"]);
+    if (!canManageContent(user.roleKey)) return jsonError("Forbidden", 403);
+    const id = Number((await context.params).id);
+    if (!Number.isFinite(id)) return jsonError("Invalid package id.", 400);
+
+    const db = getDb();
+    const [existing] = await db
+      .select()
+      .from(conferencePackages)
+      .where(eq(conferencePackages.id, id))
+      .limit(1);
+    if (!existing) return jsonError("Package not found.", 404);
+
+    await db.delete(conferencePackages).where(eq(conferencePackages.id, id));
+
+    await writeAuditLog({
+      adminUserId: user.id,
+      action: "conference.package_deleted",
+      entityType: "conference_package",
+      entityId: id,
+      details: { name: existing.name },
+    });
+
+    return Response.json({ ok: true });
+  } catch (error) {
+    if (error instanceof AuthError) return jsonError(error.message, error.status);
+    console.error(error);
+    return jsonError("Could not delete package.", 500);
+  }
+}

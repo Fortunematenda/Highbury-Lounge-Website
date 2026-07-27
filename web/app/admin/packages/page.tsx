@@ -17,8 +17,7 @@ export default async function PackagesPage() {
     <div className="admin-page">
       <h1>Conference packages</h1>
       <p className="page-sub">
-        Edit package names and descriptions in each language. Pricing and capacity
-        stay shared.
+        Add, edit, or remove venues shown on the website. Upload images and translations per language.
       </p>
       <PackagesManager packages={rows} />
     </div>

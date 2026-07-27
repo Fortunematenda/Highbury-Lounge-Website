@@ -9,7 +9,8 @@ import {
 } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { todayISODate } from "@/lib/availability";
-import { formatDate, formatMoney, statusColor } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
+import { RecentBookingsList } from "./page-recent-bookings";
 
 export const dynamic = "force-dynamic";
 
@@ -182,51 +183,7 @@ export default async function AdminDashboardPage() {
           <h2>Recent bookings</h2>
           <Link href="/admin/bookings">All bookings</Link>
         </div>
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Reference</th>
-                <th>Guest</th>
-                <th>Room</th>
-                <th>Dates</th>
-                <th>Total</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.length === 0 ? (
-                <tr>
-                  <td colSpan={6}>No bookings yet.</td>
-                </tr>
-              ) : (
-                recent.map((b) => (
-                  <tr key={b.id}>
-                    <td>
-                      <Link href={`/admin/bookings/${b.id}`}>{b.reference}</Link>
-                    </td>
-                    <td>
-                      {b.firstName} {b.lastName}
-                    </td>
-                    <td>{b.roomName}</td>
-                    <td>
-                      {formatDate(b.checkIn)} – {formatDate(b.checkOut)}
-                    </td>
-                    <td>{formatMoney(b.totalAmount, b.currency)}</td>
-                    <td>
-                      <span
-                        className="admin-badge"
-                        style={{ background: statusColor(b.status) }}
-                      >
-                        {b.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <RecentBookingsList rows={recent} />
       </section>
 
       <div className="admin-two-col">

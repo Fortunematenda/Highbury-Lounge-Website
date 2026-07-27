@@ -55,7 +55,7 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch("/api/menu");
+        const res = await fetch("/api/menu", { cache: "no-store" });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || t("validation.tryAgain"));
         if (!cancelled) setCategories(data.categories ?? []);

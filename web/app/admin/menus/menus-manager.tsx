@@ -5,6 +5,10 @@ import {
   AdminLangTabs,
   buildTranslationDraft,
 } from "@/app/admin/components/AdminLangTabs";
+import {
+  AdminClickableRow,
+  AdminRowActions,
+} from "@/app/admin/components/AdminRowActions";
 import { formatMoney } from "@/lib/format";
 import {
   stringifyTranslations,
@@ -1430,9 +1434,12 @@ export function MenusManager() {
                   </thead>
                   <tbody>
                     {activeCategories.map((c, idx) => (
-                      <tr key={c.id}>
+                      <AdminClickableRow
+                        key={c.id}
+                        onOpen={() => openEditCategory(c)}
+                      >
                         <td>
-                          <div className="admin-actions">
+                          <div className="admin-actions" data-row-actions>
                             <button
                               type="button"
                               className="admin-btn ghost"
@@ -1471,46 +1478,39 @@ export function MenusManager() {
                           </span>
                         </td>
                         <td>
-                          <div className="admin-actions">
-                            <button
-                              type="button"
-                              className="admin-btn secondary"
-                              onClick={() => openEditCategory(c)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="admin-btn ghost"
-                              onClick={() =>
-                                setConfirm({
-                                  title: "Archive category",
-                                  message: `Archive “${c.name}”? It will be hidden from active lists.`,
-                                  confirmLabel: "Archive",
-                                  onConfirm: () => archiveCategory(c.id),
-                                })
-                              }
-                            >
-                              Archive
-                            </button>
-                            <button
-                              type="button"
-                              className="admin-btn danger"
-                              onClick={() =>
-                                setConfirm({
-                                  title: "Delete category",
-                                  message: `Permanently delete “${c.name}”? This only works if it has no items.`,
-                                  confirmLabel: "Delete",
-                                  danger: true,
-                                  onConfirm: () => deleteCategory(c.id),
-                                })
-                              }
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          <AdminRowActions
+                            label={`Actions for ${c.name}`}
+                            actions={[
+                              {
+                                label: "Edit",
+                                onClick: () => openEditCategory(c),
+                              },
+                              {
+                                label: "Archive",
+                                onClick: () =>
+                                  setConfirm({
+                                    title: "Archive category",
+                                    message: `Archive “${c.name}”? It will be hidden from active lists.`,
+                                    confirmLabel: "Archive",
+                                    onConfirm: () => archiveCategory(c.id),
+                                  }),
+                              },
+                              {
+                                label: "Delete",
+                                danger: true,
+                                onClick: () =>
+                                  setConfirm({
+                                    title: "Delete category",
+                                    message: `Permanently delete “${c.name}”? This only works if it has no items.`,
+                                    confirmLabel: "Delete",
+                                    danger: true,
+                                    onConfirm: () => deleteCategory(c.id),
+                                  }),
+                              },
+                            ]}
+                          />
                         </td>
-                      </tr>
+                      </AdminClickableRow>
                     ))}
                   </tbody>
                 </table>
@@ -1609,7 +1609,10 @@ export function MenusManager() {
                   </thead>
                   <tbody>
                     {items.map((item) => (
-                      <tr key={item.id}>
+                      <AdminClickableRow
+                        key={item.id}
+                        onOpen={() => void openEditItem(item)}
+                      >
                         <td>
                           <div className="menu-thumb sm">
                             {thumbUrl(item) ? (
@@ -1656,114 +1659,79 @@ export function MenusManager() {
                         </td>
                         <td>{item.isFeatured ? "Yes" : "—"}</td>
                         <td>
-                          <div className="menu-actions">
-                            <button
-                              type="button"
-                              className="admin-btn secondary"
-                              onClick={() =>
-                                setActionsOpenId(
-                                  actionsOpenId === item.id ? null : item.id,
-                                )
-                              }
-                            >
-                              Actions
-                            </button>
-                            {actionsOpenId === item.id ? (
-                              <div className="menu-actions-menu">
-                                <button
-                                  type="button"
-                                  onClick={() => void openEditItem(item)}
-                                >
-                                  Edit
-                                </button>
-                                {tab === "archived" ? (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      void runItemAction(item.id, "restore")
-                                    }
-                                  >
-                                    Restore
-                                  </button>
-                                ) : (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
+                          <AdminRowActions
+                            label={`Actions for ${item.name}`}
+                            actions={[
+                              {
+                                label: "Edit",
+                                onClick: () => void openEditItem(item),
+                              },
+                              ...(tab === "archived"
+                                ? [
+                                    {
+                                      label: "Restore",
+                                      onClick: () =>
+                                        void runItemAction(item.id, "restore"),
+                                    },
+                                  ]
+                                : [
+                                    {
+                                      label: "Toggle available",
+                                      onClick: () =>
                                         void runItemAction(
                                           item.id,
                                           "toggle_available",
-                                        )
-                                      }
-                                    >
-                                      Toggle available
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
+                                        ),
+                                    },
+                                    {
+                                      label: "Toggle active",
+                                      onClick: () =>
                                         void runItemAction(
                                           item.id,
                                           "toggle_active",
-                                        )
-                                      }
-                                    >
-                                      Toggle active
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
+                                        ),
+                                    },
+                                    {
+                                      label: "Toggle featured",
+                                      onClick: () =>
                                         void runItemAction(
                                           item.id,
                                           "toggle_featured",
-                                        )
-                                      }
-                                    >
-                                      Toggle featured
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        void runItemAction(item.id, "duplicate")
-                                      }
-                                    >
-                                      Duplicate
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
+                                        ),
+                                    },
+                                    {
+                                      label: "Duplicate",
+                                      onClick: () =>
+                                        void runItemAction(item.id, "duplicate"),
+                                    },
+                                    {
+                                      label: "Archive",
+                                      onClick: () =>
                                         setConfirm({
                                           title: "Archive item",
                                           message: `Archive “${item.name}”? It will be hidden from the public menu.`,
                                           confirmLabel: "Archive",
                                           onConfirm: () =>
                                             runItemAction(item.id, "archive"),
-                                        })
-                                      }
-                                    >
-                                      Archive
-                                    </button>
-                                  </>
-                                )}
-                                <button
-                                  type="button"
-                                  className="danger"
-                                  onClick={() =>
-                                    setConfirm({
-                                      title: "Delete item",
-                                      message: `Permanently delete “${item.name}”? Linked booking extras will block this.`,
-                                      confirmLabel: "Delete",
-                                      danger: true,
-                                      onConfirm: () => deleteItem(item.id),
-                                    })
-                                  }
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            ) : null}
-                          </div>
+                                        }),
+                                    },
+                                  ]),
+                              {
+                                label: "Delete",
+                                danger: true,
+                                onClick: () =>
+                                  setConfirm({
+                                    title: "Delete item",
+                                    message: `Permanently delete “${item.name}”? Linked booking extras will block this.`,
+                                    confirmLabel: "Delete",
+                                    danger: true,
+                                    onConfirm: () => deleteItem(item.id),
+                                  }),
+                              },
+                            ]}
+                          />
                         </td>
-                      </tr>
+                      </AdminClickableRow>
                     ))}
                   </tbody>
                 </table>

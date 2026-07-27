@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { asc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomTypes } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
-import { formatMoney } from "@/lib/format";
+import { RoomsList } from "./rooms-list";
 
 export const dynamic = "force-dynamic";
 
@@ -26,41 +26,7 @@ export default async function AdminRoomsPage() {
           Add room type
         </Link>
       </header>
-      <section className="admin-card">
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Inventory</th>
-                <th>Max guests</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.name}</td>
-                  <td>
-                    {formatMoney(r.promotionalPrice ?? r.pricePerNight)}
-                    {r.promotionalPrice ? (
-                      <small> (list {formatMoney(r.pricePerNight)})</small>
-                    ) : null}
-                  </td>
-                  <td>{r.inventoryCount}</td>
-                  <td>{r.maxGuests}</td>
-                  <td>{r.isActive ? "Active" : "Inactive"}</td>
-                  <td>
-                    <Link href={`/admin/rooms/${r.id}`}>Edit</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <RoomsList rooms={rooms} />
     </div>
   );
 }

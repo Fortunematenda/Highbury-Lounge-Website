@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import {
   amenities,
   conferencePackages,
+  galleryImages,
   menuCategories,
   menuItems,
   roles,
@@ -492,6 +493,22 @@ export async function seedDatabase(options?: {
       displayOrder: foodOrder,
     });
     foodOrder += 1;
+  }
+
+  const existingGallery = await db.select().from(galleryImages).limit(1);
+  if (existingGallery.length === 0) {
+    const defaults = [
+      { imageUrl: "/images/garden.jpg", altText: "Highbury Lounge garden", displayOrder: 1 },
+      { imageUrl: "/images/pool.jpg", altText: "Highbury Lounge swimming pool", displayOrder: 2 },
+      { imageUrl: "/images/family-room.jpg", altText: "Highbury Lounge guest room", displayOrder: 3 },
+      { imageUrl: "/images/events.jpg", altText: "Highbury Lounge event setting", displayOrder: 4 },
+    ];
+    for (const image of defaults) {
+      await db.insert(galleryImages).values({
+        ...image,
+        isActive: true,
+      });
+    }
   }
 
   return {

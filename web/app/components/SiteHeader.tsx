@@ -17,39 +17,6 @@ const NAV = [
   { href: "/#contact", key: "nav.contact" },
 ] as const;
 
-const SEARCH_ROOMS = [
-  {
-    id: "deluxe-double",
-    name: "Highbury Deluxe King",
-    detail: "King bed · 2 guests · Breakfast included",
-  },
-  {
-    id: "executive-twin",
-    name: "Garden Executive Twin",
-    detail: "2 double beds · 4 guests · Garden view",
-  },
-  {
-    id: "classic-queen",
-    name: "Classic Queen Retreat",
-    detail: "Queen bed · 2 guests · Quiet garden wing",
-  },
-  {
-    id: "signature-suite",
-    name: "Highbury Signature Suite",
-    detail: "King bed · Lounge area · Premium breakfast",
-  },
-  {
-    id: "family-garden",
-    name: "Garden Family Residence",
-    detail: "2 double beds · 4 guests · Garden access",
-  },
-  {
-    id: "business-studio",
-    name: "Executive Business Studio",
-    detail: "King bed · Work desk · High-speed Wi-Fi",
-  },
-];
-
 type Props = {
   variant?: "hero" | "solid";
 };
@@ -160,7 +127,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
 
       <div className="header-actions">
         <LanguageSelector variant="header" />
-        <SiteSearch rooms={SEARCH_ROOMS} />
+        <SiteSearch />
         <button
           type="button"
           className="menu-button"

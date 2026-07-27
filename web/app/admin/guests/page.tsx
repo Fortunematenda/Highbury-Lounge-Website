@@ -2,6 +2,7 @@ import { desc, like, or, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { bookingGuests } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
+import { GuestsList } from "./guests-list";
 
 export const dynamic = "force-dynamic";
 
@@ -44,21 +45,7 @@ export default async function AdminGuestsPage({
         <button className="admin-btn" type="submit">Search</button>
       </form>
       <section className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr><th>Name</th><th>Email</th><th>Phone</th><th>Country</th></tr>
-          </thead>
-          <tbody>
-            {guests.map((g) => (
-              <tr key={`${g.email}-${g.phone}`}>
-                <td>{g.firstName} {g.lastName}</td>
-                <td>{g.email}</td>
-                <td>{g.phone}</td>
-                <td>{g.country || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <GuestsList guests={guests} />
       </section>
     </div>
   );

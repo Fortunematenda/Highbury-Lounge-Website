@@ -72,7 +72,11 @@ export async function GET() {
       }))
       .filter((category) => category.items.length > 0);
 
-    return Response.json({ categories: grouped });
+    return Response.json({ categories: grouped }, {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     console.error(error);
     return jsonError("Unable to load menu.", 500);
