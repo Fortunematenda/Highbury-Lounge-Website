@@ -13,6 +13,7 @@ import {
 } from "@/lib/availability";
 import { getSettingsMap } from "@/lib/settings";
 import { queueNotification } from "@/lib/notifications";
+import { createAdminNotification } from "@/lib/admin-notifications";
 
 export type GuestPayload = {
   firstName: string;
@@ -215,6 +216,39 @@ export async function createBooking(input: CreateBookingInput) {
     relatedId: booking.id,
   });
 
+  await createAdminNotification({
+    type: "booking_received",
+    title: "New room booking",
+    message: `${reference} · ${room.name} · ${input.checkIn} to ${input.checkOut}`,
+    entityType: "booking",
+    entityId: booking.id,
+    actionUrl: `/admin/bookings/${booking.id}`,
+  });
+
+  try {
+    const inventory = await db
+      .select({ qty: roomTypes.inventoryCount })
+      .from(roomTypes);
+    const totalRooms = inventory.reduce((s, r) => s + r.qty, 0);
+    const [occupied] = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(bookings)
+      .where(eq(bookings.status, "Checked In"));
+    const occupiedCount = Number(occupied?.value ?? 0);
+    if (totalRooms > 0 && occupiedCount / totalRooms >= 0.85) {
+      await createAdminNotification({
+        type: "room_availability",
+        title: "Room availability warning",
+        message: `${occupiedCount} of ${totalRooms} rooms are currently occupied`,
+        entityType: "room_type",
+        entityId: room.id,
+        actionUrl: "/admin/rooms",
+      });
+    }
+  } catch {
+    /* non-blocking */
+  }
+
   return booking;
 }
 
@@ -280,6 +314,35 @@ export async function updateBookingStatus(params: {
       },
       relatedType: "booking",
       relatedId: booking.id,
+    });
+  }
+
+  if (params.newStatus === "Cancelled" || params.newStatus === "Declined") {
+    await createAdminNotification({
+      type: "booking_cancelled",
+      title: `Booking ${params.newStatus.toLowerCase()}`,
+      message: `${booking.reference} is now ${params.newStatus}`,
+      entityType: "booking",
+      entityId: booking.id,
+      actionUrl: `/admin/bookings/${booking.id}`,
+    });
+  } else if (params.newStatus === "Pending" || params.newStatus === "Awaiting Payment") {
+    await createAdminNotification({
+      type: "booking_confirmation_needed",
+      title: "Booking needs attention",
+      message: `${booking.reference} is ${params.newStatus}`,
+      entityType: "booking",
+      entityId: booking.id,
+      actionUrl: `/admin/bookings/${booking.id}`,
+    });
+  } else {
+    await createAdminNotification({
+      type: "booking_status",
+      title: "Booking status updated",
+      message: `${booking.reference} → ${params.newStatus}`,
+      entityType: "booking",
+      entityId: booking.id,
+      actionUrl: `/admin/bookings/${booking.id}`,
     });
   }
 

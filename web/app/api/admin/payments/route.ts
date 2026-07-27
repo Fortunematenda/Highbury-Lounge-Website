@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { bookings, payments } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit";
 import { jsonError } from "@/lib/format";
+import { createAdminNotification } from "@/lib/admin-notifications";
 
 export async function GET() {
   try {
@@ -94,6 +95,15 @@ export async function POST(request: Request) {
       entityType: "payment",
       entityId: row.id,
       details: { bookingId, amount, method },
+    });
+
+    await createAdminNotification({
+      type: "booking_payment",
+      title: "Payment recorded",
+      message: `${booking.reference} · ${method} · ${paymentStatus}`,
+      entityType: "booking",
+      entityId: bookingId,
+      actionUrl: `/admin/bookings/${bookingId}`,
     });
 
     return Response.json({ ok: true, payment: row }, { status: 201 });

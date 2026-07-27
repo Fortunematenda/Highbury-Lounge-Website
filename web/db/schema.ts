@@ -537,3 +537,28 @@ export const galleryImages = sqliteTable(
     index("gallery_images_active_idx").on(t.isActive),
   ],
 );
+
+/** In-app admin notifications (separate from guest email notifications). */
+export const adminNotifications = sqliteTable(
+  "admin_notifications",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    adminUserId: integer("admin_user_id").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    entityType: text("entity_type"),
+    entityId: integer("entity_id"),
+    actionUrl: text("action_url"),
+    isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+    readAt: text("read_at"),
+    ...timestamps,
+  },
+  (t) => [
+    index("admin_notifications_read_idx").on(t.isRead),
+    index("admin_notifications_created_idx").on(t.createdAt),
+    index("admin_notifications_user_idx").on(t.adminUserId),
+  ],
+);

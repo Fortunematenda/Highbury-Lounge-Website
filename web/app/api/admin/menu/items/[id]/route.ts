@@ -183,6 +183,19 @@ export async function PATCH(
         entityId: id,
         details: { isAvailable: next },
       });
+      if (!next) {
+        const { createAdminNotification } = await import(
+          "@/lib/admin-notifications"
+        );
+        await createAdminNotification({
+          type: "menu_unavailable",
+          title: "Menu item marked unavailable",
+          message: `${existing.name} is no longer available to guests`,
+          entityType: "menu_item",
+          entityId: id,
+          actionUrl: "/admin/menus",
+        });
+      }
       return Response.json({ ok: true });
     }
 

@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { conferenceEnquiries, conferencePackages } from "@/db/schema";
 import { jsonError } from "@/lib/format";
 import { queueNotification } from "@/lib/notifications";
+import { createAdminNotification } from "@/lib/admin-notifications";
 
 function enquiryReference() {
   return `CE-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 1000)
@@ -88,6 +89,15 @@ export async function POST(request: Request) {
       },
       relatedType: "conference_enquiry",
       relatedId: enquiry.id,
+    });
+
+    await createAdminNotification({
+      type: "conference_request",
+      title: "New conference request",
+      message: `${reference} · ${contactName} · ${preferredDate} · ${attendees} guests`,
+      entityType: "conference_enquiry",
+      entityId: enquiry.id,
+      actionUrl: `/admin/conference/${enquiry.id}`,
     });
 
     return Response.json({ ok: true, enquiry: { id: enquiry.id, reference } }, { status: 201 });

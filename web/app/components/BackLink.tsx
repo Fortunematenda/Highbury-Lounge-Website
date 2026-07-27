@@ -39,11 +39,8 @@ export function BackLink({
 
 /** Resolve a sensible parent path for admin nested routes. */
 export function adminBackHref(pathname: string | null | undefined): string | null {
-  if (!pathname || pathname === "/admin/login") {
+  if (!pathname || pathname === "/admin/login" || pathname === "/admin") {
     return null;
-  }
-  if (pathname === "/admin") {
-    return "/";
   }
 
   const segments = pathname.split("/").filter(Boolean);
@@ -59,6 +56,5 @@ export function adminBackHref(pathname: string | null | undefined): string | nul
 }
 
 export function adminBackLabel(pathname: string | null | undefined): string {
-  if (pathname === "/admin") return "Back to website";
   return "Back";
 }
