@@ -3265,6 +3265,8 @@ textarea.admin-textarea-fixed {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .detail-breadcrumbs ol {
@@ -3327,6 +3329,8 @@ textarea.admin-textarea-fixed {
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 24px;
   align-items: start;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .detail-page-grid.is-single {
@@ -4120,16 +4124,33 @@ textarea.admin-textarea-fixed {
   z-index: 5;
   margin: 0 0 16px;
   padding: 4px 0 8px;
+  max-width: 100%;
+  min-width: 0;
   background: linear-gradient(180deg, var(--admin-page) 70%, transparent);
+}
+
+.pms-tabs-scroller {
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 14px;
+  background: #efeaea;
+  overflow: hidden;
 }
 
 .pms-tabs {
   display: flex;
+  flex-wrap: nowrap;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scroll-snap-type: x proximity;
   padding: 4px;
-  border-radius: 14px;
-  background: #efeaea;
   scrollbar-width: none;
 }
 
@@ -4150,7 +4171,9 @@ textarea.admin-textarea-fixed {
   color: #6b5a62;
   font-size: 13px;
   font-weight: 650;
+  white-space: nowrap;
   cursor: pointer;
+  scroll-snap-align: center;
   transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
@@ -4239,5 +4262,41 @@ textarea.admin-textarea-fixed {
 
   .detail-section-head .pms-lang-chips {
     width: 100%;
+  }
+
+  .pms-tabs-sticky {
+    top: calc(56px + env(safe-area-inset-top, 0px));
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+
+  .pms-tabs {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .pms-tab {
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 12.5px;
+  }
+
+  .pms-room-hero-media,
+  .pms-room-hero-media img {
+    min-height: 140px;
+    height: 140px;
+  }
+
+  .detail-page-title-row h1 {
+    font-size: 22px;
+  }
+
+  .detail-page-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .detail-page-header-actions {
+    justify-content: stretch;
   }
 }

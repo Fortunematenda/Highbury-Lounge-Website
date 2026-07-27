@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 export function PmsPageHeader({
   title,
@@ -119,24 +119,39 @@ export function PmsTabs({
   value: string;
   onChange: (id: string) => void;
 }) {
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = listRef.current;
+    if (!root) return;
+    const active = root.querySelector<HTMLButtonElement>(".pms-tab.is-active");
+    active?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [value]);
+
   return (
-    <div className="pms-tabs" role="tablist">
-      {tabs.map((tab) => {
-        const active = tab.id === value;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            className={`pms-tab${active ? " is-active" : ""}`}
-            onClick={() => onChange(tab.id)}
-          >
-            {tab.icon ? <tab.icon size={15} aria-hidden /> : null}
-            {tab.label}
-          </button>
-        );
-      })}
+    <div className="pms-tabs-scroller">
+      <div ref={listRef} className="pms-tabs" role="tablist">
+        {tabs.map((tab) => {
+          const active = tab.id === value;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`pms-tab${active ? " is-active" : ""}`}
+              onClick={() => onChange(tab.id)}
+            >
+              {tab.icon ? <tab.icon size={15} aria-hidden /> : null}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
