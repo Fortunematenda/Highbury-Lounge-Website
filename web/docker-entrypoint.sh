@@ -20,6 +20,16 @@ export WRANGLER_SEND_METRICS=false
 # Keep admin sessions working on plain HTTP unless explicitly enabled.
 export COOKIE_SECURE="${COOKIE_SECURE:-false}"
 
+# Apply pending D1 migrations against the same persist path the app uses.
+# Missing tables (e.g. food_orders) cause opaque Server Component errors in prod.
+if [ -f wrangler.migrate.toml ] && [ -d drizzle ]; then
+  echo "Applying local D1 migrations..."
+  npx wrangler d1 migrations apply highbury-lounge-d1 --local \
+    --config wrangler.migrate.toml \
+    --persist-to .wrangler/state \
+    || echo "WARNING: D1 migration apply failed — check logs; app will still start."
+fi
+
 exec npx wrangler dev \
   --config dist/server/wrangler.json \
   --local \

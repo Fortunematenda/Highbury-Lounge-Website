@@ -320,56 +320,79 @@ export async function GET(request: Request) {
       .where(eq(payments.status, "Paid"));
     const paidAmount = paymentRevenue.reduce((s, p) => s + (p.amount || 0), 0);
 
-    const [foodPreordersRow] = await db
-      .select({ value: sql<number>`count(*)` })
-      .from(foodOrders);
-    const foodPreorders = Number(foodPreordersRow?.value ?? 0);
+    let foodPreorders = 0;
+    let pendingFoodOrders = 0;
+    let preparingFoodOrders = 0;
+    let readyFoodOrders = 0;
+    let recentFoodOrders: Array<{
+      id: number;
+      reference: string;
+      status: string;
+      guestName: string | null;
+      totalAmount: number;
+      currency: string;
+      createdAt: string;
+    }> = [];
+    const preorderTrendMap = new Map(
+      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+    );
 
-    const [pendingFood] = await db
-      .select({ value: sql<number>`count(*)` })
-      .from(foodOrders)
-      .where(eq(foodOrders.status, "Pending"));
-    const [preparingFood] = await db
-      .select({ value: sql<number>`count(*)` })
-      .from(foodOrders)
-      .where(eq(foodOrders.status, "Preparing"));
-    const [readyFood] = await db
-      .select({ value: sql<number>`count(*)` })
-      .from(foodOrders)
-      .where(eq(foodOrders.status, "Ready"));
+    try {
+      const [foodPreordersRow] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(foodOrders);
+      foodPreorders = Number(foodPreordersRow?.value ?? 0);
+
+      const [pendingFood] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(foodOrders)
+        .where(eq(foodOrders.status, "Pending"));
+      pendingFoodOrders = Number(pendingFood?.value ?? 0);
+
+      const [preparingFood] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(foodOrders)
+        .where(eq(foodOrders.status, "Preparing"));
+      preparingFoodOrders = Number(preparingFood?.value ?? 0);
+
+      const [readyFood] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(foodOrders)
+        .where(eq(foodOrders.status, "Ready"));
+      readyFoodOrders = Number(readyFood?.value ?? 0);
+
+      const foodPeriod = await db
+        .select({ createdAt: foodOrders.createdAt })
+        .from(foodOrders)
+        .where(gte(foodOrders.createdAt, since));
+      for (const row of foodPeriod) {
+        const day = String(row.createdAt).slice(0, 10);
+        if (preorderTrendMap.has(day)) {
+          preorderTrendMap.set(day, (preorderTrendMap.get(day) ?? 0) + 1);
+        }
+      }
+
+      recentFoodOrders = await db
+        .select({
+          id: foodOrders.id,
+          reference: foodOrders.reference,
+          status: foodOrders.status,
+          guestName: foodOrders.guestName,
+          totalAmount: foodOrders.totalAmount,
+          currency: foodOrders.currency,
+          createdAt: foodOrders.createdAt,
+        })
+        .from(foodOrders)
+        .orderBy(desc(foodOrders.createdAt))
+        .limit(6);
+    } catch (err) {
+      console.error("Dashboard food order metrics skipped", err);
+    }
 
     const [todayBookingsRow] = await db
       .select({ value: sql<number>`count(*)` })
       .from(bookings)
       .where(sql`date(${bookings.createdAt}) = ${today}`);
-
-    const foodPeriod = await db
-      .select({ createdAt: foodOrders.createdAt })
-      .from(foodOrders)
-      .where(gte(foodOrders.createdAt, since));
-    const preorderTrendMap = new Map(
-      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
-    );
-    for (const row of foodPeriod) {
-      const day = String(row.createdAt).slice(0, 10);
-      if (preorderTrendMap.has(day)) {
-        preorderTrendMap.set(day, (preorderTrendMap.get(day) ?? 0) + 1);
-      }
-    }
-
-    const recentFoodOrders = await db
-      .select({
-        id: foodOrders.id,
-        reference: foodOrders.reference,
-        status: foodOrders.status,
-        guestName: foodOrders.guestName,
-        totalAmount: foodOrders.totalAmount,
-        currency: foodOrders.currency,
-        createdAt: foodOrders.createdAt,
-      })
-      .from(foodOrders)
-      .orderBy(desc(foodOrders.createdAt))
-      .limit(6);
 
     const recent = await db
       .select({
@@ -443,9 +466,9 @@ export async function GET(request: Request) {
         revenue,
         conferenceRequests: Number(conferenceCount?.value ?? 0),
         foodPreorders,
-        pendingFoodOrders: Number(pendingFood?.value ?? 0),
-        preparingFoodOrders: Number(preparingFood?.value ?? 0),
-        readyFoodOrders: Number(readyFood?.value ?? 0),
+        pendingFoodOrders,
+        preparingFoodOrders,
+        readyFoodOrders,
         todayBookings: Number(todayBookingsRow?.value ?? 0),
         occupiedRooms: occupiedUnits,
         maintenanceRooms: maintenanceUnits,

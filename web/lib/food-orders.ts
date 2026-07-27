@@ -315,90 +315,101 @@ export async function updateFoodOrderStatus(params: {
 }
 
 export async function getFoodOrderDetail(foodOrderId: number) {
-  const db = getDb();
-  const [order] = await db
-    .select()
-    .from(foodOrders)
-    .where(eq(foodOrders.id, foodOrderId))
-    .limit(1);
-  if (!order) return null;
-
-  const items = await db
-    .select()
-    .from(foodOrderItems)
-    .where(eq(foodOrderItems.foodOrderId, foodOrderId));
-
-  let booking: {
-    id: number;
-    reference: string;
-    status: string;
-    roomName: string | null;
-  } | null = null;
-
-  if (order.bookingId != null) {
-    const [row] = await db
-      .select({
-        id: bookings.id,
-        reference: bookings.reference,
-        status: bookings.status,
-        roomName: roomTypes.name,
-      })
-      .from(bookings)
-      .leftJoin(roomTypes, eq(bookings.roomTypeId, roomTypes.id))
-      .where(eq(bookings.id, order.bookingId))
+  try {
+    const db = getDb();
+    const [order] = await db
+      .select()
+      .from(foodOrders)
+      .where(eq(foodOrders.id, foodOrderId))
       .limit(1);
-    booking = row ?? null;
-  }
+    if (!order) return null;
 
-  return { order, items, booking };
+    const items = await db
+      .select()
+      .from(foodOrderItems)
+      .where(eq(foodOrderItems.foodOrderId, foodOrderId));
+
+    let booking: {
+      id: number;
+      reference: string;
+      status: string;
+      roomName: string | null;
+    } | null = null;
+
+    if (order.bookingId != null) {
+      const [row] = await db
+        .select({
+          id: bookings.id,
+          reference: bookings.reference,
+          status: bookings.status,
+          roomName: roomTypes.name,
+        })
+        .from(bookings)
+        .leftJoin(roomTypes, eq(bookings.roomTypeId, roomTypes.id))
+        .where(eq(bookings.id, order.bookingId))
+        .limit(1);
+      booking = row ?? null;
+    }
+
+    return { order, items, booking };
+  } catch (err) {
+    console.error("getFoodOrderDetail failed", err);
+    return null;
+  }
 }
 
 export async function getFoodOrderForBooking(bookingId: number) {
-  const db = getDb();
-  const [order] = await db
-    .select()
-    .from(foodOrders)
-    .where(eq(foodOrders.bookingId, bookingId))
-    .limit(1);
-  if (!order) {
-    const extras = await db
+  try {
+    const db = getDb();
+    const [order] = await db
       .select()
-      .from(bookingExtras)
-      .where(eq(bookingExtras.bookingId, bookingId));
-    if (!extras.length) return null;
+      .from(foodOrders)
+      .where(eq(foodOrders.bookingId, bookingId))
+      .limit(1);
+    if (!order) {
+      const extras = await db
+        .select()
+        .from(bookingExtras)
+        .where(eq(bookingExtras.bookingId, bookingId));
+      if (!extras.length) return null;
+      return {
+        order: null as typeof foodOrders.$inferSelect | null,
+        items: extras.map((e) => ({
+          id: e.id,
+          foodOrderId: e.foodOrderId,
+          menuItemId: e.menuItemId,
+          name: e.name,
+          quantity: e.quantity,
+          unitPrice: e.unitPrice,
+          totalPrice: e.totalPrice,
+          specialInstructions: e.specialInstructions,
+          imageUrl: e.imageUrl,
+        })),
+        specialInstructions: null as string | null,
+        status: "Pending" as FoodOrderStatus,
+        reference: null as string | null,
+        totalAmount: extras.reduce((s, e) => s + e.totalPrice, 0),
+        currency: "USD",
+      };
+    }
+
+    const items = await db
+      .select()
+      .from(foodOrderItems)
+      .where(eq(foodOrderItems.foodOrderId, order.id));
+
     return {
-      order: null as typeof foodOrders.$inferSelect | null,
-      items: extras.map((e) => ({
-        id: e.id,
-        foodOrderId: e.foodOrderId,
-        menuItemId: e.menuItemId,
-        name: e.name,
-        quantity: e.quantity,
-        unitPrice: e.unitPrice,
-        totalPrice: e.totalPrice,
-        specialInstructions: e.specialInstructions,
-        imageUrl: e.imageUrl,
-      })),
-      specialInstructions: null as string | null,
-      status: "Pending" as FoodOrderStatus,
-      reference: null as string | null,
-      totalAmount: extras.reduce((s, e) => s + e.totalPrice, 0),
-      currency: "USD",
+      order,
+      items,
+      specialInstructions: order.specialInstructions,
+      status: order.status as FoodOrderStatus,
+      reference: order.reference,
+      totalAmount: order.totalAmount,
+      currency: order.currency,
     };
+  } catch (err) {
+    // Missing food_orders migration must not crash booking detail RSC.
+    console.error("getFoodOrderForBooking failed", err);
+    return null;
   }
-
-  const items = await db
-    .select()
-    .from(foodOrderItems)
-    .where(eq(foodOrderItems.foodOrderId, order.id));
-
-  return {
-    order,
-    items,
-    specialInstructions: order.specialInstructions,
-    status: order.status as FoodOrderStatus,
-    reference: order.reference,
-    totalAmount: order.totalAmount,
-    currency: order.currency,
-  };
 }

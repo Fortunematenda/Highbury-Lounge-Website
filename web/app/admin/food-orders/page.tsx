@@ -58,60 +58,81 @@ export default async function AdminFoodOrdersPage({
 
   const where = filters.length ? and(...filters) : undefined;
 
-  const rows = await db
-    .select({
-      id: foodOrders.id,
-      reference: foodOrders.reference,
-      status: foodOrders.status,
-      guestName: foodOrders.guestName,
-      totalAmount: foodOrders.totalAmount,
-      currency: foodOrders.currency,
-      createdAt: foodOrders.createdAt,
-      bookingId: foodOrders.bookingId,
-      bookingReference: bookings.reference,
-      bookingStatus: bookings.status,
-      roomName: roomTypes.name,
-    })
-    .from(foodOrders)
-    .leftJoin(bookings, eq(foodOrders.bookingId, bookings.id))
-    .leftJoin(roomTypes, eq(bookings.roomTypeId, roomTypes.id))
-    .where(where)
-    .orderBy(desc(foodOrders.createdAt))
-    .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE);
+  let list: Array<{
+    id: number;
+    reference: string;
+    status: string;
+    guestName: string | null;
+    totalAmount: number;
+    currency: string;
+    createdAt: string;
+    bookingId: number | null;
+    bookingReference: string | null;
+    bookingStatus: string | null;
+    roomName: string | null;
+    itemSummary: string;
+  }> = [];
+  let schemaMissing = false;
 
-  const orderIds = rows.map((r) => r.id);
-  const itemRows =
-    orderIds.length === 0
-      ? []
-      : await db
-          .select({
-            foodOrderId: foodOrderItems.foodOrderId,
-            name: foodOrderItems.name,
-            quantity: foodOrderItems.quantity,
-          })
-          .from(foodOrderItems)
-          .where(
-            sql`${foodOrderItems.foodOrderId} in (${sql.join(
-              orderIds.map((id) => sql`${id}`),
-              sql`, `,
-            )})`,
-          );
+  try {
+    const rows = await db
+      .select({
+        id: foodOrders.id,
+        reference: foodOrders.reference,
+        status: foodOrders.status,
+        guestName: foodOrders.guestName,
+        totalAmount: foodOrders.totalAmount,
+        currency: foodOrders.currency,
+        createdAt: foodOrders.createdAt,
+        bookingId: foodOrders.bookingId,
+        bookingReference: bookings.reference,
+        bookingStatus: bookings.status,
+        roomName: roomTypes.name,
+      })
+      .from(foodOrders)
+      .leftJoin(bookings, eq(foodOrders.bookingId, bookings.id))
+      .leftJoin(roomTypes, eq(bookings.roomTypeId, roomTypes.id))
+      .where(where)
+      .orderBy(desc(foodOrders.createdAt))
+      .limit(PAGE_SIZE)
+      .offset((page - 1) * PAGE_SIZE);
 
-  const itemsByOrder = new Map<number, string>();
-  for (const item of itemRows) {
-    const prev = itemsByOrder.get(item.foodOrderId);
-    const next = `${item.name} x${item.quantity}`;
-    itemsByOrder.set(
-      item.foodOrderId,
-      prev ? `${prev}, ${next}` : next,
-    );
+    const orderIds = rows.map((r) => r.id);
+    const itemRows =
+      orderIds.length === 0
+        ? []
+        : await db
+            .select({
+              foodOrderId: foodOrderItems.foodOrderId,
+              name: foodOrderItems.name,
+              quantity: foodOrderItems.quantity,
+            })
+            .from(foodOrderItems)
+            .where(
+              sql`${foodOrderItems.foodOrderId} in (${sql.join(
+                orderIds.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            );
+
+    const itemsByOrder = new Map<number, string>();
+    for (const item of itemRows) {
+      const prev = itemsByOrder.get(item.foodOrderId);
+      const next = `${item.name} x${item.quantity}`;
+      itemsByOrder.set(
+        item.foodOrderId,
+        prev ? `${prev}, ${next}` : next,
+      );
+    }
+
+    list = rows.map((row) => ({
+      ...row,
+      itemSummary: itemsByOrder.get(row.id) ?? "—",
+    }));
+  } catch (err) {
+    console.error("Admin food orders query failed", err);
+    schemaMissing = true;
   }
-
-  const list = rows.map((row) => ({
-    ...row,
-    itemSummary: itemsByOrder.get(row.id) ?? "—",
-  }));
 
   const bookingStatuses = [
     "Pending",
@@ -134,6 +155,13 @@ export default async function AdminFoodOrdersPage({
           </p>
         </div>
       </header>
+
+      {schemaMissing ? (
+        <div className="admin-error" role="alert">
+          Food order tables are missing. Apply D1 migration{" "}
+          <code>0005_food_orders</code> and reload.
+        </div>
+      ) : null}
 
       <form className="admin-filters" method="get">
         <input
