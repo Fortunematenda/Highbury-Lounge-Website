@@ -6,12 +6,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
+import { toast } from "sonner";
 import {
   DetailFieldGrid,
   DetailPageShell,
   DetailSectionCard,
   DetailStickyActionBar,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
   AdminFormField,
@@ -45,8 +45,6 @@ export function PaymentCreateForm({
   }[];
 }) {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
 
   const form = useForm<FormValues>({
@@ -72,8 +70,6 @@ export function PaymentCreateForm({
 
   async function onSubmit(values: FormValues) {
     setBusy(true);
-    setError("");
-    setSuccess("");
     try {
       const res = await fetch("/api/admin/payments", {
         method: "POST",
@@ -88,14 +84,14 @@ export function PaymentCreateForm({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not record payment");
-      setSuccess("Created successfully.");
+      toast.success("Created");
       reset();
       window.setTimeout(() => {
         router.push("/admin/payments");
         router.refresh();
       }, 700);
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof Error ? err.message : "Could not record payment",
       );
     } finally {
@@ -114,18 +110,6 @@ export function PaymentCreateForm({
       description="Log a manual payment against a booking."
       backAction={{ label: "Back to payments", href: "/admin/payments" }}
     >
-      <UnsavedChangesGuard dirty={isDirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <form
         id="payment-create-form"
         className="detail-form-stack"

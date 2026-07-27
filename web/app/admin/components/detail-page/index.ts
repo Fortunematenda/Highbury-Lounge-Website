@@ -14,7 +14,6 @@ export {
   DetailNotFoundState,
 } from "./DetailStates";
 export { DetailStickyActionBar } from "./DetailStickyActionBar";
-export { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 export type {
   DetailAction,
   DetailBreadcrumb,

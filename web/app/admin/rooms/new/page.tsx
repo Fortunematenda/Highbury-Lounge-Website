@@ -3,13 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon, Save, Settings2, Users, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import {
   DetailFieldGrid,
   DetailFieldSpan,
   DetailPageShell,
   DetailSectionCard,
   DetailStickyActionBar,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
   RoomImageGallery,
@@ -18,8 +18,6 @@ import {
 
 export default function NewRoomPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
@@ -27,8 +25,6 @@ export default function NewRoomPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const payload = Object.fromEntries(fd.entries());
     try {
@@ -58,7 +54,7 @@ export default function NewRoomPage() {
         try {
           await uploadRoomImageFiles(data.room.id, pendingImages);
         } catch (uploadErr) {
-          setError(
+          toast.error(
             uploadErr instanceof Error
               ? `Room created, but image upload failed: ${uploadErr.message}`
               : "Room created, but image upload failed.",
@@ -70,14 +66,12 @@ export default function NewRoomPage() {
         }
       }
 
-      setSuccess("Created successfully.");
+      toast.success("Room created");
       setDirty(false);
-      window.setTimeout(() => {
-        router.push(`/admin/rooms/${data.room.id}`);
-        router.refresh();
-      }, 900);
+      router.push(`/admin/rooms/${data.room.id}`);
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create room");
+      toast.error(err instanceof Error ? err.message : "Could not create room");
     } finally {
       setLoading(false);
     }
@@ -94,18 +88,6 @@ export default function NewRoomPage() {
       description="Create a new room listing with pricing, capacity and photos."
       backAction={{ label: "Back to rooms", href: "/admin/rooms" }}
     >
-      <UnsavedChangesGuard dirty={dirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <form
         className="detail-form-stack"
         onSubmit={onSubmit}

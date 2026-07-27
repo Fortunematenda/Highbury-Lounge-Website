@@ -13,6 +13,7 @@ import { AdminBrandLogo } from "@/app/admin/components/AdminBrandLogo";
 import { AdminGlobalSearch } from "@/app/admin/components/AdminGlobalSearch";
 import { AdminNotificationsBell } from "@/app/admin/components/AdminNotificationsBell";
 import { resolveAdminRouteMeta } from "@/app/admin/lib/admin-route-meta";
+import { Toaster } from "sonner";
 import {
   BarChart3,
   BedDouble,
@@ -395,6 +396,14 @@ export function AdminShell({
           {children}
         </main>
       </div>
+      <Toaster
+        position="top-center"
+        richColors
+        closeButton
+        toastOptions={{
+          className: "admin-toast",
+        }}
+      />
     </div>
   );
 }

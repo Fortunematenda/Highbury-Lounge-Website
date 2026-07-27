@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImageIcon, Save, Settings2, UtensilsCrossed, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import {
   AdminLangTabs,
   buildTranslationDraft,
@@ -23,7 +24,6 @@ import {
   DetailSectionCard,
   DetailStickyActionBar,
   StatusBadge,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
   AdminFormField,
@@ -106,8 +106,6 @@ export function MenuItemForm({
     initial?.imageUrl ?? null,
   );
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const [contentDirty, setContentDirty] = useState(false);
 
@@ -176,12 +174,10 @@ export function MenuItemForm({
 
   async function onSubmit(values: FormValues) {
     setBusy(true);
-    setError("");
-    setSuccess("");
     const en = translations.en ?? {};
     const englishName = (en.name || initial?.name || "").trim();
     if (!englishName) {
-      setError("Enter a product name in English.");
+      toast.error("Enter a product name in English.");
       setBusy(false);
       return;
     }
@@ -236,7 +232,7 @@ export function MenuItemForm({
         }
       }
 
-      setSuccess(mode === "create" ? "Created successfully." : "Saved successfully.");
+      toast.success(mode === "create" ? "Created" : "Saved");
       setContentDirty(false);
       setPendingFiles([]);
       reset(values);
@@ -247,7 +243,7 @@ export function MenuItemForm({
         router.refresh();
       }, 700);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save product");
+      toast.error(err instanceof Error ? err.message : "Could not save product");
     } finally {
       setBusy(false);
     }
@@ -309,18 +305,6 @@ export function MenuItemForm({
         ) : undefined
       }
     >
-      <UnsavedChangesGuard dirty={dirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <form
         id="menu-item-form"
         className="detail-form-stack"

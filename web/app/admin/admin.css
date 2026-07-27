@@ -3521,6 +3521,15 @@ textarea.admin-textarea-fixed {
   background: rgba(42, 18, 32, 0.92);
   color: #fff;
   box-shadow: 0 12px 28px rgba(24, 10, 16, 0.24);
+  width: fit-content;
+  max-width: calc(100% - 8px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.detail-sticky-bar.is-actions-only {
+  justify-content: flex-end;
+  padding: 10px 12px;
 }
 
 .detail-sticky-bar p {
@@ -3533,6 +3542,30 @@ textarea.admin-textarea-fixed {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  width: auto;
+}
+
+.detail-sticky-bar-actions .admin-btn {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.detail-sticky-bar .admin-btn.ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+}
+
+.detail-sticky-bar .admin-btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.detail-sticky-bar .admin-btn:not(.ghost):not(.danger):not(.secondary) {
+  background: #fff;
+  color: #2a1220;
+  border-color: #fff;
 }
 
 .detail-state-card {
@@ -3626,17 +3659,20 @@ textarea.admin-textarea-fixed {
   }
 
   .detail-sticky-bar {
-    left: 12px;
-    right: 12px;
+    left: auto;
+    right: auto;
     bottom: max(12px, env(safe-area-inset-bottom));
+    width: fit-content;
+    max-width: calc(100% - 24px);
   }
 
   .detail-sticky-bar-actions {
-    width: 100%;
+    width: auto;
   }
 
   .detail-sticky-bar-actions .admin-btn {
-    flex: 1;
+    flex: 0 0 auto;
+    width: auto;
   }
 }
 

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ImageIcon, Save, Settings2, Trash2, Users, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import {
   AdminLangTabs,
   buildTranslationDraft,
@@ -23,7 +24,6 @@ import {
   DetailSectionCard,
   DetailStickyActionBar,
   StatusBadge,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
   AdminFormField,
@@ -91,8 +91,6 @@ export function PackageForm({
     initial?.imageUrl ?? null,
   );
   const [pendingCover, setPendingCover] = useState<File[]>([]);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -151,12 +149,10 @@ export function PackageForm({
 
   async function onSubmit(values: FormValues) {
     setBusy(true);
-    setError("");
-    setSuccess("");
     const en = translations.en ?? {};
     const englishName = (en.name || initial?.name || "").trim();
     if (!englishName) {
-      setError("Enter a package name in English.");
+      toast.error("Enter a package name in English.");
       setBusy(false);
       return;
     }
@@ -211,7 +207,7 @@ export function PackageForm({
         }
       }
 
-      setSuccess(mode === "create" ? "Created successfully." : "Saved successfully.");
+      toast.success(mode === "create" ? "Created" : "Saved");
       setContentDirty(false);
       setPendingCover([]);
       reset(values);
@@ -222,7 +218,7 @@ export function PackageForm({
         router.refresh();
       }, 700);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save package");
+      toast.error(err instanceof Error ? err.message : "Could not save package");
     } finally {
       setBusy(false);
     }
@@ -244,10 +240,11 @@ export function PackageForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not delete package");
+      toast.success("Deleted");
       router.push("/admin/packages");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete package");
+      toast.error(err instanceof Error ? err.message : "Could not delete package");
     } finally {
       setDeleting(false);
     }
@@ -302,18 +299,6 @@ export function PackageForm({
         ) : undefined
       }
     >
-      <UnsavedChangesGuard dirty={dirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <form
         id="package-form"
         className="detail-form-stack"

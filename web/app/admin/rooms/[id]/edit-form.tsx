@@ -27,7 +27,6 @@ import {
   DetailSectionCard,
   DetailStickyActionBar,
   StatusBadge,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import { RoomImageGallery } from "@/app/admin/rooms/room-image-field";
 import {
@@ -35,6 +34,7 @@ import {
   type ContentTranslations,
 } from "@/lib/i18n/content";
 import type { AppLocale } from "@/lib/i18n/locales";
+import { toast } from "sonner";
 
 type Room = {
   id: number;
@@ -99,8 +99,6 @@ export function EditRoomForm({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabId>("overview");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -142,14 +140,12 @@ export function EditRoomForm({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
     const fd = new FormData(e.currentTarget);
     const payload = Object.fromEntries(fd.entries());
     const en = translations.en ?? {};
     const englishName = (en.name || room.name).trim();
     if (!englishName) {
-      setError("Enter a room name in English.");
+      toast.error("Enter a room name in English.");
       setTab("overview");
       setLoading(false);
       return;
@@ -188,32 +184,35 @@ export function EditRoomForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save room");
-      setSuccess("Saved successfully.");
+      toast.success("Room saved");
       setDirty(false);
-      window.setTimeout(() => setSuccess(""), 3500);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save room");
+      toast.error(err instanceof Error ? err.message : "Could not save room");
     } finally {
       setLoading(false);
     }
   }
 
   async function deactivate() {
-    if (!window.confirm(`Deactivate “${room.name}”? Guests will no longer see it.`)) {
+    if (
+      !window.confirm(
+        `Deactivate “${room.name}”? Guests will no longer see it.`,
+      )
+    ) {
       return;
     }
     setDeactivating(true);
-    setError("");
     try {
       const res = await fetch(`/api/admin/rooms/${room.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not deactivate room");
+        toast.error(data.error || "Could not deactivate room");
         return;
       }
+      toast.success("Room deactivated");
       setDirty(false);
       router.push("/admin/rooms");
       router.refresh();
@@ -315,18 +314,6 @@ export function EditRoomForm({
         </>
       }
     >
-      <UnsavedChangesGuard dirty={dirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <div className="pms-tabs-sticky">
         <PmsTabs
           tabs={[...TABS]}

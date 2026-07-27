@@ -4,7 +4,7 @@ import { DetailActionButton } from "./DetailActionButton";
 import type { DetailAction } from "./types";
 
 export function DetailStickyActionBar({
-  message = "You have unsaved changes",
+  message,
   visible,
   primaryAction,
   cancelAction,
@@ -16,12 +16,18 @@ export function DetailStickyActionBar({
 }) {
   if (!visible) return null;
   return (
-    <div className="detail-sticky-bar" role="status">
-      <p>{message}</p>
+    <div
+      className={`detail-sticky-bar${message ? "" : " is-actions-only"}`}
+      role="status"
+    >
+      {message ? <p>{message}</p> : null}
       <div className="detail-sticky-bar-actions">
         {cancelAction ? <DetailActionButton action={cancelAction} /> : null}
         <DetailActionButton
-          action={{ ...primaryAction, variant: primaryAction.variant ?? "primary" }}
+          action={{
+            ...primaryAction,
+            variant: primaryAction.variant ?? "primary",
+          }}
         />
       </div>
     </div>

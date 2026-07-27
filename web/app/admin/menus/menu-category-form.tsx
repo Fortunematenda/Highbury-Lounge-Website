@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FolderTree, Save, Settings2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   AdminLangTabs,
   buildTranslationDraft,
@@ -16,7 +17,6 @@ import {
   DetailSectionCard,
   DetailStickyActionBar,
   StatusBadge,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
   AdminFormField,
@@ -79,8 +79,6 @@ export function MenuCategoryForm({
       : { en: { name: "", description: "" } },
   );
   const [slugManual, setSlugManual] = useState(mode === "edit");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
   const [contentDirty, setContentDirty] = useState(false);
 
@@ -133,12 +131,10 @@ export function MenuCategoryForm({
 
   async function onSubmit(values: FormValues) {
     setBusy(true);
-    setError("");
-    setSuccess("");
     const en = translations.en ?? {};
     const englishName = (en.name || initial?.name || "").trim();
     if (!englishName) {
-      setError("Enter a category name in English.");
+      toast.error("Enter a category name in English.");
       setBusy(false);
       return;
     }
@@ -173,9 +169,7 @@ export function MenuCategoryForm({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not save category");
 
-      setSuccess(
-        mode === "create" ? "Created successfully." : "Saved successfully.",
-      );
+      toast.success(mode === "create" ? "Created" : "Saved");
       setContentDirty(false);
       reset(values);
       const categoryId = data.category?.id ?? initial?.id;
@@ -188,7 +182,7 @@ export function MenuCategoryForm({
         }
       }, 600);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save category.");
+      toast.error(err instanceof Error ? err.message : "Could not save category.");
     } finally {
       setBusy(false);
     }
@@ -220,18 +214,6 @@ export function MenuCategoryForm({
       }
       backAction={{ label: "Back to menus", href: "/admin/menus" }}
     >
-      <UnsavedChangesGuard dirty={dirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <form
         id="menu-category-form"
         className="detail-form-stack"

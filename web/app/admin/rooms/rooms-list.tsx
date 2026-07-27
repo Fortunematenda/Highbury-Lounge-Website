@@ -18,6 +18,7 @@ import {
   PmsStatusPill,
 } from "@/app/admin/components/pms";
 import { formatMoney } from "@/lib/format";
+import { toast } from "sonner";
 
 type RoomRow = {
   id: number;
@@ -37,7 +38,6 @@ type RoomRow = {
 export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [error, setError] = useState("");
 
   async function removeRoom(room: RoomRow) {
     const ok = window.confirm(
@@ -45,14 +45,14 @@ export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
     );
     if (!ok) return;
     setBusyId(room.id);
-    setError("");
     try {
       const res = await fetch(`/api/admin/rooms/${room.id}`, { method: "DELETE" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not remove room");
+      toast.success(`Removed ${room.name}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not remove room");
+      toast.error(err instanceof Error ? err.message : "Could not remove room");
     } finally {
       setBusyId(null);
     }
@@ -78,7 +78,6 @@ export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
           title="Rooms"
           subtitle="Room types guests can book on the website"
         />
-        {error ? <div className="admin-error">{error}</div> : null}
         <PmsEmptyState
           icon={BedDouble}
           title="No rooms added yet"
@@ -102,8 +101,6 @@ export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
           </Link>
         }
       />
-
-      {error ? <div className="admin-error">{error}</div> : null}
 
       <div className="pms-room-grid">
         {rooms.map((room) => {

@@ -6,12 +6,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save } from "lucide-react";
+import { toast } from "sonner";
 import {
   DetailFieldGrid,
   DetailPageShell,
   DetailSectionCard,
   DetailStickyActionBar,
-  UnsavedChangesGuard,
 } from "@/app/admin/components/detail-page";
 import {
   AdminFormField,
@@ -42,8 +42,6 @@ export function BlockCreateForm({
   rooms: { id: number; name: string }[];
 }) {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
 
   const form = useForm<FormValues>({
@@ -67,8 +65,6 @@ export function BlockCreateForm({
 
   async function onSubmit(values: FormValues) {
     setBusy(true);
-    setError("");
-    setSuccess("");
     try {
       const res = await fetch("/api/admin/blocks", {
         method: "POST",
@@ -77,14 +73,14 @@ export function BlockCreateForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not create block");
-      setSuccess("Created successfully.");
+      toast.success("Created");
       reset();
       window.setTimeout(() => {
         router.push("/admin/blocks");
         router.refresh();
       }, 700);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create block");
+      toast.error(err instanceof Error ? err.message : "Could not create block");
     } finally {
       setBusy(false);
     }
@@ -101,18 +97,6 @@ export function BlockCreateForm({
       description="Hold inventory for maintenance, private use or manual reservations."
       backAction={{ label: "Back to blocks", href: "/admin/blocks" }}
     >
-      <UnsavedChangesGuard dirty={isDirty} />
-      {error ? (
-        <div className="admin-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {success ? (
-        <div className="admin-success" role="status">
-          {success}
-        </div>
-      ) : null}
-
       <form
         id="block-create-form"
         className="detail-form-stack"
