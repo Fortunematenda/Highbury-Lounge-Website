@@ -29,6 +29,12 @@ export async function POST(request: Request) {
       };
       preferredLanguage?: string;
       idempotencyKey?: string;
+      foodSpecialInstructions?: string;
+      extras?: Array<{
+        menuItemId?: number;
+        quantity?: number;
+        specialInstructions?: string;
+      }>;
     };
 
     const ip =
@@ -48,6 +54,14 @@ export async function POST(request: Request) {
       return jsonError("Missing required booking fields.", 400);
     }
 
+    const extras = (body.extras ?? [])
+      .map((item) => ({
+        menuItemId: Number(item.menuItemId),
+        quantity: Number(item.quantity ?? 1),
+        specialInstructions: item.specialInstructions ?? null,
+      }))
+      .filter((item) => Number.isFinite(item.menuItemId) && item.menuItemId > 0);
+
     const booking = await createBooking({
       roomTypeId: body.roomTypeId,
       checkIn: body.checkIn,
@@ -56,6 +70,8 @@ export async function POST(request: Request) {
       children: body.children ?? 0,
       roomsBooked: body.roomsBooked ?? 1,
       preferredLanguage: body.preferredLanguage || "en",
+      foodSpecialInstructions: body.foodSpecialInstructions,
+      extras: extras.length ? extras : undefined,
       guest: {
         firstName: body.guest.firstName ?? "",
         lastName: body.guest.lastName ?? "",
@@ -82,6 +98,7 @@ export async function POST(request: Request) {
           checkOut: booking.checkOut,
           nights: booking.nights,
           expiresAt: booking.expiresAt,
+          extrasTotal: booking.extrasTotal,
         },
       },
       { status: 201 },

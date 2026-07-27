@@ -57,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Operations",
     items: [
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList },
+      { href: "/admin/food-orders", label: "Food Orders", icon: UtensilsCrossed },
       { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
       { href: "/admin/rooms", label: "Rooms", icon: BedDouble },
       { href: "/admin/blocks", label: "Blocks", icon: Building2 },
@@ -68,7 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Content",
     items: [
-      { href: "/admin/menus", label: "Menus & Products", icon: UtensilsCrossed },
+      { href: "/admin/menus", label: "Menus", icon: UtensilsCrossed },
       { href: "/admin/pricing", label: "Pricing", icon: BarChart3 },
       { href: "/admin/gallery", label: "Gallery", icon: GalleryHorizontal },
     ],

@@ -50,6 +50,10 @@ type DashboardData = {
     revenue: number;
     conferenceRequests: number;
     foodPreorders: number;
+    pendingFoodOrders: number;
+    preparingFoodOrders: number;
+    readyFoodOrders: number;
+    todayBookings: number;
     occupiedRooms: number;
     maintenanceRooms: number;
     totalRooms: number;
@@ -81,6 +85,15 @@ type DashboardData = {
     roomName: string | null;
     firstName: string | null;
     lastName: string | null;
+  }>;
+  recentFoodOrders?: Array<{
+    id: number;
+    reference: string;
+    status: string;
+    guestName: string | null;
+    totalAmount: number;
+    currency: string;
+    createdAt: string;
   }>;
   recentNotifications: Array<{
     id: number;
@@ -402,13 +415,49 @@ export function AdminDashboardClient() {
               tip="Sum of confirmed, checked-in, and checked-out booking totals"
             />
             <KpiCard
+              title="Today's bookings"
+              value={data.totals.todayBookings}
+              icon={CalendarCheck2}
+              spark={data.trends.bookingTrend}
+              sparkType="line"
+              color="#70163f"
+              tip="Bookings created today"
+            />
+            <KpiCard
+              title="Pending food orders"
+              value={data.totals.pendingFoodOrders}
+              icon={UtensilsCrossed}
+              spark={data.trends.preorderTrend}
+              sparkType="line"
+              color="#b45309"
+              tip="Food orders awaiting kitchen start"
+            />
+            <KpiCard
+              title="Orders preparing"
+              value={data.totals.preparingFoodOrders}
+              icon={UtensilsCrossed}
+              spark={data.trends.preorderTrend}
+              sparkType="bar"
+              color="#c47a2c"
+              tip="Food orders currently being prepared"
+            />
+            <KpiCard
+              title="Ready for delivery"
+              value={data.totals.readyFoodOrders}
+              icon={UtensilsCrossed}
+              spark={data.trends.preorderTrend}
+              sparkType="area"
+              color="#15803d"
+              tip="Food orders ready to deliver"
+            />
+            <KpiCard
               title="Food pre-orders"
               value={data.totals.foodPreorders}
               icon={UtensilsCrossed}
               spark={data.trends.preorderTrend}
               sparkType="line"
               color="#c47a2c"
-              tip="Total quantity of booking extras / menu pre-orders"
+              tip="All food orders in the database"
             />
             <KpiCard
               title="Available rooms"
@@ -517,16 +566,47 @@ export function AdminDashboardClient() {
                     <li key={booking.id}>
                       <Link href={`/admin/bookings/${booking.id}`}>
                         {booking.reference}
-                      </Link>{" "}
-                      — {booking.firstName} {booking.lastName} ·{" "}
-                      {booking.roomName} · {booking.status} ·{" "}
-                      {formatMoney(booking.totalAmount, booking.currency)}
+                      </Link>
+                      {" · "}
+                      {booking.firstName} {booking.lastName}
+                      {" · "}
+                      {booking.roomName}
+                      {" · "}
+                      {booking.status}
                     </li>
                   ))}
                 </ul>
               )}
             </section>
 
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>Recent food orders</h2>
+                <Link href="/admin/food-orders">View all</Link>
+              </div>
+              {(data.recentFoodOrders ?? []).length === 0 ? (
+                <p className="admin-empty">No food orders yet.</p>
+              ) : (
+                <ul className="admin-list">
+                  {(data.recentFoodOrders ?? []).map((order) => (
+                    <li key={order.id}>
+                      <Link href={`/admin/food-orders/${order.id}`}>
+                        {order.reference}
+                      </Link>
+                      {" · "}
+                      {order.guestName || "Guest"}
+                      {" · "}
+                      {order.status}
+                      {" · "}
+                      {formatMoney(order.totalAmount, order.currency)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
+
+          <div className="admin-two-col">
             <section className="admin-card">
               <div className="admin-card-head">
                 <h2>Recent notifications</h2>
@@ -552,11 +632,36 @@ export function AdminDashboardClient() {
                 </ul>
               )}
             </section>
+
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>Latest guest activity</h2>
+                <Link href="/admin/guests">Guests</Link>
+              </div>
+              {data.recentBookings.length === 0 ? (
+                <p className="admin-empty">No recent guest activity.</p>
+              ) : (
+                <ul className="admin-list">
+                  {data.recentBookings.slice(0, 6).map((booking) => (
+                    <li key={`guest-${booking.id}`}>
+                      <Link href={`/admin/bookings/${booking.id}`}>
+                        {booking.firstName} {booking.lastName}
+                      </Link>
+                      {" · "}
+                      {booking.reference} · {booking.status}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
           </div>
 
           <div className="admin-quick-actions">
             <Link className="admin-btn" href="/admin/bookings">
               View bookings
+            </Link>
+            <Link className="admin-btn secondary" href="/admin/food-orders">
+              Food orders
             </Link>
             <Link className="admin-btn secondary" href="/admin/rooms/new">
               Add room

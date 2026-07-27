@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { CheckCheck, Loader2 } from "lucide-react";
+import { CheckCheck, Loader2, Trash2 } from "lucide-react";
 
 type AdminNotification = {
   id: number;
@@ -11,6 +11,8 @@ type AdminNotification = {
   title: string;
   message: string;
   actionUrl: string | null;
+  entityType: string | null;
+  entityId: number | null;
   isRead: boolean;
   createdAt: string;
 };
@@ -24,6 +26,8 @@ type EmailNotification = {
   createdAt: string;
 };
 
+const PAGE_SIZE = 20;
+
 export function NotificationsClient({
   emailRows,
 }: {
@@ -33,28 +37,43 @@ export function NotificationsClient({
   const [error, setError] = useState("");
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       setError("");
-      const res = await fetch("/api/admin/notifications?limit=100", {
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        page: String(page),
+      });
+      if (q) params.set("q", q);
+      const res = await fetch(`/api/admin/notifications?${params}`, {
         cache: "no-store",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load");
       setItems(data.notifications ?? []);
       setUnreadCount(Number(data.unreadCount ?? 0));
+      setTotal(Number(data.total ?? 0));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, q]);
 
   useEffect(() => {
+    setLoading(true);
     const start = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(start);
-  }, []);
+    const timer = window.setInterval(() => void load(), 45000);
+    return () => {
+      window.clearTimeout(start);
+      window.clearInterval(timer);
+    };
+  }, [load]);
 
   async function markRead(id: number) {
     await fetch("/api/admin/notifications", {
@@ -74,13 +93,20 @@ export function NotificationsClient({
     await load();
   }
 
+  async function remove(id: number) {
+    await fetch(`/api/admin/notifications?id=${id}`, { method: "DELETE" });
+    await load();
+  }
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   return (
     <div className="admin-page">
       <header className="admin-page-header">
         <div>
           <h1>Notifications</h1>
           <p className="page-sub">
-            In-app alerts for bookings, payments, and enquiries
+            In-app admin alerts only (no email, SMS, or push from this center)
             {unreadCount ? ` · ${unreadCount} unread` : ""}
           </p>
         </div>
@@ -93,6 +119,25 @@ export function NotificationsClient({
           <CheckCheck size={16} aria-hidden /> Mark all as read
         </button>
       </header>
+
+      <form
+        className="admin-filters"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setPage(1);
+          setQ(searchInput.trim());
+        }}
+      >
+        <input
+          className="admin-input"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search title, message, or type"
+        />
+        <button className="admin-btn" type="submit">
+          Search
+        </button>
+      </form>
 
       <section className="admin-card">
         <div className="admin-card-head">
@@ -114,6 +159,7 @@ export function NotificationsClient({
                 <strong>{item.title}</strong>
                 <p>{item.message}</p>
                 <small>
+                  {new Date(item.createdAt).toLocaleString()} ·{" "}
                   {formatDistanceToNow(new Date(item.createdAt), {
                     addSuffix: true,
                   })}{" "}
@@ -122,8 +168,18 @@ export function NotificationsClient({
               </div>
               <div className="admin-actions">
                 {item.actionUrl ? (
-                  <Link className="admin-btn ghost" href={item.actionUrl}>
-                    Open
+                  <Link
+                    className="admin-btn ghost"
+                    href={item.actionUrl}
+                    onClick={() => {
+                      if (!item.isRead) void markRead(item.id);
+                    }}
+                  >
+                    {item.entityType === "food_order"
+                      ? "View food order"
+                      : item.entityType === "booking"
+                        ? "View booking"
+                        : "Open"}
                   </Link>
                 ) : null}
                 {!item.isRead ? (
@@ -135,15 +191,47 @@ export function NotificationsClient({
                     Mark read
                   </button>
                 ) : null}
+                <button
+                  type="button"
+                  className="admin-btn ghost"
+                  onClick={() => void remove(item.id)}
+                  aria-label="Delete notification"
+                >
+                  <Trash2 size={14} aria-hidden />
+                </button>
               </div>
             </li>
           ))}
         </ul>
+        <div className="admin-pagination">
+          <button
+            type="button"
+            className="admin-btn ghost"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </button>
+          <span className="admin-muted">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className="admin-btn ghost"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
       </section>
 
       <section className="admin-card">
         <div className="admin-card-head">
-          <h2>Email delivery log</h2>
+          <h2>Guest email delivery log</h2>
+          <p className="page-sub">
+            Separate from in-app admin alerts — guest booking emails only
+          </p>
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">

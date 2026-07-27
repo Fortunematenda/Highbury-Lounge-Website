@@ -19,8 +19,11 @@ type AvailableRoom = {
   description?: string | null;
   translationsJson?: string | null;
   effectivePrice: number;
+  currency?: string;
   roomsRemaining: number;
   maxGuests: number;
+  bedType?: string | null;
+  roomSize?: string | null;
   featuredImage: string | null;
   images: string[];
   amenities: string[];
@@ -44,6 +47,7 @@ function RoomResultCard({
   rooms: string;
 }) {
   const { t, i18n } = useTranslation();
+  const currency = room.currency || "USD";
   const localized = pickTranslated(
     i18n.language as AppLocale,
     {
@@ -57,18 +61,26 @@ function RoomResultCard({
     room.featuredImage,
     ...(room.images ?? []),
   ].filter(Boolean) as string[];
+  const uniqueGallery = [...new Set(gallery)];
   const [activeImage, setActiveImage] = useState(
-    gallery[0] || "/images/deluxe-room.jpg",
+    uniqueGallery[0] || "/images/deluxe-room.jpg",
   );
+
+  const metaParts = [
+    t("booking.upToGuests", { count: room.maxGuests }),
+    room.bedType || null,
+    room.roomSize || null,
+    `${room.nights} ${room.nights === 1 ? t("booking.night") : t("booking.nights")}`,
+  ].filter(Boolean);
 
   return (
     <article className="available-room">
       <div>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={activeImage} alt={localized.name} />
-        {gallery.length > 1 ? (
+        {uniqueGallery.length > 1 ? (
           <CompactImageStrip
-            images={gallery}
+            images={uniqueGallery}
             alt={localized.name}
             fallback="/images/deluxe-room.jpg"
             onOpen={setActiveImage}
@@ -81,23 +93,22 @@ function RoomResultCard({
         </span>
         <h3>{localized.name}</h3>
         <p>{localized.shortDescription || localized.description}</p>
-        <p className="muted">
-          {t("booking.upToGuests", { count: room.maxGuests })} · {room.nights}{" "}
-          {room.nights === 1 ? t("booking.night") : t("booking.nights")}
-        </p>
-        <div className="amenity-chips">
-          {room.amenities.slice(0, 4).map((a) => (
-            <span key={a}>✓ {a}</span>
-          ))}
-        </div>
+        <p className="muted">{metaParts.join(" · ")}</p>
+        {room.amenities.length > 0 ? (
+          <div className="amenity-chips">
+            {room.amenities.slice(0, 6).map((a) => (
+              <span key={a}>✓ {a}</span>
+            ))}
+          </div>
+        ) : null}
         <strong>
-          {formatMoney(room.effectivePrice, "USD", i18n.language)}{" "}
+          {formatMoney(room.effectivePrice, currency, i18n.language)}{" "}
           <small>/ {t("booking.perNight")}</small>
         </strong>
         <p>
           {t("booking.estimatedTotalLabel")}:{" "}
           <strong>
-            {formatMoney(room.estimatedTotal, "USD", i18n.language)}
+            {formatMoney(room.estimatedTotal, currency, i18n.language)}
           </strong>
         </p>
       </div>
@@ -130,7 +141,9 @@ function SearchResultsInner() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/availability?${search.toString()}`);
+      const res = await fetch(`/api/availability?${search.toString()}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t("validation.tryAgain"));
       setResults(data.results ?? []);
@@ -145,6 +158,11 @@ function SearchResultsInner() {
   useEffect(() => {
     const checkInP = params.get("checkIn");
     const checkOutP = params.get("checkOut");
+    setCheckIn(params.get("checkIn") ?? "");
+    setCheckOut(params.get("checkOut") ?? "");
+    setAdults(params.get("adults") ?? "2");
+    setChildren(params.get("children") ?? "0");
+    setRooms(params.get("rooms") ?? "1");
     if (checkInP && checkOutP) {
       void load(params);
     }
@@ -209,6 +227,14 @@ function SearchResultsInner() {
             <p>{t("booking.tryDifferentDates")}</p>
           </div>
         )}
+
+        {!loading && results.length > 0 ? (
+          <p className="muted" style={{ marginBottom: 12 }}>
+            {results.length === 1
+              ? "1 room available from your inventory"
+              : `${results.length} rooms available from your inventory`}
+          </p>
+        ) : null}
 
         <div className="availability-list">
           {results.map((room) => (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import {
   ClipboardList,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getDb } from "@/db";
 import {
+  adminNotifications,
   adminUsers,
   bookingGuests,
   bookings,
@@ -23,6 +24,7 @@ import {
   getLatestEntityChange,
 } from "@/lib/audit";
 import { formatDate, formatMoney } from "@/lib/format";
+import { getFoodOrderForBooking } from "@/lib/food-orders";
 import { LOCALE_NATIVE_NAMES, isAppLocale } from "@/lib/i18n/locales";
 import {
   DetailMetadataCard,
@@ -30,6 +32,7 @@ import {
   DetailSectionCard,
   StatusBadge,
 } from "@/app/admin/components/detail-page";
+import { BookingFoodPreOrders } from "./food-preorders";
 import { BookingNotesForm } from "./notes-form";
 import { BookingStatusActions } from "./status-actions";
 
@@ -87,6 +90,35 @@ export default async function AdminBookingDetailPage({
     .select()
     .from(payments)
     .where(eq(payments.bookingId, bookingId));
+
+  const foodOrder = await getFoodOrderForBooking(bookingId);
+
+  const bookingNotifs = await db
+    .select()
+    .from(adminNotifications)
+    .where(eq(adminNotifications.entityId, bookingId))
+    .orderBy(desc(adminNotifications.createdAt))
+    .limit(30);
+
+  const foodNotifs =
+    foodOrder?.order != null
+      ? await db
+          .select()
+          .from(adminNotifications)
+          .where(eq(adminNotifications.entityId, foodOrder.order.id))
+          .orderBy(desc(adminNotifications.createdAt))
+          .limit(20)
+      : [];
+
+  const notificationHistory = [
+    ...bookingNotifs.filter((n) => n.entityType === "booking"),
+    ...foodNotifs.filter((n) => n.entityType === "food_order"),
+  ]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+    .slice(0, 20);
 
   const lastChange = await getLatestEntityChange("booking", bookingId);
 
@@ -335,15 +367,33 @@ export default async function AdminBookingDetailPage({
           </p>
         </DetailSectionCard>
 
+        <BookingFoodPreOrders
+          currency={b.currency}
+          reference={foodOrder?.reference ?? null}
+          status={foodOrder?.status ?? null}
+          foodOrderId={foodOrder?.order?.id ?? null}
+          specialInstructions={foodOrder?.specialInstructions ?? null}
+          totalAmount={foodOrder?.totalAmount ?? b.extrasTotal}
+          items={(foodOrder?.items ?? []).map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            specialInstructions: item.specialInstructions,
+            imageUrl: item.imageUrl,
+          }))}
+        />
+
         <DetailSectionCard title="Status actions" icon={ClipboardList}>
           <BookingStatusActions bookingId={b.id} currentStatus={b.status} />
         </DetailSectionCard>
 
-        <DetailSectionCard title="Additional notes" icon={StickyNote}>
+        <DetailSectionCard title="Internal notes" icon={StickyNote}>
           <BookingNotesForm bookingId={b.id} initialNotes={b.adminNotes || ""} />
         </DetailSectionCard>
 
-        <DetailSectionCard title="Activity" icon={History}>
+        <DetailSectionCard title="Booking timeline" icon={History}>
           <ul className="admin-list">
             {history.length === 0 ? <li>No status changes yet.</li> : null}
             {history.map((h) => (
@@ -361,6 +411,21 @@ export default async function AdminBookingDetailPage({
               </li>
             ))}
           </ul>
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Notifications history" icon={History}>
+          {notificationHistory.length === 0 ? (
+            <p className="admin-empty">No related admin notifications.</p>
+          ) : (
+            <ul className="admin-list">
+              {notificationHistory.map((n) => (
+                <li key={n.id}>
+                  {n.createdAt}: <strong>{n.title}</strong> — {n.message}
+                  {n.isRead ? "" : " · unread"}
+                </li>
+              ))}
+            </ul>
+          )}
         </DetailSectionCard>
 
         <DetailSectionCard title="Payments" icon={CreditCard}>

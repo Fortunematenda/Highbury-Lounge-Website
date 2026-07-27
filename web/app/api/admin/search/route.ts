@@ -5,6 +5,7 @@ import {
   bookingGuests,
   bookings,
   conferenceEnquiries,
+  foodOrders,
   menuItems,
   roomTypes,
 } from "@/db/schema";
@@ -65,6 +66,38 @@ export async function GET(request: Request) {
         description: `${row.firstName ?? ""} ${row.lastName ?? ""} · ${row.roomName ?? "Room"} · ${row.status}`,
         href: `/admin/bookings/${row.id}`,
         group: "Bookings",
+      });
+    }
+
+    const foodRows = await db
+      .select({
+        id: foodOrders.id,
+        reference: foodOrders.reference,
+        status: foodOrders.status,
+        guestName: foodOrders.guestName,
+        totalAmount: foodOrders.totalAmount,
+        currency: foodOrders.currency,
+      })
+      .from(foodOrders)
+      .where(
+        or(
+          like(foodOrders.reference, pattern),
+          like(foodOrders.guestName, pattern),
+          like(foodOrders.guestEmail, pattern),
+          like(foodOrders.guestPhone, pattern),
+          like(foodOrders.status, pattern),
+        ),
+      )
+      .orderBy(desc(foodOrders.createdAt))
+      .limit(6);
+
+    for (const row of foodRows) {
+      results.push({
+        id: `food-${row.id}`,
+        title: row.reference,
+        description: `${row.guestName ?? "Guest"} · ${row.status} · ${row.currency} ${Number(row.totalAmount).toFixed(2)}`,
+        href: `/admin/food-orders/${row.id}`,
+        group: "Food Orders",
       });
     }
 

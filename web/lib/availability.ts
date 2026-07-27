@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   bookings,
@@ -8,6 +8,7 @@ import {
   roomTypeAmenities,
   amenities,
 } from "@/db/schema";
+import { getSettingsMap } from "@/lib/settings";
 
 export const ACTIVE_BOOKING_STATUSES = [
   "Pending",
@@ -160,6 +161,7 @@ export type AvailableRoom = {
   pricePerNight: number;
   promotionalPrice: number | null;
   effectivePrice: number;
+  currency: string;
   inventoryCount: number;
   roomsRemaining: number;
   maxAdults: number;
@@ -195,7 +197,11 @@ export async function findAvailableRooms(params: {
   const types = await db
     .select()
     .from(roomTypes)
-    .where(eq(roomTypes.isActive, true));
+    .where(eq(roomTypes.isActive, true))
+    .orderBy(asc(roomTypes.displayOrder), asc(roomTypes.pricePerNight));
+
+  const settings = await getSettingsMap();
+  const currency = settings.currency || "USD";
 
   const results: AvailableRoom[] = [];
 
@@ -216,7 +222,8 @@ export async function findAvailableRooms(params: {
     const images = await db
       .select()
       .from(roomImages)
-      .where(eq(roomImages.roomTypeId, room.id));
+      .where(eq(roomImages.roomTypeId, room.id))
+      .orderBy(asc(roomImages.displayOrder));
     const amenityRows = await db
       .select({ name: amenities.name })
       .from(roomTypeAmenities)
@@ -238,6 +245,7 @@ export async function findAvailableRooms(params: {
       pricePerNight: room.pricePerNight,
       promotionalPrice: room.promotionalPrice,
       effectivePrice,
+      currency,
       inventoryCount: room.inventoryCount,
       roomsRemaining: remaining,
       maxAdults: room.maxAdults,
@@ -253,5 +261,5 @@ export async function findAvailableRooms(params: {
     });
   }
 
-  return results.sort((a, b) => a.effectivePrice - b.effectivePrice);
+  return results;
 }

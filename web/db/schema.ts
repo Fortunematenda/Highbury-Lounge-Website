@@ -483,14 +483,70 @@ export const bookingExtras = sqliteTable(
     bookingId: integer("booking_id")
       .notNull()
       .references(() => bookings.id, { onDelete: "cascade" }),
+    foodOrderId: integer("food_order_id"),
     menuItemId: integer("menu_item_id").references(() => menuItems.id),
     name: text("name").notNull(),
     quantity: integer("quantity").notNull().default(1),
     unitPrice: real("unit_price").notNull(),
     totalPrice: real("total_price").notNull(),
+    specialInstructions: text("special_instructions"),
+    imageUrl: text("image_url"),
     ...timestamps,
   },
-  (t) => [index("booking_extras_booking_idx").on(t.bookingId)],
+  (t) => [
+    index("booking_extras_booking_idx").on(t.bookingId),
+    index("booking_extras_food_order_idx").on(t.foodOrderId),
+  ],
+);
+
+/** Kitchen / food pre-order header (booking-linked or standalone). */
+export const foodOrders = sqliteTable(
+  "food_orders",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    reference: text("reference").notNull().unique(),
+    bookingId: integer("booking_id").references(() => bookings.id, {
+      onDelete: "cascade",
+    }),
+    guestName: text("guest_name"),
+    guestEmail: text("guest_email"),
+    guestPhone: text("guest_phone"),
+    serviceDate: text("service_date"),
+    serviceTime: text("service_time"),
+    serviceType: text("service_type"),
+    /** Pending | Preparing | Ready | Delivered | Cancelled */
+    status: text("status").notNull().default("Pending"),
+    specialInstructions: text("special_instructions"),
+    totalAmount: real("total_amount").notNull().default(0),
+    currency: text("currency").notNull().default("USD"),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("food_orders_booking_uidx").on(t.bookingId),
+    index("food_orders_status_idx").on(t.status),
+    index("food_orders_created_idx").on(t.createdAt),
+  ],
+);
+
+export const foodOrderItems = sqliteTable(
+  "food_order_items",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    foodOrderId: integer("food_order_id")
+      .notNull()
+      .references(() => foodOrders.id, { onDelete: "cascade" }),
+    menuItemId: integer("menu_item_id").references(() => menuItems.id, {
+      onDelete: "set null",
+    }),
+    name: text("name").notNull(),
+    quantity: integer("quantity").notNull().default(1),
+    unitPrice: real("unit_price").notNull(),
+    totalPrice: real("total_price").notNull(),
+    specialInstructions: text("special_instructions"),
+    imageUrl: text("image_url"),
+    ...timestamps,
+  },
+  (t) => [index("food_order_items_order_idx").on(t.foodOrderId)],
 );
 
 export const adminAuditLogs = sqliteTable(

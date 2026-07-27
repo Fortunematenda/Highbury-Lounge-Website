@@ -174,6 +174,14 @@ export default function Home() {
   const [foodOrderDate, setFoodOrderDate] = useState("");
   const [foodOrderTime, setFoodOrderTime] = useState("");
   const [foodService, setFoodService] = useState<FoodServiceKey>("dineIn");
+  const [foodGuestName, setFoodGuestName] = useState("");
+  const [foodGuestPhone, setFoodGuestPhone] = useState("");
+  const [foodGuestEmail, setFoodGuestEmail] = useState("");
+  const [foodBookingRef, setFoodBookingRef] = useState("");
+  const [foodDietaryNotes, setFoodDietaryNotes] = useState("");
+  const [foodSubmitting, setFoodSubmitting] = useState(false);
+  const [foodSubmitError, setFoodSubmitError] = useState("");
+  const [foodOrderReference, setFoodOrderReference] = useState("");
   const [checkIn, setCheckIn] = useState(stayDefaults.checkIn);
   const [checkOut, setCheckOut] = useState(stayDefaults.checkOut);
   const [adults, setAdults] = useState("2");
@@ -211,8 +219,9 @@ export default function Home() {
           (c: { name: string; items: PublicFoodItem[] }) =>
             (c.items ?? []).map((item) => ({ ...item, category: c.name })),
         );
-        setMenuOptions(flat);
-        setSelectedFood((current) => current || flat[0]?.name || "");
+        const preorderable = flat.filter((item) => item.allowPreOrder);
+        setMenuOptions(preorderable);
+        setSelectedFood((current) => current || preorderable[0]?.name || "");
       })
       .catch(() => undefined);
   }, []);
@@ -341,12 +350,54 @@ export default function Home() {
     else if (menuOptions[0]) setSelectedFood(menuOptions[0].name);
     setFoodPreview(null);
     setFoodOrderSubmitted(false);
+    setFoodSubmitError("");
+    setFoodOrderReference("");
     setFoodOrderOpen(true);
   };
 
-  const submitFoodOrder = (event: FormEvent<HTMLFormElement>) => {
+  const submitFoodOrder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFoodOrderSubmitted(true);
+    setFoodSubmitError("");
+    const selected = menuOptions.find((item) => item.name === selectedFood);
+    if (!selected) {
+      setFoodSubmitError(t("validation.unableCreateBooking"));
+      return;
+    }
+    setFoodSubmitting(true);
+    try {
+      const res = await fetch("/api/food-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guestName: foodGuestName,
+          guestPhone: foodGuestPhone,
+          guestEmail: foodGuestEmail || undefined,
+          serviceDate: foodOrderDate,
+          serviceTime: foodOrderTime,
+          serviceType: foodService,
+          specialInstructions: foodDietaryNotes || undefined,
+          bookingReference: foodBookingRef || undefined,
+          items: [
+            {
+              menuItemId: selected.id,
+              quantity: Number(foodQuantity) || 1,
+            },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to submit food order.");
+      }
+      setFoodOrderReference(data.foodOrder?.reference ?? "");
+      setFoodOrderSubmitted(true);
+    } catch (err) {
+      setFoodSubmitError(
+        err instanceof Error ? err.message : "Unable to submit food order.",
+      );
+    } finally {
+      setFoodSubmitting(false);
+    }
   };
 
   const foodServiceLabel = t(FOOD_SERVICE_I18N[foodService]);
@@ -801,18 +852,73 @@ export default function Home() {
                   <fieldset>
                     <legend>{t("menu.yourDetails")}</legend>
                     <div className="form-row">
-                      <label>{t("menu.fullName")}<input type="text" placeholder={t("menu.placeholderFullName")} required /></label>
-                      <label>{t("menu.phoneWhatsApp")}<input type="tel" placeholder={t("menu.placeholderPhone")} required /></label>
+                      <label>
+                        {t("menu.fullName")}
+                        <input
+                          type="text"
+                          placeholder={t("menu.placeholderFullName")}
+                          value={foodGuestName}
+                          onChange={(e) => setFoodGuestName(e.target.value)}
+                          required
+                        />
+                      </label>
+                      <label>
+                        {t("menu.phoneWhatsApp")}
+                        <input
+                          type="tel"
+                          placeholder={t("menu.placeholderPhone")}
+                          value={foodGuestPhone}
+                          onChange={(e) => setFoodGuestPhone(e.target.value)}
+                          required
+                        />
+                      </label>
                     </div>
                     <div className="form-row">
-                      <label>{t("menu.emailAddress")}<input type="email" placeholder={t("menu.placeholderEmail")} /></label>
-                      <label>{t("menu.roomOrBookingRef")}<input type="text" placeholder={t("menu.placeholderOptional")} /></label>
+                      <label>
+                        {t("menu.emailAddress")}
+                        <input
+                          type="email"
+                          placeholder={t("menu.placeholderEmail")}
+                          value={foodGuestEmail}
+                          onChange={(e) => setFoodGuestEmail(e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        {t("menu.roomOrBookingRef")}
+                        <input
+                          type="text"
+                          placeholder={t("menu.placeholderOptional")}
+                          value={foodBookingRef}
+                          onChange={(e) => setFoodBookingRef(e.target.value)}
+                        />
+                      </label>
                     </div>
-                    <label>{t("menu.dietaryNotes")}<textarea rows={4} placeholder={t("menu.placeholderDietary")} /></label>
+                    <label>
+                      {t("menu.dietaryNotes")}
+                      <textarea
+                        rows={4}
+                        placeholder={t("menu.placeholderDietary")}
+                        value={foodDietaryNotes}
+                        onChange={(e) => setFoodDietaryNotes(e.target.value)}
+                      />
+                    </label>
                   </fieldset>
+                  {foodSubmitError ? (
+                    <p className="form-error" role="alert">
+                      {foodSubmitError}
+                    </p>
+                  ) : null}
                   <div className="form-footer">
                     <p>{t("menu.foodOrderFooter")}</p>
-                    <button className="button primary" type="submit">{t("menu.submitPreOrder")}</button>
+                    <button
+                      className="button primary"
+                      type="submit"
+                      disabled={foodSubmitting || !menuOptions.length}
+                    >
+                      {foodSubmitting
+                        ? t("booking.submitting")
+                        : t("menu.submitPreOrder")}
+                    </button>
                   </div>
                 </form>
               </>
@@ -821,11 +927,14 @@ export default function Home() {
                 <span>✓</span>
                 <h2>{t("menu.preOrderPrepared")}</h2>
                 <p>{t("menu.preOrderSuccess", { quantity: foodQuantity, item: selectedFood })}</p>
+                {foodOrderReference ? (
+                  <p className="muted">Reference: {foodOrderReference}</p>
+                ) : null}
                 <a
                   className="button primary"
                   href={whatsappHref(
                     settings.whatsapp,
-                    `Hello Highbury Lounge, I would like to pre-order ${foodQuantity} x ${selectedFood} for ${foodOrderDate} at ${foodOrderTime}. Service: ${foodServiceLabel}.`,
+                    `Hello Highbury Lounge, I would like to pre-order ${foodQuantity} x ${selectedFood} for ${foodOrderDate} at ${foodOrderTime}. Service: ${foodServiceLabel}.${foodOrderReference ? ` Reference: ${foodOrderReference}.` : ""}`,
                   )}
                   target="_blank"
                   rel="noreferrer"

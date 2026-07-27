@@ -14,6 +14,10 @@ import {
 import { getSettingsMap } from "@/lib/settings";
 import { queueNotification } from "@/lib/notifications";
 import { createAdminNotification } from "@/lib/admin-notifications";
+import {
+  attachFoodOrderToBooking,
+  type FoodOrderItemInput,
+} from "@/lib/food-orders";
 
 export type GuestPayload = {
   firstName: string;
@@ -37,6 +41,9 @@ export type CreateBookingInput = {
   guest: GuestPayload;
   /** Guest UI language code: en | zh-CN | sn | nd */
   preferredLanguage?: string;
+  /** Optional food pre-order lines saved with the booking */
+  extras?: FoodOrderItemInput[];
+  foodSpecialInstructions?: string | null;
 };
 
 function bookingReference(): string {
@@ -111,6 +118,7 @@ export async function createBooking(input: CreateBookingInput) {
   const subtotal = unitPrice * nights * roomsBooked;
   const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
   const serviceFee = Math.round(subtotal * serviceFeeRate * 100) / 100;
+  // Food extras are added after insert so room total starts without them
   const totalAmount = Math.round((subtotal + taxAmount + serviceFee) * 100) / 100;
 
   const expiresAt = new Date();
@@ -196,6 +204,40 @@ export async function createBooking(input: CreateBookingInput) {
     note: "Guest submitted reservation request",
   });
 
+  let foodAttached = false;
+  try {
+    if (input.extras?.length) {
+      await attachFoodOrderToBooking({
+        bookingId: booking.id,
+        currency,
+        specialInstructions: input.foodSpecialInstructions,
+        items: input.extras,
+        guestName: `${input.guest.firstName} ${input.guest.lastName}`.trim(),
+        guestEmail: input.guest.email.trim().toLowerCase(),
+        guestPhone: input.guest.phone.trim(),
+        serviceDate: input.checkIn,
+      });
+      foodAttached = true;
+    }
+  } catch (error) {
+    await db.delete(bookings).where(eq(bookings.id, booking.id));
+    throw error instanceof BookingError
+      ? error
+      : new BookingError(
+          error instanceof Error
+            ? error.message
+            : "Could not save food pre-order with booking.",
+          400,
+        );
+  }
+
+  const [freshBooking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, booking.id))
+    .limit(1);
+  const finalBooking = freshBooking ?? booking;
+
   await queueNotification({
     templateKey: "booking_received",
     recipientEmail: input.guest.email.trim().toLowerCase(),
@@ -208,7 +250,7 @@ export async function createBooking(input: CreateBookingInput) {
       checkIn: input.checkIn,
       checkOut: input.checkOut,
       guests: `${input.adults} adult(s), ${input.children} child(ren)`,
-      total: `${currency} ${totalAmount.toFixed(2)}`,
+      total: `${currency} ${Number(finalBooking.totalAmount).toFixed(2)}`,
       status: "Pending",
       preferredLanguage: input.preferredLanguage || "en",
     },
@@ -219,7 +261,9 @@ export async function createBooking(input: CreateBookingInput) {
   await createAdminNotification({
     type: "booking_received",
     title: "New room booking",
-    message: `${reference} · ${room.name} · ${input.checkIn} to ${input.checkOut}`,
+    message: `${reference} · ${room.name} · ${input.checkIn} to ${input.checkOut}${
+      foodAttached ? " · includes food pre-order" : ""
+    }`,
     entityType: "booking",
     entityId: booking.id,
     actionUrl: `/admin/bookings/${booking.id}`,
@@ -249,7 +293,7 @@ export async function createBooking(input: CreateBookingInput) {
     /* non-blocking */
   }
 
-  return booking;
+  return finalBooking;
 }
 
 export async function updateBookingStatus(params: {

@@ -72,6 +72,25 @@ export async function POST(request: Request) {
       details: { roomTypeId, startDate, endDate, reason },
     });
 
+    const [room] = await db
+      .select({ name: roomTypes.name })
+      .from(roomTypes)
+      .where(eq(roomTypes.id, roomTypeId))
+      .limit(1);
+
+    const { createAdminNotification } = await import(
+      "@/lib/admin-notifications"
+    );
+    await createAdminNotification({
+      type: "room_availability",
+      title: "Room marked unavailable",
+      message: `${room?.name ?? "Room"} blocked ${startDate} to ${endDate} · ${reason}`,
+      entityType: "room_block",
+      entityId: row.id,
+      actionUrl: "/admin/blocks",
+      adminUserId: user.id,
+    });
+
     return Response.json({ ok: true, block: row }, { status: 201 });
   } catch (error) {
     if (error instanceof AuthError) return jsonError(error.message, error.status);

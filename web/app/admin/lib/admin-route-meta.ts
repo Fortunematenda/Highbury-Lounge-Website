@@ -19,13 +19,14 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
 
   const modules: Record<string, string> = {
     bookings: "Bookings",
+    "food-orders": "Food Orders",
     calendar: "Calendar",
     rooms: "Rooms",
     blocks: "Blocks",
     conference: "Conference Requests",
     packages: "Packages",
     payments: "Payments",
-    menus: "Menus & Products",
+    menus: "Menus",
     pricing: "Pricing",
     gallery: "Gallery",
     guests: "Guests",

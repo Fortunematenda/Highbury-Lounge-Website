@@ -837,6 +837,35 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   letter-spacing: 0;
   font-size: 15px;
 }
+.booking-food-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 14px;
+}
+.booking-food-fieldset legend {
+  padding: 0 6px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.booking-food-cart {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.booking-food-cart li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-weight: 600;
+}
 .form-error {
   background: #fff1f1;
   color: #9c2020;
