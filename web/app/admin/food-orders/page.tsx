@@ -124,11 +124,12 @@ export default async function AdminFoodOrdersPage({
   ];
 
   return (
-    <div className="admin-page">
-      <header className="admin-page-header">
-        <div>
+    <div className="admin-page pms-page">
+      <header className="pms-page-header">
+        <div className="pms-page-header-copy">
+          <p className="pms-eyebrow">Operations</p>
           <h1>Food Orders</h1>
-          <p className="page-sub">
+          <p className="pms-page-sub">
             Kitchen pre-orders from bookings and standalone guest requests
           </p>
         </div>

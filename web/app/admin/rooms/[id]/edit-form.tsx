@@ -17,6 +17,7 @@ import {
   AdminLangTabs,
   buildTranslationDraft,
 } from "@/app/admin/components/AdminLangTabs";
+import { PmsTabs } from "@/app/admin/components/pms";
 import {
   DetailDangerZone,
   DetailFieldGrid,
@@ -65,6 +66,16 @@ type RoomImageRow = {
   displayOrder: number;
 };
 
+const TABS = [
+  { id: "overview", label: "Overview", icon: Eye },
+  { id: "pricing", label: "Pricing", icon: Wallet },
+  { id: "gallery", label: "Images", icon: ImageIcon },
+  { id: "specs", label: "Details", icon: Users },
+  { id: "settings", label: "Settings", icon: Settings2 },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
 export function EditRoomForm({
   room,
   images = [],
@@ -87,6 +98,7 @@ export function EditRoomForm({
   };
 }) {
   const router = useRouter();
+  const [tab, setTab] = useState<TabId>("overview");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -138,6 +150,7 @@ export function EditRoomForm({
     const englishName = (en.name || room.name).trim();
     if (!englishName) {
       setError("Enter a room name in English.");
+      setTab("overview");
       setLoading(false);
       return;
     }
@@ -222,7 +235,7 @@ export function EditRoomForm({
         { label: room.name },
       ]}
       title={room.name}
-      description="Update room details, pricing, availability and images."
+      description="Manage listing, rates, photos, and availability."
       status={
         <>
           <StatusBadge
@@ -237,8 +250,8 @@ export function EditRoomForm({
       backAction={{ label: "Back to rooms", href: "/admin/rooms" }}
       sidebar={
         <>
-          <section className="admin-card detail-section-card detail-preview-card">
-            <div className="detail-preview-media">
+          <section className="admin-card detail-section-card detail-preview-card pms-room-hero-card">
+            <div className="detail-preview-media pms-room-hero-media">
               {coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={coverUrl} alt="" />
@@ -249,10 +262,22 @@ export function EditRoomForm({
             <div className="detail-preview-body">
               <strong>{room.name}</strong>
               <p>{summary.rateLabel}</p>
-              <ul>
-                <li>{summary.inventory} units</li>
-                <li>Up to {summary.maxGuests} guests</li>
-                <li>{summary.photoCount} photos</li>
+              <ul className="pms-meta-row pms-meta-row-stack">
+                <li>
+                  <BedDouble size={14} aria-hidden />
+                  <strong>{summary.inventory}</strong>
+                  <span>units</span>
+                </li>
+                <li>
+                  <Users size={14} aria-hidden />
+                  <strong>{summary.maxGuests}</strong>
+                  <span>guests</span>
+                </li>
+                <li>
+                  <ImageIcon size={14} aria-hidden />
+                  <strong>{summary.photoCount}</strong>
+                  <span>photos</span>
+                </li>
               </ul>
             </div>
           </section>
@@ -302,250 +327,269 @@ export function EditRoomForm({
         </div>
       ) : null}
 
+      <div className="pms-tabs-sticky">
+        <PmsTabs
+          tabs={[...TABS]}
+          value={tab}
+          onChange={(id) => setTab(id as TabId)}
+        />
+      </div>
+
       <form
         id="room-edit-form"
         className="detail-form-stack"
         onSubmit={onSubmit}
         onChange={markDirty}
       >
-        <DetailSectionCard
-          title="Content"
-          description="Listing copy shown on the public website."
-          icon={Eye}
-          headerAction={
-            <AdminLangTabs
-              lang={lang}
-              onChange={setLang}
-              translations={translations}
-            />
-          }
-        >
-          <p className="page-sub detail-inline-hint">{langHint}</p>
-          <DetailFieldGrid columns={2}>
-            <label>
-              Name {lang === "en" ? "*" : ""}
-              <input
-                className="admin-input"
-                value={current.name ?? ""}
-                required={lang === "en"}
-                onChange={(e) => updateField("name", e.target.value)}
+        {/* Keep all fields mounted so FormData always includes every input */}
+        <div className={tab === "overview" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
+          <DetailSectionCard
+            title="Listing content"
+            description="What guests see on the public website."
+            icon={Eye}
+            headerAction={
+              <AdminLangTabs
+                lang={lang}
+                onChange={setLang}
+                translations={translations}
               />
-            </label>
-            <label>
-              Page address
-              <input
-                className="admin-input"
-                name="slug"
-                defaultValue={room.slug}
-                required
-              />
-            </label>
-            <DetailFieldSpan>
+            }
+          >
+            <p className="page-sub detail-inline-hint">{langHint}</p>
+            <DetailFieldGrid columns={2}>
               <label>
-                Short description
+                Name {lang === "en" ? "*" : ""}
                 <input
                   className="admin-input"
-                  value={current.shortDescription ?? ""}
-                  onChange={(e) =>
-                    updateField("shortDescription", e.target.value)
-                  }
-                  placeholder="One-line summary for listings"
+                  value={current.name ?? ""}
+                  required={lang === "en"}
+                  onChange={(e) => updateField("name", e.target.value)}
                 />
               </label>
-            </DetailFieldSpan>
-            <DetailFieldSpan>
               <label>
-                Description
-                <textarea
+                Page address
+                <input
                   className="admin-input"
-                  rows={5}
-                  value={current.description ?? ""}
-                  onChange={(e) => updateField("description", e.target.value)}
+                  name="slug"
+                  defaultValue={room.slug}
+                  required
                 />
               </label>
-            </DetailFieldSpan>
-          </DetailFieldGrid>
-        </DetailSectionCard>
+              <DetailFieldSpan>
+                <label>
+                  Short description
+                  <input
+                    className="admin-input"
+                    value={current.shortDescription ?? ""}
+                    onChange={(e) =>
+                      updateField("shortDescription", e.target.value)
+                    }
+                    placeholder="One-line summary for listings"
+                  />
+                </label>
+              </DetailFieldSpan>
+              <DetailFieldSpan>
+                <label>
+                  Description
+                  <textarea
+                    className="admin-input"
+                    rows={5}
+                    value={current.description ?? ""}
+                    onChange={(e) => updateField("description", e.target.value)}
+                  />
+                </label>
+              </DetailFieldSpan>
+            </DetailFieldGrid>
+          </DetailSectionCard>
+        </div>
 
-        <DetailSectionCard
-          title="Pricing & inventory"
-          description="Nightly rates and how many units can be sold."
-          icon={Wallet}
-        >
-          <DetailFieldGrid columns={3}>
-            <label>
-              Price / night *
-              <input
-                className="admin-input"
-                name="pricePerNight"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={room.pricePerNight}
-                required
-              />
-            </label>
-            <label>
-              Promo price
-              <input
-                className="admin-input"
-                name="promotionalPrice"
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={room.promotionalPrice ?? ""}
-              />
-            </label>
-            <label>
-              Inventory *
-              <input
-                className="admin-input"
-                name="inventoryCount"
-                type="number"
-                min="0"
-                defaultValue={room.inventoryCount}
-                required
-              />
-            </label>
-          </DetailFieldGrid>
-        </DetailSectionCard>
+        <div className={tab === "pricing" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
+          <DetailSectionCard
+            title="Pricing & inventory"
+            description="Nightly rates and sellable units."
+            icon={Wallet}
+          >
+            <DetailFieldGrid columns={3}>
+              <label>
+                Price / night *
+                <input
+                  className="admin-input"
+                  name="pricePerNight"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={room.pricePerNight}
+                  required
+                />
+              </label>
+              <label>
+                Promo price
+                <input
+                  className="admin-input"
+                  name="promotionalPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={room.promotionalPrice ?? ""}
+                />
+              </label>
+              <label>
+                Inventory *
+                <input
+                  className="admin-input"
+                  name="inventoryCount"
+                  type="number"
+                  min="0"
+                  defaultValue={room.inventoryCount}
+                  required
+                />
+              </label>
+            </DetailFieldGrid>
+          </DetailSectionCard>
+        </div>
 
-        <DetailSectionCard
-          title="Capacity & specs"
-          description="Guest limits and room details."
-          icon={Users}
-        >
-          <DetailFieldGrid columns={3}>
-            <label>
-              Max adults
-              <input
-                className="admin-input"
-                name="maxAdults"
-                type="number"
-                min="0"
-                defaultValue={room.maxAdults}
-              />
-            </label>
-            <label>
-              Max children
-              <input
-                className="admin-input"
-                name="maxChildren"
-                type="number"
-                min="0"
-                defaultValue={room.maxChildren}
-              />
-            </label>
-            <label>
-              Max guests
-              <input
-                className="admin-input"
-                name="maxGuests"
-                type="number"
-                min="0"
-                defaultValue={room.maxGuests}
-              />
-            </label>
-            <label>
-              <span className="room-field-label">
-                <BedDouble size={14} aria-hidden /> Bed type
-              </span>
-              <input
-                className="admin-input"
-                name="bedType"
-                defaultValue={room.bedType ?? ""}
-              />
-            </label>
-            <label>
-              <span className="room-field-label">
-                <Ruler size={14} aria-hidden /> Room size
-              </span>
-              <input
-                className="admin-input"
-                name="roomSize"
-                defaultValue={room.roomSize ?? ""}
-              />
-            </label>
-            <label>
-              Sort order
-              <input
-                className="admin-input"
-                name="displayOrder"
-                type="number"
-                defaultValue={room.displayOrder}
-              />
-            </label>
-          </DetailFieldGrid>
-        </DetailSectionCard>
+        <div className={tab === "gallery" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
+          <DetailSectionCard
+            title="Photo gallery"
+            description="Upload, reorder, and set the cover image."
+            icon={ImageIcon}
+          >
+            <RoomImageGallery
+              roomId={room.id}
+              initialImages={images}
+              featuredImage={featuredImage}
+              onFeaturedChange={(url) => {
+                setFeaturedImage(url);
+                markDirty();
+              }}
+            />
+          </DetailSectionCard>
+        </div>
 
-        <DetailSectionCard
-          title="Gallery"
-          description="Upload photos and choose the cover image."
-          icon={ImageIcon}
-        >
-          <RoomImageGallery
-            roomId={room.id}
-            initialImages={images}
-            featuredImage={featuredImage}
-            onFeaturedChange={(url) => {
-              setFeaturedImage(url);
-              markDirty();
+        <div className={tab === "specs" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
+          <DetailSectionCard
+            title="Capacity & specs"
+            description="Guest limits and room details."
+            icon={Users}
+          >
+            <DetailFieldGrid columns={3}>
+              <label>
+                Max adults
+                <input
+                  className="admin-input"
+                  name="maxAdults"
+                  type="number"
+                  min="0"
+                  defaultValue={room.maxAdults}
+                />
+              </label>
+              <label>
+                Max children
+                <input
+                  className="admin-input"
+                  name="maxChildren"
+                  type="number"
+                  min="0"
+                  defaultValue={room.maxChildren}
+                />
+              </label>
+              <label>
+                Max guests
+                <input
+                  className="admin-input"
+                  name="maxGuests"
+                  type="number"
+                  min="0"
+                  defaultValue={room.maxGuests}
+                />
+              </label>
+              <label>
+                <span className="room-field-label">
+                  <BedDouble size={14} aria-hidden /> Bed type
+                </span>
+                <input
+                  className="admin-input"
+                  name="bedType"
+                  defaultValue={room.bedType ?? ""}
+                />
+              </label>
+              <label>
+                <span className="room-field-label">
+                  <Ruler size={14} aria-hidden /> Room size
+                </span>
+                <input
+                  className="admin-input"
+                  name="roomSize"
+                  defaultValue={room.roomSize ?? ""}
+                />
+              </label>
+              <label>
+                Sort order
+                <input
+                  className="admin-input"
+                  name="displayOrder"
+                  type="number"
+                  defaultValue={room.displayOrder}
+                />
+              </label>
+            </DetailFieldGrid>
+          </DetailSectionCard>
+        </div>
+
+        <div className={tab === "settings" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
+          <DetailSectionCard
+            title="Publishing"
+            description="Control website visibility."
+            icon={Settings2}
+          >
+            <div className="room-toggle-list">
+              <label className="room-toggle">
+                <span>
+                  <strong>Active</strong>
+                  <small>Available for booking when inventory allows</small>
+                </span>
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  defaultChecked={room.isActive}
+                />
+              </label>
+              <label className="room-toggle">
+                <span>
+                  <strong>Featured</strong>
+                  <small>Highlight this room on homepage listings</small>
+                </span>
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  defaultChecked={room.isFeatured}
+                />
+              </label>
+            </div>
+            <div className="detail-inline-actions">
+              <button
+                className="admin-btn"
+                type="submit"
+                disabled={loading || deactivating}
+              >
+                <Save size={16} aria-hidden />
+                {loading ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </DetailSectionCard>
+
+          <DetailDangerZone
+            title="Deactivate room"
+            description="Hide this room from the website. Existing bookings are not removed."
+            action={{
+              label: deactivating ? "Deactivating…" : "Deactivate room",
+              icon: Trash2,
+              loading: deactivating,
+              disabled: loading || deactivating,
+              onClick: () => void deactivate(),
             }}
           />
-        </DetailSectionCard>
-
-        <DetailSectionCard
-          title="Publishing"
-          description="Control whether this room appears on the website."
-          icon={Settings2}
-        >
-          <div className="room-toggle-list">
-            <label className="room-toggle">
-              <span>
-                <strong>Active</strong>
-                <small>Available for booking when inventory allows</small>
-              </span>
-              <input
-                type="checkbox"
-                name="isActive"
-                defaultChecked={room.isActive}
-              />
-            </label>
-            <label className="room-toggle">
-              <span>
-                <strong>Featured</strong>
-                <small>Highlight this room on homepage listings</small>
-              </span>
-              <input
-                type="checkbox"
-                name="isFeatured"
-                defaultChecked={room.isFeatured}
-              />
-            </label>
-          </div>
-          <div className="detail-inline-actions">
-            <button
-              className="admin-btn"
-              type="submit"
-              disabled={loading || deactivating}
-            >
-              <Save size={16} aria-hidden />
-              {loading ? "Saving…" : "Save changes"}
-            </button>
-          </div>
-        </DetailSectionCard>
-
-        <DetailDangerZone
-          title="Deactivate room"
-          description="Hide this room from the website. Existing bookings are not removed."
-          action={{
-            label: deactivating ? "Deactivating…" : "Deactivate room",
-            icon: Trash2,
-            loading: deactivating,
-            disabled: loading || deactivating,
-            onClick: () => void deactivate(),
-          }}
-        />
+        </div>
       </form>
 
       <DetailStickyActionBar

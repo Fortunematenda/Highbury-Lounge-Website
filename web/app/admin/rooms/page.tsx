@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { asc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomTypes } from "@/db/schema";
@@ -11,22 +10,22 @@ export default async function AdminRoomsPage() {
   await requireAdminPage(["content_manager"]);
   const db = getDb();
   const rooms = await db
-    .select()
+    .select({
+      id: roomTypes.id,
+      name: roomTypes.name,
+      slug: roomTypes.slug,
+      shortDescription: roomTypes.shortDescription,
+      pricePerNight: roomTypes.pricePerNight,
+      promotionalPrice: roomTypes.promotionalPrice,
+      inventoryCount: roomTypes.inventoryCount,
+      maxGuests: roomTypes.maxGuests,
+      bedType: roomTypes.bedType,
+      featuredImage: roomTypes.featuredImage,
+      isActive: roomTypes.isActive,
+      isFeatured: roomTypes.isFeatured,
+    })
     .from(roomTypes)
-    .orderBy(asc(roomTypes.displayOrder));
+    .orderBy(asc(roomTypes.displayOrder), asc(roomTypes.name));
 
-  return (
-    <div className="admin-page">
-      <header className="admin-page-header">
-        <div>
-          <h1>Rooms</h1>
-          <p className="page-sub">Room types and inventory</p>
-        </div>
-        <Link className="admin-btn" href="/admin/rooms/new">
-          Add room
-        </Link>
-      </header>
-      <RoomsList rooms={rooms} />
-    </div>
-  );
+  return <RoomsList rooms={rooms} />;
 }

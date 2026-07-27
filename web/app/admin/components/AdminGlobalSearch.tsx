@@ -33,6 +33,7 @@ export function AdminGlobalSearch({
   const [error, setError] = useState("");
   const [results, setResults] = useState<SearchHit[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogId = useId();
   const isInline = variant === "inline";
@@ -111,6 +112,15 @@ export function AdminGlobalSearch({
     };
   }, [open, query, isInline]);
 
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("hl-admin-recent-searches");
+      setRecent(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setRecent([]);
+    }
+  }, [open, panelOpen]);
+
   const searchable = query.trim().length >= 2;
   const flatHits = useMemo(() => results, [results]);
   const grouped = useMemo(() => {
@@ -125,6 +135,19 @@ export function AdminGlobalSearch({
   }, [results, searchable]);
 
   function go(href: string) {
+    try {
+      const raw = window.localStorage.getItem("hl-admin-recent-searches");
+      const prev = raw ? (JSON.parse(raw) as string[]) : [];
+      const next = [query.trim(), ...prev.filter((q) => q !== query.trim())]
+        .filter(Boolean)
+        .slice(0, 6);
+      window.localStorage.setItem(
+        "hl-admin-recent-searches",
+        JSON.stringify(next),
+      );
+    } catch {
+      /* ignore */
+    }
     setOpen(false);
     setQuery("");
     setResults([]);
@@ -176,7 +199,24 @@ export function AdminGlobalSearch({
       ) : null}
       {error ? <p className="admin-search-state error">{error}</p> : null}
       {!loading && !error && !searchable ? (
-        <p className="admin-search-state">Type at least 2 characters</p>
+        recent.length ? (
+          <div className="admin-search-group">
+            <h3>Recent</h3>
+            {recent.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="admin-search-hit"
+                onClick={() => setQuery(item)}
+              >
+                <strong>{item}</strong>
+                <span>Recent search</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="admin-search-state">Type at least 2 characters</p>
+        )
       ) : null}
       {!loading && !error && searchable && results.length === 0 ? (
         <p className="admin-search-state">No results found</p>

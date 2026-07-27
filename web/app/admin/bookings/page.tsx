@@ -83,11 +83,12 @@ export default async function AdminBookingsPage({
   ];
 
   return (
-    <div className="admin-page">
-      <header className="admin-page-header">
-        <div>
+    <div className="admin-page pms-page">
+      <header className="pms-page-header">
+        <div className="pms-page-header-copy">
+          <p className="pms-eyebrow">Operations</p>
           <h1>Bookings</h1>
-          <p className="page-sub">Search, filter and manage reservations</p>
+          <p className="pms-page-sub">Search, filter and manage reservations</p>
         </div>
       </header>
 

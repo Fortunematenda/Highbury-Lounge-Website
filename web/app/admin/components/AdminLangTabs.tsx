@@ -1,6 +1,6 @@
 "use client";
 
-import { LOCALES, LOCALE_LABELS, type AppLocale } from "@/lib/i18n/locales";
+import { LOCALES, LOCALE_NATIVE_NAMES, type AppLocale } from "@/lib/i18n/locales";
 import {
   parseTranslationsJson,
   type ContentTranslations,
@@ -21,7 +21,7 @@ export function AdminLangTabs({
   missingHint = true,
 }: Props) {
   return (
-    <div className="admin-tabs admin-lang-tabs" role="tablist" aria-label="Languages">
+    <div className="pms-lang-chips" role="tablist" aria-label="Languages">
       {LOCALES.map((code) => {
         const has =
           code === "en" ||
@@ -32,13 +32,14 @@ export function AdminLangTabs({
               translations[code]?.features,
           );
         const incomplete = missingHint && code !== "en" && !has;
+        const selected = lang === code;
         return (
           <button
             key={code}
             type="button"
             role="tab"
-            aria-selected={lang === code}
-            className={`admin-tab${lang === code ? " active" : ""}${incomplete ? " is-incomplete" : ""}`}
+            aria-selected={selected}
+            className={`pms-lang-chip${selected ? " is-active" : ""}${incomplete ? " is-incomplete" : ""}`}
             onClick={() => onChange(code)}
             title={
               code === "en"
@@ -48,10 +49,8 @@ export function AdminLangTabs({
                   : undefined
             }
           >
-            <span>{LOCALE_LABELS[code]}</span>
-            {code === "en" ? (
-              <em className="admin-lang-primary">Primary</em>
-            ) : null}
+            <span>{LOCALE_NATIVE_NAMES[code] || code}</span>
+            {selected ? <span className="pms-lang-check" aria-hidden>✓</span> : null}
             {incomplete ? (
               <span className="admin-lang-dot" aria-label="Not translated yet" />
             ) : null}
