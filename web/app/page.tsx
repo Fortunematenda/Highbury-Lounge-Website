@@ -424,26 +424,28 @@ export default function Home() {
 
   return (
     <main>
-      <section className="hero" id="home">
-        <img src={settings.hero_image || "/images/hero-venue.jpg"} alt="Aerial view of Highbury Lounge gardens and event venue" />
-        <div className="hero-shade" />
-        <div className="hero-copy">
-          <p className="eyebrow light">{t("home.eyebrow")}</p>
-          <h1>{t("home.heroTitle")}</h1>
-          <p className="hero-text">{t("home.heroText")}</p>
-          <div className="hero-actions">
-            <button
-              type="button"
-              className="button primary"
-              onClick={() => openBooking()}
-            >
-              {t("home.checkAvailability")}
-            </button>
-            <a className="button ghost" href="#about">
-              {t("home.exploreVenue")} <span>↗</span>
-            </a>
+      <div className="hero-block">
+        <section className="hero" id="home">
+          <img src={settings.hero_image || "/images/hero-venue.jpg"} alt="Aerial view of Highbury Lounge gardens and event venue" />
+          <div className="hero-shade" />
+          <div className="hero-copy">
+            <p className="eyebrow light">{t("home.eyebrow")}</p>
+            <h1>{t("home.heroTitle")}</h1>
+            <p className="hero-text">{t("home.heroText")}</p>
+            <div className="hero-actions">
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => openBooking()}
+              >
+                {t("home.checkAvailability")}
+              </button>
+              <a className="button ghost" href="#about">
+                {t("home.exploreVenue")} <span>↗</span>
+              </a>
+            </div>
           </div>
-        </div>
+        </section>
         <div className="booking-strip" id="booking-search">
           <label>
             <span>{t("booking.checkIn")}</span>
@@ -523,7 +525,7 @@ export default function Home() {
             </p>
           ) : null}
         </div>
-      </section>
+      </div>
 
       <HomeUpcomingEvents />
 

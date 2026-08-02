@@ -124,12 +124,23 @@ a { color: inherit; text-decoration: none; }
 .brand strong { display: block; font-family: Georgia, serif; font-size: 21px; line-height: 1; }
 .brand small { display: block; margin-top: 5px; font-size: 9px; text-transform: uppercase; letter-spacing: .2em; opacity: .82; }
 .nav { display: flex; justify-content: center; gap: clamp(10px, 1.4vw, 22px); font-size: 12px; font-weight: 700; }
-.nav a { position: relative; padding: 32px 0; white-space: nowrap; }
+.nav a {
+  position: relative;
+  padding: 32px 0;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.78);
+  transition: color 0.2s ease;
+}
+.nav a:hover {
+  color: #fff;
+}
+.nav a.is-active {
+  color: #e2c4aa;
+}
+.nav a::after {
+  display: none;
+}
 .nav-book-mobile { display: none; }
-.nav a::after { content: ""; position: absolute; height: 2px; left: 0; right: 100%; bottom: 23px; background: white; transition: right .25s; }
-.nav a:hover::after,
-.nav a.is-active::after { right: 0; }
-.nav a.is-active { opacity: 1; }
 .header-cta {
   border: 0;
   padding: 14px 18px;
@@ -367,6 +378,10 @@ a { color: inherit; text-decoration: none; }
 }
 .menu-button { display: none; }
 
+.hero-block {
+  position: relative;
+  margin-bottom: 56px;
+}
 .hero {
   position: relative;
   height: clamp(560px, 68vh, 720px);
@@ -375,7 +390,7 @@ a { color: inherit; text-decoration: none; }
   color: white;
   display: flex;
   align-items: center;
-  overflow: visible;
+  overflow: hidden;
 }
 @media (min-width: 1440px) {
   .hero {
@@ -910,8 +925,8 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 }
 
 /* Space for the booking strip that overlaps the hero bottom */
-.hero + .home-events-section,
-.hero + .rooms-section {
+.hero-block + .home-events-section,
+.hero-block + .rooms-section {
   padding-top: 96px;
 }
 
@@ -1723,7 +1738,6 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   }
   .nav.open { display: flex; }
   .nav a { padding: 15px; white-space: normal; }
-  .nav a::after { display: none; }
   .nav-book-mobile {
     display: block;
     margin-top: 12px;
@@ -1737,30 +1751,47 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
     text-transform: uppercase;
     cursor: pointer;
   }
+  .hero-block {
+    margin-bottom: 28px;
+  }
   .hero {
     height: auto;
     min-height: 620px;
     max-height: none;
     padding-bottom: 28px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-end;
   }
-  .hero-copy { padding-bottom: 24px; width: auto; margin-right: clamp(20px, 5vw, 40px); }
+  .hero-copy {
+    padding-bottom: 24px;
+    width: auto;
+    margin-right: clamp(20px, 5vw, 40px);
+  }
   .booking-strip {
     position: relative;
     left: auto;
+    right: auto;
     transform: none;
-    width: min(1590px, calc(100% - 40px));
-    margin: -48px auto 0;
+    width: calc(100% - 40px);
+    max-width: none;
+    margin: 16px auto 0;
     bottom: auto;
     height: auto;
     min-height: 0;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
-  .booking-strip label { border-right: 0; border-bottom: 1px solid var(--line); }
-  .booking-strip label:nth-child(odd) { border-right: 1px solid var(--line); }
-  .booking-strip button { min-height: 52px; grid-column: 1 / -1; }
-  .hero + .home-events-section,
-  .hero + .rooms-section {
-    padding-top: 88px;
+  .booking-strip label {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .booking-strip button {
+    min-height: 52px;
+    grid-column: 1 / -1;
+  }
+  .hero-block + .home-events-section,
+  .hero-block + .rooms-section {
+    padding-top: 28px;
   }
   .intro {
     padding-block: 72px 56px;
@@ -1802,7 +1833,8 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   .nav { top: 72px; }
   .hero {
     min-height: 560px;
-    align-items: flex-start;
+    align-items: stretch;
+    justify-content: flex-end;
     padding-top: 110px;
     padding-bottom: 20px;
   }
@@ -1814,14 +1846,11 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   .hero-actions .button { width: 100%; min-width: 0; min-height: 48px; }
   .booking-strip {
     width: calc(100% - 32px);
-    margin: -36px auto 0;
-    grid-template-columns: 1fr;
+    margin: 12px auto 0;
   }
   .booking-strip label {
     padding: 14px 16px;
-    border-right: 0;
   }
-  .booking-strip label:nth-child(odd) { border-right: 0; }
   .booking-strip button { min-height: 48px; }
   .section {
     padding-block: clamp(48px, 12vw, 64px);
@@ -1830,9 +1859,9 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   .section.gallery-section {
     padding-block: 28px;
   }
-  .hero + .home-events-section,
-  .hero + .rooms-section {
-    padding-top: 72px;
+  .hero-block + .home-events-section,
+  .hero-block + .rooms-section {
+    padding-top: 20px;
   }
   .section-head { display: block; }
   .price-note { text-align: left; margin-top: 18px; }
@@ -2071,7 +2100,7 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
 }
 @media (max-width: 980px) {
   .search-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
   .search-form .button {
     grid-column: 1 / -1;

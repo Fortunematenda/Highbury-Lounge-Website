@@ -1047,11 +1047,11 @@ body.has-room-gallery-open {
   }
 
   .hl-rooms-search {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .hl-rooms-search .button {
-    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
@@ -1108,6 +1108,11 @@ body.has-room-gallery-open {
 
   .hl-room-booking {
     position: static;
+  }
+
+  .hl-room-dates,
+  .hl-room-guests {
+    grid-template-columns: 1fr;
   }
 
   .hl-room-mobile-bar {
