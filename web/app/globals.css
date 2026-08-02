@@ -95,7 +95,9 @@ a { color: inherit; text-decoration: none; }
 .nav { display: flex; justify-content: center; gap: clamp(18px, 2.4vw, 38px); font-size: 13px; font-weight: 700; }
 .nav a { position: relative; padding: 32px 0; }
 .nav a::after { content: ""; position: absolute; height: 2px; left: 0; right: 100%; bottom: 23px; background: white; transition: right .25s; }
-.nav a:hover::after { right: 0; }
+.nav a:hover::after,
+.nav a.is-active::after { right: 0; }
+.nav a.is-active { opacity: 1; }
 .header-cta {
   border: 0;
   padding: 14px 18px;
@@ -445,6 +447,138 @@ h2 { font-size: clamp(39px, 4vw, 64px); line-height: 1.02; letter-spacing: -.035
 .celebrate > div:last-child { position: relative; z-index: 2; padding: 80px 8vw; max-width: 720px; }
 .celebrate h2 { font-size: clamp(46px, 5vw, 74px); }
 .celebrate p:not(.eyebrow) { max-width: 520px; font-size: 17px; line-height: 1.7; color: rgba(255,255,255,.86); margin: 26px 0 32px; }
+.celebrate-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.celebrate-actions .button.ghost.light {
+  border-color: rgba(255,255,255,.55);
+  color: #fff;
+  background: transparent;
+}
+
+.event-announce {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 6vw;
+  background: #2a1220;
+  color: #fff;
+  font-size: 13px;
+  z-index: 60;
+  position: relative;
+}
+.event-announce p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+}
+.event-announce span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #f0c9d8;
+}
+.event-announce strong { font-weight: 700; }
+.event-announce em { font-style: normal; opacity: .8; }
+.event-announce-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.event-announce-actions a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.event-announce-actions button {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.home-events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.home-event-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.home-event-media {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #e8e0e3;
+}
+.home-event-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .45s ease;
+}
+.home-event-card:hover .home-event-media img { transform: scale(1.03); }
+.home-event-body { padding: 22px 22px 24px; display: grid; gap: 12px; }
+.home-event-body h3 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+.home-event-body h3 a { color: inherit; text-decoration: none; }
+.home-event-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  color: #6b5a62;
+  font-size: 13px;
+}
+.home-event-body li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.home-event-price {
+  margin: 0;
+  color: var(--wine);
+  font-weight: 700;
+  font-size: 14px;
+}
+.home-event-body .button {
+  justify-self: start;
+  min-height: 44px;
+}
+
+@media (max-width: 980px) {
+  .home-events-grid { grid-template-columns: 1fr 1fr; }
+  .event-announce { padding: 10px 22px; align-items: flex-start; }
+}
+@media (max-width: 720px) {
+  .home-events-grid { grid-template-columns: 1fr; }
+  .home-events-section .section-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .home-events-section .section-head .button { width: 100%; text-align: center; }
+  .celebrate-actions { width: 100%; }
+  .celebrate-actions .button { width: 100%; text-align: center; }
+}
 
 .dining-section { display: grid; grid-template-columns: .78fr 1.22fr; gap: 8vw; align-items: center; }
 .dining-copy { padding-left: 3vw; }

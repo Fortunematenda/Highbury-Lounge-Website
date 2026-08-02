@@ -8,6 +8,9 @@ export type NotificationContext = {
   reference: string;
   roomName?: string;
   eventDetails?: string;
+  eventTitle?: string;
+  eventDate?: string;
+  guestCount?: string;
   checkIn?: string;
   checkOut?: string;
   guests?: string;
@@ -73,6 +76,11 @@ const EN_TEMPLATES: Record<string, Template> = {
     subject: "Conference booking confirmed — {{reference}}",
     body: (ctx, c) =>
       `Dear ${ctx.guestName},\n\nYour conference booking ${ctx.reference} is confirmed.\n\n${ctx.eventDetails ?? ""}\n\n${c.block}`,
+  },
+  event_reservation_received: {
+    subject: "Event reservation received — {{reference}}",
+    body: (ctx, c) =>
+      `Dear ${ctx.guestName},\n\nThank you for your interest in ${ctx.eventTitle ?? "our event"}.\n\nReservation: ${ctx.reference}\nEvent date: ${ctx.eventDate ?? ""}\nGuests: ${ctx.guestCount ?? ctx.guests ?? ""}\nStatus: ${ctx.status}\n\nOur team will confirm your place shortly.\n\n${c.block}`,
   },
 };
 

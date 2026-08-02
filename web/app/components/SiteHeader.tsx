@@ -3,19 +3,26 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { Toaster } from "sonner";
 import { SiteSearch } from "@/app/components/SiteSearch";
 import { SiteFooter } from "@/app/components/SiteFooter";
+import { EventAnnouncementBanner } from "@/app/components/EventAnnouncementBanner";
 import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { I18nProvider, useTranslation } from "@/lib/i18n/I18nProvider";
 import type { AppLocale } from "@/lib/i18n/locales";
 
-const NAV = [
-  { href: "/#stay", key: "nav.stay" },
-  { href: "/#meet", key: "nav.meet" },
-  { href: "/#dine", key: "nav.dine" },
-  { href: "/#gallery", key: "nav.gallery" },
-  { href: "/#contact", key: "nav.contact" },
-] as const;
+type NavItem =
+  | { type: "hash"; href: string; key: string }
+  | { type: "route"; href: string; key: string; match?: string };
+
+const NAV: NavItem[] = [
+  { type: "hash", href: "/#stay", key: "nav.stay" },
+  { type: "route", href: "/events", key: "nav.events", match: "/events" },
+  { type: "hash", href: "/#meet", key: "nav.meet" },
+  { type: "hash", href: "/#dine", key: "nav.dine" },
+  { type: "hash", href: "/#gallery", key: "nav.gallery" },
+  { type: "hash", href: "/#contact", key: "nav.contact" },
+];
 
 type Props = {
   variant?: "hero" | "solid";
@@ -78,6 +85,14 @@ export function SiteHeader({ variant = "solid" }: Props) {
     router.push("/#booking-search");
   }
 
+  function isActive(item: NavItem) {
+    if (item.type === "route") {
+      const match = item.match ?? item.href;
+      return pathname === match || pathname.startsWith(`${match}/`);
+    }
+    return false;
+  }
+
   const isSolid = variant === "solid" || headerState === "sticky";
 
   return (
@@ -107,19 +122,35 @@ export function SiteHeader({ variant = "solid" }: Props) {
         className={menuOpen ? "nav open" : "nav"}
         aria-label="Main navigation"
       >
-        {NAV.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            onClick={(event) => {
-              event.preventDefault();
-              const hash = item.href.slice(1);
-              goHomeSection(hash);
-            }}
-          >
-            {t(item.key)}
-          </a>
-        ))}
+        {NAV.map((item) => {
+          const active = isActive(item);
+          if (item.type === "route") {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={active ? "is-active" : undefined}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                {t(item.key)}
+              </Link>
+            );
+          }
+          return (
+            <a
+              key={item.href}
+              href={item.href}
+              onClick={(event) => {
+                event.preventDefault();
+                const hash = item.href.slice(1);
+                goHomeSection(hash);
+              }}
+            >
+              {t(item.key)}
+            </a>
+          );
+        })}
         <div className="nav-language-mobile">
           <LanguageSelector variant="compact" />
         </div>
@@ -160,11 +191,23 @@ export function PublicChrome({
   }
 
   const onHome = pathname === "/";
+  const onEvents = pathname.startsWith("/events");
   return (
     <I18nProvider initialLocale={initialLocale}>
+      <EventAnnouncementBanner />
       <SiteHeader variant={onHome ? "hero" : "solid"} />
-      <div className={onHome ? undefined : "has-site-header"}>{children}</div>
+      <div
+        className={[
+          onHome ? undefined : "has-site-header",
+          onEvents ? "events-chrome" : undefined,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {children}
+      </div>
       <SiteFooter />
+      <Toaster position="top-center" richColors closeButton />
     </I18nProvider>
   );
 }

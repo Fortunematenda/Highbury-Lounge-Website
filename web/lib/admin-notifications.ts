@@ -11,6 +11,7 @@ export type AdminNotificationType =
   | "check_out_upcoming"
   | "conference_request"
   | "food_preorder"
+  | "event_reservation"
   | "contact_enquiry"
   | "room_availability"
   | "menu_unavailable"

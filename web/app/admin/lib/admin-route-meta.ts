@@ -29,6 +29,7 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
     menus: "Menus",
     pricing: "Rooms",
     gallery: "Gallery",
+    events: "Events",
     guests: "Guests",
     notifications: "Notifications",
     reports: "Reports",
@@ -159,6 +160,44 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
       breadcrumbs: [
         { label: "Menus & Products", href: "/admin/menus" },
         { label: "Edit category" },
+      ],
+    };
+  }
+
+  if (root === "events" && rest[1] === "reservations" && rest.length >= 3) {
+    return {
+      title: "Reservation details",
+      breadcrumbs: [
+        { label: "Event Reservations", href: "/admin/events/reservations" },
+        { label: "Reservation details" },
+      ],
+    };
+  }
+
+  if (root === "events" && rest[1] === "reservations") {
+    return { title: "Event Reservations" };
+  }
+
+  if (root === "events" && rest[1] === "subscribers") {
+    return { title: "Event Subscribers" };
+  }
+
+  if (root === "events" && leaf === "new") {
+    return {
+      title: "Add event",
+      breadcrumbs: [
+        { label: "Events", href: "/admin/events" },
+        { label: "Add event" },
+      ],
+    };
+  }
+
+  if (root === "events" && rest.length >= 2) {
+    return {
+      title: "Edit event",
+      breadcrumbs: [
+        { label: "Events", href: "/admin/events" },
+        { label: "Edit event" },
       ],
     };
   }

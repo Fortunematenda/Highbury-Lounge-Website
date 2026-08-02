@@ -31,6 +31,8 @@ import {
   Package,
   Settings,
   Shield,
+  Sparkles,
+  Ticket,
   UtensilsCrossed,
   Users,
   Wallet,
@@ -65,6 +67,11 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/conference", label: "Conference Requests", icon: Building2 },
       { href: "/admin/packages", label: "Packages", icon: Package },
       { href: "/admin/payments", label: "Payments", icon: Wallet },
+      {
+        href: "/admin/events/reservations",
+        label: "Event Reservations",
+        icon: Ticket,
+      },
     ],
   },
   {
@@ -72,6 +79,12 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/menus", label: "Menus", icon: UtensilsCrossed },
       { href: "/admin/gallery", label: "Gallery", icon: GalleryHorizontal },
+      { href: "/admin/events", label: "Events", icon: Sparkles },
+      {
+        href: "/admin/events/subscribers",
+        label: "Event Subscribers",
+        icon: Bell,
+      },
     ],
   },
   {

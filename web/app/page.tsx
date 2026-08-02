@@ -7,6 +7,7 @@ import {
   type PublicMenuItem,
 } from "@/app/components/PublicMenuSection";
 import { PreviewMediaGallery } from "@/app/components/PreviewMediaGallery";
+import { HomeUpcomingEvents } from "@/app/components/HomeUpcomingEvents";
 import { formatMoney } from "@/lib/format";
 import { pickTranslated } from "@/lib/i18n/content";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
@@ -610,11 +611,18 @@ export default function Home() {
           <p className="eyebrow light">{t("home.celebrateEyebrow")}</p>
           <h2>{t("home.celebrateTitle")}</h2>
           <p>{t("home.celebrateText")}</p>
-          <a className="button cream" href={whatsappHref(settings.whatsapp, "Hello Highbury Lounge, I would like an event quote.")} target="_blank" rel="noreferrer">
-            {t("home.planEvent")}
-          </a>
+          <div className="celebrate-actions">
+            <a className="button cream" href="/events">
+              Explore Events
+            </a>
+            <a className="button ghost light" href="/conference">
+              Host Your Event
+            </a>
+          </div>
         </div>
       </section>
+
+      <HomeUpcomingEvents />
 
       <section className="section dining-section" id="dine">
         <div className="dining-copy">

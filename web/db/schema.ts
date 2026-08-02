@@ -594,6 +594,132 @@ export const galleryImages = sqliteTable(
   ],
 );
 
+/** Public entertainment / programme events (distinct from conference enquiries). */
+export const events = sqliteTable(
+  "events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    title: text("title").notNull(),
+    slug: text("slug").notNull().unique(),
+    shortDescription: text("short_description"),
+    description: text("description"),
+    category: text("category").notNull().default("Other"),
+    tagsJson: text("tags_json"),
+    artistOrHost: text("artist_or_host"),
+    venueName: text("venue_name").notNull().default("Highbury Lounge"),
+    venueAddress: text("venue_address")
+      .notNull()
+      .default("7504 Greenfield Cherries, Kadoma, Zimbabwe"),
+    /** ISO local datetime YYYY-MM-DDTHH:mm:ss */
+    startAt: text("start_at").notNull(),
+    endAt: text("end_at"),
+    timezone: text("timezone").notNull().default("Africa/Harare"),
+    coverImage: text("cover_image"),
+    posterImage: text("poster_image"),
+    galleryJson: text("gallery_json"),
+    /** free | fixed | from | contact */
+    entryType: text("entry_type").notNull().default("contact"),
+    currency: text("currency").notNull().default("USD"),
+    price: real("price"),
+    capacity: integer("capacity"),
+    trackCapacity: integer("track_capacity", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    soldOutOverride: integer("sold_out_override", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    limitedSpaceThreshold: integer("limited_space_threshold").default(10),
+    /** reserve_table | book_tickets | register | guest_list | enquiry | whatsapp | external | none */
+    actionType: text("action_type").notNull().default("reserve_table"),
+    customActionLabel: text("custom_action_label"),
+    externalBookingUrl: text("external_booking_url"),
+    enableOnlineReservations: integer("enable_online_reservations", {
+      mode: "boolean",
+    })
+      .notNull()
+      .default(true),
+    minGuests: integer("min_guests").notNull().default(1),
+    maxGuestsPerReservation: integer("max_guests_per_reservation")
+      .notNull()
+      .default(10),
+    reservationDeadline: text("reservation_deadline"),
+    requireApproval: integer("require_approval", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    programmeJson: text("programme_json"),
+    dressCode: text("dress_code"),
+    ageNote: text("age_note"),
+    attendanceInfo: text("attendance_info"),
+    /** draft | scheduled | published | postponed | cancelled | completed */
+    status: text("status").notNull().default("draft"),
+    isFeatured: integer("is_featured", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    showAnnouncement: integer("show_announcement", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    publishedAt: text("published_at"),
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    socialImage: text("social_image"),
+    deletedAt: text("deleted_at"),
+    ...timestamps,
+  },
+  (t) => [
+    index("events_status_idx").on(t.status),
+    index("events_start_idx").on(t.startAt),
+    index("events_category_idx").on(t.category),
+    index("events_featured_idx").on(t.isFeatured),
+  ],
+);
+
+export const eventReservations = sqliteTable(
+  "event_reservations",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    reference: text("reference").notNull().unique(),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    fullName: text("full_name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone").notNull(),
+    guestCount: integer("guest_count").notNull().default(1),
+    reservationType: text("reservation_type"),
+    seatingRequest: text("seating_request"),
+    notes: text("notes"),
+    /** Pending | Confirmed | Declined | Cancelled | Attended | No Show */
+    status: text("status").notNull().default("Pending"),
+    adminNotes: text("admin_notes"),
+    consentAccepted: integer("consent_accepted", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    ...timestamps,
+  },
+  (t) => [
+    index("event_reservations_event_idx").on(t.eventId),
+    index("event_reservations_status_idx").on(t.status),
+    index("event_reservations_created_idx").on(t.createdAt),
+  ],
+);
+
+export const eventSubscribers = sqliteTable(
+  "event_subscribers",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    email: text("email").notNull().unique(),
+    /** active | unsubscribed */
+    status: text("status").notNull().default("active"),
+    source: text("source").notNull().default("events_page"),
+    subscribedAt: text("subscribed_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    unsubscribedAt: text("unsubscribed_at"),
+    ...timestamps,
+  },
+  (t) => [index("event_subscribers_status_idx").on(t.status)],
+);
+
 /** In-app admin notifications (separate from guest email notifications). */
 export const adminNotifications = sqliteTable(
   "admin_notifications",
