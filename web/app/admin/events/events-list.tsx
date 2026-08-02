@@ -76,6 +76,8 @@ function formatEventWhen(startAt: string, endAt: string | null) {
 export function EventsList({ rows }: { rows: EventRow[] }) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [hiddenIds, setHiddenIds] = useState<number[]>([]);
+  const visibleRows = rows.filter((row) => !hiddenIds.includes(row.id));
 
   async function patchEvent(
     id: number,
@@ -132,6 +134,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not delete event");
+      setHiddenIds((ids) => [...ids, row.id]);
       toast.success(`Deleted “${row.title}”`);
       router.refresh();
     } catch (err) {
@@ -210,7 +213,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
     return row.capacity != null ? `${row.capacity} capacity` : "—";
   }
 
-  if (rows.length === 0) {
+  if (visibleRows.length === 0) {
     return <p className="admin-muted">No events match your filters.</p>;
   }
 
@@ -231,7 +234,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {visibleRows.map((row) => (
               <AdminClickableRow key={row.id} href={`/admin/events/${row.id}`}>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -287,7 +290,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
       </div>
 
       <div className="admin-mobile-cards">
-        {rows.map((row) => (
+        {visibleRows.map((row) => (
           <AdminMobileCard
             key={row.id}
             title={row.title}

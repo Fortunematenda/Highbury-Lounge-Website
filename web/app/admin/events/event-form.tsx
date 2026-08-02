@@ -535,6 +535,20 @@ export function EventForm({
         ) : undefined
       }
       backAction={{ label: "Back to events", href: "/admin/events" }}
+      secondaryActions={
+        mode === "edit" && initial
+          ? [
+              {
+                label: deleting ? "Deleting…" : "Delete",
+                icon: Trash2,
+                variant: "danger" as const,
+                loading: deleting,
+                disabled: busy || deleting,
+                onClick: () => void onDelete(),
+              },
+            ]
+          : undefined
+      }
       sidebar={
         mode === "edit" && initial ? (
           <>
@@ -1184,21 +1198,21 @@ export function EventForm({
               </button>
             </div>
           ) : null}
-
-          {mode === "edit" ? (
-            <DetailDangerZone
-              title="Delete event"
-              description="Remove this event from the website. This cannot be undone."
-              action={{
-                label: deleting ? "Deleting…" : "Delete event",
-                icon: Trash2,
-                loading: deleting,
-                disabled: busy || deleting,
-                onClick: () => void onDelete(),
-              }}
-            />
-          ) : null}
         </div>
+
+        {mode === "edit" ? (
+          <DetailDangerZone
+            title="Delete event"
+            description="Remove this event from the website and admin list. Reservations stay for your records."
+            action={{
+              label: deleting ? "Deleting…" : "Delete event",
+              icon: Trash2,
+              loading: deleting,
+              disabled: busy || deleting,
+              onClick: () => void onDelete(),
+            }}
+          />
+        ) : null}
       </form>
 
       <DetailStickyActionBar
