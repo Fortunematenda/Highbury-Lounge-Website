@@ -1167,7 +1167,7 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 .dining-images img { width: 100%; height: 360px; object-fit: cover; }
 .dining-images img:last-child { height: 280px; }
 .food-menu-section { background: var(--cream); }
-.food-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.food-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .food-card { overflow: hidden; background: white; border: 1px solid var(--line); }
 .food-image-button { position: relative; width: 100%; padding: 0; border: 0; background: #ddd; cursor: pointer; overflow: hidden; }
 .food-image-button img { width: 100%; height: 220px; object-fit: cover; transition: transform .5s; }

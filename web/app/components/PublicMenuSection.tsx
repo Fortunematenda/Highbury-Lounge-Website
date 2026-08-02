@@ -42,7 +42,7 @@ type Props = {
 };
 
 const FALLBACK_IMAGE = "/images/food.jpg";
-const INITIAL_VISIBLE = 4;
+const INITIAL_VISIBLE = 3;
 
 export function PublicMenuSection({ onPreview, onOrder }: Props) {
   const { t, i18n } = useTranslation();
