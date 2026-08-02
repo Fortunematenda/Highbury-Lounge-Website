@@ -103,12 +103,12 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
 
   return (
     <section className="section food-menu-section" aria-labelledby="food-menu-title">
-      <div className="section-head">
+      <div className="section-head food-menu-head">
         <div>
           <p className="eyebrow">{t("menu.eyebrow")}</p>
           <h2 id="food-menu-title" className="home-section-title">{t("menu.title")}</h2>
+          <p className="food-menu-note">{t("menu.note")}</p>
         </div>
-        <p className="price-note">{t("menu.note")}</p>
       </div>
 
       {loading && <p className="muted">{t("menu.loadingMenu")}</p>}
