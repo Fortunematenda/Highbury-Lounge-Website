@@ -559,7 +559,7 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 }
 .feature-row { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 22px; color: var(--sage); font-size: 12px; font-weight: 700; }
 .section-head { display: flex; justify-content: space-between; gap: 40px; align-items: end; margin-bottom: 28px; }
-.price-note { max-width: 270px; color: #88767c; font-size: 12px; line-height: 1.6; text-align: right; }
+.price-note { max-width: 240px; color: #88767c; font-size: 12px; line-height: 1.55; text-align: right; text-wrap: balance; }
 .rooms-section { background: var(--cream); }
 .rooms-section-head {
   align-items: start;
