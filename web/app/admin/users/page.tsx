@@ -24,22 +24,24 @@ export default async function UsersPage() {
     <div className="admin-page">
       <h1>Admin users</h1>
       <section className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Last login</th></tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.fullName}</td>
-                <td>{u.email}</td>
-                <td>{u.roleName}</td>
-                <td>{u.isActive ? "Yes" : "No"}</td>
-                <td>{u.lastLoginAt || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th>Last login</th></tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.fullName}</td>
+                  <td>{u.email}</td>
+                  <td>{u.roleName}</td>
+                  <td>{u.isActive ? "Yes" : "No"}</td>
+                  <td>{u.lastLoginAt || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

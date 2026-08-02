@@ -1,13 +1,15 @@
 {
   "nav": {
+    "home": "首页",
     "stay": "住宿",
-    "events": "活动",
-    "meet": "会议",
     "dine": "餐饮",
+    "conferences": "会议",
+    "meet": "会议",
+    "events": "活动",
     "gallery": "图集",
+    "about": "关于我们",
     "contact": "联系我们",
-    "bookStay": "预订客房",
-    "home": "首页"
+    "bookStay": "立即预订"
   },
   "brand": {
     "homeAria": "Highbury Lounge 首页",

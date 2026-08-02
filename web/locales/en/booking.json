@@ -51,6 +51,8 @@
   "backToVenues": "Back to venues",
   "checkingAvailability": "Checking availability…",
   "noRoomsAvailable": "No rooms available for your dates.",
+  "oneRoomAvailable": "1 room available for your dates",
+  "roomsAvailableCount": "{{count}} rooms available for your dates",
   "loading": "Loading…",
   "preferredLanguage": "Preferred language",
   "guestLanguage": "Guest language",

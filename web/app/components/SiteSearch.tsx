@@ -36,7 +36,14 @@ const SITE_PAGE_DEFS = [
     id: "page-meet",
     titleKey: "search.pages.meetTitle",
     descKey: "search.pages.meetDesc",
-    href: "/#meet",
+    href: "/#conferences",
+    kind: "Page" as const,
+  },
+  {
+    id: "page-about",
+    titleKey: "search.pages.aboutTitle",
+    descKey: "search.pages.aboutDesc",
+    href: "/#about",
     kind: "Page" as const,
   },
   {

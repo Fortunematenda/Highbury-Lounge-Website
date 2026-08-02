@@ -2,10 +2,9 @@
 
 import {
   createContext,
-  startTransition,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -14,8 +13,7 @@ import {
   DEFAULT_LOCALE,
   LOCALE_COOKIE,
   LOCALE_STORAGE_KEY,
-  detectBrowserLocale,
-  isAppLocale,
+  parseAppLocale,
   type AppLocale,
 } from "@/lib/i18n/locales";
 import { resources, type Namespace } from "@/lib/i18n/resources";
@@ -30,6 +28,7 @@ type I18nContextValue = {
 };
 
 const I18nContext = createContext<I18nContextValue | null>(null);
+const LOCALE_CHANGE_EVENT = "hl-locale-change";
 
 function getByPath(obj: Dict, path: string): unknown {
   return path.split(".").reduce<unknown>((acc, part) => {
@@ -51,7 +50,6 @@ function resolveKey(locale: AppLocale, key: string): string | undefined {
   const [nsOrFirst, ...rest] = key.split(".");
   const namespaces = Object.keys(resources[locale]) as Namespace[];
 
-  // Support "booking.checkIn" (namespace.key) and "checkIn" within common fallback
   if (rest.length && namespaces.includes(nsOrFirst as Namespace)) {
     const ns = nsOrFirst as Namespace;
     const path = rest.join(".");
@@ -73,54 +71,41 @@ function resolveKey(locale: AppLocale, key: string): string | undefined {
 }
 
 function writeLocalePreference(locale: AppLocale) {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   } catch {
     /* ignore */
   }
-  document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(locale)};path=/;max-age=31536000;samesite=lax`;
-  document.documentElement.lang = locale;
-}
-
-function readInitialLocale(initial?: AppLocale | null): AppLocale {
-  if (initial && isAppLocale(initial)) return initial;
-  if (typeof window === "undefined") return DEFAULT_LOCALE;
   try {
-    const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (isAppLocale(stored)) return stored;
+    sessionStorage.setItem(LOCALE_STORAGE_KEY, locale);
   } catch {
     /* ignore */
   }
-  const cookieMatch = document.cookie.match(/(?:^|;\s*)hl_locale=([^;]+)/);
-  const cookieVal = cookieMatch?.[1] ? decodeURIComponent(cookieMatch[1]) : null;
-  if (isAppLocale(cookieVal)) return cookieVal;
-  return detectBrowserLocale(navigator.language);
+  // Max-Age 1 year; Path=/ so SSR layout cookies() can read it on refresh.
+  document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  document.documentElement.lang = locale;
+  window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT));
 }
 
 export function I18nProvider({
   children,
-  initialLocale,
 }: {
   children: ReactNode;
   initialLocale?: AppLocale | null;
 }) {
-  const [locale, setLocaleState] = useState<AppLocale>(() =>
-    initialLocale && isAppLocale(initialLocale) ? initialLocale : DEFAULT_LOCALE,
-  );
+  // Public language switcher is disabled for now — keep the site on English.
+  const [locale] = useState<AppLocale>(DEFAULT_LOCALE);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const next = readInitialLocale(initialLocale);
-    writeLocalePreference(next);
-    startTransition(() => {
-      setLocaleState(next);
-      setReady(true);
-    });
-  }, [initialLocale]);
+  useLayoutEffect(() => {
+    writeLocalePreference(DEFAULT_LOCALE);
+    document.documentElement.lang = DEFAULT_LOCALE;
+    setReady(true);
+  }, []);
 
-  const setLocale = useCallback((next: AppLocale) => {
-    setLocaleState(next);
-    writeLocalePreference(next);
+  const setLocale = useCallback((_next: AppLocale) => {
+    // Language switching is temporarily disabled.
   }, []);
 
   const t = useCallback(
@@ -131,7 +116,7 @@ export function I18nProvider({
     [locale],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof document === "undefined") return;
     document.title = t("common.meta.siteTitle");
     const meta = document.querySelector('meta[name="description"]');
@@ -164,7 +149,8 @@ export function useTranslation(_ns?: string) {
     i18n: {
       language: locale,
       changeLanguage: async (lng: string) => {
-        if (isAppLocale(lng)) setLocale(lng);
+        const next = parseAppLocale(lng);
+        if (next) setLocale(next);
       },
     },
     ready,

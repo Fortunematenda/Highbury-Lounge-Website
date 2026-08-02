@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
 import { PublicChrome } from "@/app/components/SiteHeader";
-import { isAppLocale, type AppLocale } from "@/lib/i18n/locales";
+import { parseAppLocale, type AppLocale } from "@/lib/i18n/locales";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,6 +19,12 @@ export const metadata: Metadata = {
     shortcut: "/favicon.png",
     apple: "/apple-icon.png",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 function resolvePathname(headerStore: Headers) {
@@ -49,10 +55,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const jar = await cookies();
-  const cookieLocale = jar.get("hl_locale")?.value;
-  const initialLocale: AppLocale | null = isAppLocale(cookieLocale)
-    ? cookieLocale
-    : null;
+  const initialLocale: AppLocale | null = parseAppLocale(
+    jar.get("hl_locale")?.value,
+  );
   const pathname = resolvePathname(await headers());
   const isAdmin = pathname.startsWith("/admin");
 

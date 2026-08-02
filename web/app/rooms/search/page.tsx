@@ -7,7 +7,6 @@ import { BackLink } from "@/app/components/BackLink";
 import { CompactImageStrip } from "@/app/components/PreviewMediaGallery";
 import { formatMoney } from "@/lib/format";
 import { pickTranslated } from "@/lib/i18n/content";
-import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { AppLocale } from "@/lib/i18n/locales";
 
@@ -67,15 +66,25 @@ function RoomResultCard({
   );
 
   const metaParts = [
-    t("booking.upToGuests", { count: room.maxGuests }),
     room.bedType || null,
+    t("booking.upToGuests", { count: room.maxGuests }),
     room.roomSize || null,
     `${room.nights} ${room.nights === 1 ? t("booking.night") : t("booking.nights")}`,
   ].filter(Boolean);
 
+  const short = (localized.shortDescription || "").trim();
+  const long = (localized.description || "").trim();
+  // Prefer prose copy; skip shortDescriptions that are just amenity/meta lines.
+  const summary =
+    short && !short.includes("·")
+      ? short
+      : long && long !== short
+        ? long
+        : "";
+
   return (
     <article className="available-room">
-      <div>
+      <div className="available-room-media">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={activeImage} alt={localized.name} />
         {uniqueGallery.length > 1 ? (
@@ -87,13 +96,22 @@ function RoomResultCard({
           />
         ) : null}
       </div>
-      <div>
+
+      <div className="available-room-copy">
         <span className="available-badge">
           {room.roomsRemaining} {t("booking.remaining")}
         </span>
-        <h3>{localized.name}</h3>
-        <p>{localized.shortDescription || localized.description}</p>
-        <p className="muted">{metaParts.join(" · ")}</p>
+        <h3>
+          <Link href={`/rooms/${room.slug}`} className="available-room-title-link">
+            {localized.name}
+          </Link>
+        </h3>
+        {metaParts.length > 0 ? (
+          <p className="available-room-meta">{metaParts.join(" · ")}</p>
+        ) : null}
+        {summary ? (
+          <p className="available-room-summary">{summary}</p>
+        ) : null}
         {room.amenities.length > 0 ? (
           <div className="amenity-chips">
             {room.amenities.slice(0, 6).map((a) => (
@@ -101,23 +119,23 @@ function RoomResultCard({
             ))}
           </div>
         ) : null}
-        <strong>
-          {formatMoney(room.effectivePrice, currency, i18n.language)}{" "}
-          <small>/ {t("booking.perNight")}</small>
-        </strong>
-        <p>
-          {t("booking.estimatedTotalLabel")}:{" "}
-          <strong>
-            {formatMoney(room.estimatedTotal, currency, i18n.language)}
-          </strong>
-        </p>
       </div>
-      <Link
-        className="button primary"
-        href={`/book?roomTypeId=${room.id}&checkIn=${checkIn}&checkOut=${checkOut}&adults=${adults}&children=${children}&rooms=${rooms}`}
-      >
-        {t("booking.reserveNow")}
-      </Link>
+
+      <aside className="available-room-pricing">
+        <small>{t("booking.from")}</small>
+        <strong>{formatMoney(room.effectivePrice, currency, i18n.language)}</strong>
+        <span>{t("booking.perNight")}</span>
+        <p className="available-room-total">
+          {t("booking.estimatedTotalLabel")}
+          <em>{formatMoney(room.estimatedTotal, currency, i18n.language)}</em>
+        </p>
+        <Link
+          className="button primary"
+          href={`/book?roomTypeId=${room.id}&checkIn=${checkIn}&checkOut=${checkOut}&adults=${adults}&children=${children}&rooms=${rooms}`}
+        >
+          {t("booking.reserveNow")}
+        </Link>
+      </aside>
     </article>
   );
 }
@@ -182,57 +200,94 @@ function SearchResultsInner() {
   }
 
   return (
-    <main className="booking-flow">
+    <main className="booking-flow booking-flow--search">
       <section className="booking-flow-panel">
-        <BackLink href="/" label={t("booking.backToHome")} />
-        <LanguageSelector variant="panel" />
+        <div className="booking-flow-top">
+          <BackLink href="/" label={t("booking.backToHome")} />
+        </div>
         <p className="eyebrow">{t("booking.findStay")}</p>
         <h1>{t("booking.availableRooms")}</h1>
+
         <form className="search-form" onSubmit={onSearch}>
           <label>
             {t("booking.checkIn")}
-            <input type="date" min={today} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} required />
+            <input
+              type="date"
+              min={today}
+              value={checkIn}
+              onChange={(e) => setCheckIn(e.target.value)}
+              required
+            />
           </label>
           <label>
             {t("booking.checkOut")}
-            <input type="date" min={checkIn || today} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required />
+            <input
+              type="date"
+              min={checkIn || today}
+              value={checkOut}
+              onChange={(e) => setCheckOut(e.target.value)}
+              required
+            />
           </label>
           <label>
             {t("booking.adults")}
-            <input type="number" min={1} max={8} value={adults} onChange={(e) => setAdults(e.target.value)} required />
+            <input
+              type="number"
+              min={1}
+              max={8}
+              value={adults}
+              onChange={(e) => setAdults(e.target.value)}
+              required
+            />
           </label>
           <label>
             {t("booking.children")}
-            <input type="number" min={0} max={8} value={children} onChange={(e) => setChildren(e.target.value)} required />
+            <input
+              type="number"
+              min={0}
+              max={8}
+              value={children}
+              onChange={(e) => setChildren(e.target.value)}
+              required
+            />
           </label>
           <label>
             {t("booking.rooms")}
-            <input type="number" min={1} max={5} value={rooms} onChange={(e) => setRooms(e.target.value)} required />
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={rooms}
+              onChange={(e) => setRooms(e.target.value)}
+              required
+            />
           </label>
           <button className="button primary" type="submit">
             {t("booking.search")}
           </button>
         </form>
 
-        {error && (
+        {error ? (
           <p className="form-error" role="alert">
             {error}
           </p>
-        )}
-        {loading && <p className="muted">{t("booking.checkingAvailability")}</p>}
+        ) : null}
+        {loading ? (
+          <p className="availability-status">{t("booking.checkingAvailability")}</p>
+        ) : null}
 
-        {!loading && !error && results.length === 0 && checkIn && checkOut && (
-          <div className="empty-state">
+        {!loading && !error && results.length === 0 && checkIn && checkOut ? (
+          <div className="empty-state no-availability">
             <strong>{t("booking.noRoomsAvailable")}</strong>
             <p>{t("booking.tryDifferentDates")}</p>
           </div>
-        )}
+        ) : null}
 
         {!loading && results.length > 0 ? (
-          <p className="muted" style={{ marginBottom: 12 }}>
+          <p className="availability-count">
             {results.length === 1
-              ? "1 room available from your inventory"
-              : `${results.length} rooms available from your inventory`}
+              ? t("booking.oneRoomAvailable")
+              : t("booking.roomsAvailableCount", { count: results.length })}
           </p>
         ) : null}
 
@@ -257,8 +312,8 @@ function SearchResultsInner() {
 function LoadingFallback() {
   const { t } = useTranslation();
   return (
-    <main className="booking-flow">
-      <p>{t("booking.loading")}</p>
+    <main className="booking-flow booking-flow--search">
+      <p className="availability-status">{t("booking.loading")}</p>
     </main>
   );
 }

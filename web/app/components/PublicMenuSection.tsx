@@ -106,7 +106,7 @@ export function PublicMenuSection({ onPreview, onOrder }: Props) {
       <div className="section-head">
         <div>
           <p className="eyebrow">{t("menu.eyebrow")}</p>
-          <h2 id="food-menu-title">{t("menu.title")}</h2>
+          <h2 id="food-menu-title" className="home-section-title">{t("menu.title")}</h2>
         </div>
         <p className="price-note">{t("menu.note")}</p>
       </div>

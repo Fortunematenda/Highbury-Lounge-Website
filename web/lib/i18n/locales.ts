@@ -31,18 +31,37 @@ export function isAppLocale(value: string | null | undefined): value is AppLocal
   return !!value && (LOCALES as readonly string[]).includes(value);
 }
 
+/** Accepts exact codes plus common aliases / casing (zh-cn, zh_CN, etc.). */
+export function parseAppLocale(value: string | null | undefined): AppLocale | null {
+  if (!value) return null;
+  let raw = value.trim();
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    /* keep raw */
+  }
+  raw = raw.trim().replace(/^["']|["']$/g, "");
+  if (isAppLocale(raw)) return raw;
+
+  const lower = raw.toLowerCase().replace(/_/g, "-");
+  if (lower === "zh" || lower.startsWith("zh-")) return "zh-CN";
+  if (lower === "sn" || lower.startsWith("sn-")) return "sn";
+  if (lower === "nd" || lower === "nr" || lower.startsWith("nd-") || lower.startsWith("nr-")) {
+    return "nd";
+  }
+  if (lower === "en" || lower.startsWith("en-")) return "en";
+  return null;
+}
+
 export function detectBrowserLocale(navLang?: string | null): AppLocale {
-  const lang = (navLang || "").toLowerCase();
-  if (lang.startsWith("zh")) return "zh-CN";
-  if (lang.startsWith("sn")) return "sn";
-  if (lang.startsWith("nd") || lang.startsWith("nr")) return "nd";
-  if (lang.startsWith("en")) return "en";
-  return DEFAULT_LOCALE;
+  return parseAppLocale(navLang) ?? DEFAULT_LOCALE;
 }
 
 export function readLocaleCookie(cookieHeader?: string | null): AppLocale | null {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(/(?:^|;\s*)hl_locale=([^;]+)/);
-  const value = match?.[1] ? decodeURIComponent(match[1]) : null;
-  return isAppLocale(value) ? value : null;
+  const match = cookieHeader.match(
+    new RegExp(`(?:^|;\\s*)${LOCALE_COOKIE}=([^;]+)`),
+  );
+  const value = match?.[1] ? match[1] : null;
+  return parseAppLocale(value);
 }

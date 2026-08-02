@@ -7,7 +7,6 @@ import { Toaster } from "sonner";
 import { SiteSearch } from "@/app/components/SiteSearch";
 import { SiteFooter } from "@/app/components/SiteFooter";
 import { EventAnnouncementBanner } from "@/app/components/EventAnnouncementBanner";
-import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { I18nProvider, useTranslation } from "@/lib/i18n/I18nProvider";
 import type { AppLocale } from "@/lib/i18n/locales";
 
@@ -16,11 +15,13 @@ type NavItem =
   | { type: "route"; href: string; key: string; match?: string };
 
 const NAV: NavItem[] = [
-  { type: "hash", href: "/#stay", key: "nav.stay" },
-  { type: "route", href: "/events", key: "nav.events", match: "/events" },
-  { type: "hash", href: "/#meet", key: "nav.meet" },
+  { type: "route", href: "/", key: "nav.home", match: "/" },
+  { type: "route", href: "/rooms", key: "nav.stay", match: "/rooms" },
   { type: "hash", href: "/#dine", key: "nav.dine" },
+  { type: "hash", href: "/#conferences", key: "nav.conferences" },
+  { type: "route", href: "/events", key: "nav.events", match: "/events" },
   { type: "hash", href: "/#gallery", key: "nav.gallery" },
+  { type: "hash", href: "/#about", key: "nav.about" },
   { type: "hash", href: "/#contact", key: "nav.contact" },
 ];
 
@@ -43,7 +44,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
       return;
     }
 
-    const desktopQuery = window.matchMedia("(min-width: 981px)");
+    const desktopQuery = window.matchMedia("(min-width: 1101px)");
     const onScroll = () => {
       if (!desktopQuery.matches) {
         setHeaderState("top");
@@ -64,6 +65,20 @@ export function SiteHeader({ variant = "solid" }: Props) {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   function goHomeSection(hash: string) {
     setMenuOpen(false);
@@ -88,6 +103,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
   function isActive(item: NavItem) {
     if (item.type === "route") {
       const match = item.match ?? item.href;
+      if (match === "/") return pathname === "/";
       return pathname === match || pathname.startsWith(`${match}/`);
     }
     return false;
@@ -127,7 +143,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
           if (item.type === "route") {
             return (
               <Link
-                key={item.href}
+                key={`${item.key}-${item.href}`}
                 href={item.href}
                 className={active ? "is-active" : undefined}
                 aria-current={active ? "page" : undefined}
@@ -139,11 +155,13 @@ export function SiteHeader({ variant = "solid" }: Props) {
           }
           return (
             <a
-              key={item.href}
+              key={`${item.key}-${item.href}`}
               href={item.href}
               onClick={(event) => {
                 event.preventDefault();
-                const hash = item.href.slice(1);
+                const hash = item.href.includes("#")
+                  ? `#${item.href.split("#")[1]}`
+                  : item.href;
                 goHomeSection(hash);
               }}
             >
@@ -151,13 +169,16 @@ export function SiteHeader({ variant = "solid" }: Props) {
             </a>
           );
         })}
-        <div className="nav-language-mobile">
-          <LanguageSelector variant="compact" />
-        </div>
+        <button
+          type="button"
+          className="nav-book-mobile"
+          onClick={openBooking}
+        >
+          {t("nav.bookStay")}
+        </button>
       </nav>
 
       <div className="header-actions">
-        <LanguageSelector variant="header" />
         <SiteSearch />
         <button
           type="button"
@@ -193,7 +214,7 @@ export function PublicChrome({
   const onHome = pathname === "/";
   const onEvents = pathname.startsWith("/events");
   return (
-    <I18nProvider initialLocale={initialLocale}>
+    <I18nProvider key="public-i18n" initialLocale={initialLocale}>
       <EventAnnouncementBanner />
       <SiteHeader variant={onHome ? "hero" : "solid"} />
       <div

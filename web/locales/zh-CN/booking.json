@@ -51,6 +51,8 @@
   "backToVenues": "返回场地",
   "checkingAvailability": "正在查询空房…",
   "noRoomsAvailable": "您所选日期暂无可用客房。",
+  "oneRoomAvailable": "您所选日期有 1 间客房可订",
+  "roomsAvailableCount": "您所选日期有 {{count}} 间客房可订",
   "loading": "加载中…",
   "preferredLanguage": "首选语言",
   "guestLanguage": "客人语言",

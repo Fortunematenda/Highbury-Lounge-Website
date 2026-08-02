@@ -1,13 +1,15 @@
 {
   "nav": {
+    "home": "Home",
     "stay": "Stay",
-    "events": "Events",
+    "dine": "Dining",
+    "conferences": "Conferences",
     "meet": "Conferences",
-    "dine": "Dine",
+    "events": "Events",
     "gallery": "Gallery",
+    "about": "About",
     "contact": "Contact",
-    "bookStay": "Book your stay",
-    "home": "Home"
+    "bookStay": "Book Now"
   },
   "brand": {
     "homeAria": "Highbury Lounge home",
@@ -53,9 +55,11 @@
       "homeDesc": "Welcome to Highbury Lounge in Kadoma",
       "stayTitle": "Stay",
       "stayDesc": "Guest rooms and accommodation",
-      "meetTitle": "Meet & celebrate",
-      "meetDesc": "Conferences, events and celebrations",
-      "dineTitle": "Dine",
+      "meetTitle": "Conferences",
+      "meetDesc": "Conference spaces and meeting setups",
+      "aboutTitle": "About",
+      "aboutDesc": "Hospitality, venue and Highbury story",
+      "dineTitle": "Dining",
       "dineDesc": "Restaurant and kitchen dining",
       "menuTitle": "Kitchen menu",
       "menuDesc": "Explore food and drinks from our kitchen",

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { BackLink } from "@/app/components/BackLink";
-import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 function SuccessInner() {
@@ -15,7 +14,6 @@ function SuccessInner() {
     <main className="booking-flow">
       <section className="booking-flow-panel success-panel">
         <BackLink href="/" label={t("actions.back")} />
-        <LanguageSelector variant="panel" />
         <span className="success-mark">✓</span>
         <h1>{t("conference.enquiryReceived")}</h1>
         <p>{t("conference.enquiryThanksWithRef", { reference })}</p>

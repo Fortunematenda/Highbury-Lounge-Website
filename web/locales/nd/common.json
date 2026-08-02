@@ -1,13 +1,15 @@
 {
   "nav": {
+    "home": "Ikhaya",
     "stay": "Ukuhlala",
-    "events": "Imicimbi",
-    "meet": "Imihlangano",
     "dine": "Ukudla",
+    "conferences": "Imihlangano",
+    "meet": "Imihlangano",
+    "events": "Imicimbi",
     "gallery": "Izithombe",
+    "about": "Mayelana lathi",
     "contact": "Xhumana lathi",
-    "bookStay": "Bhuka ukuhlala kwakho",
-    "home": "Ikhaya"
+    "bookStay": "Bhuka manje"
   },
   "brand": {
     "homeAria": "Highbury Lounge ikhaya",

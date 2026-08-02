@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   ImageIcon,
   Megaphone,
   Plus,
@@ -499,6 +501,18 @@ export function EventForm({
 
   const title = mode === "create" ? "Add event" : initial?.title || "Edit event";
   const showFullEntry = form.entryType === "fixed" || form.entryType === "from";
+  const tabIndex = TABS.findIndex((item) => item.id === tab);
+  const canGoBack = tabIndex > 0;
+  const canGoNext = tabIndex >= 0 && tabIndex < TABS.length - 1;
+  const readyToPublish =
+    form.title.trim().length > 0 &&
+    Boolean(form.startAt) &&
+    Boolean(coverImage || pendingCover[0]);
+
+  function goToTab(direction: -1 | 1) {
+    const next = TABS[tabIndex + direction];
+    if (next) setTab(next.id);
+  }
 
   return (
     <DetailPageShell
@@ -573,7 +587,12 @@ export function EventForm({
         <PmsTabs tabs={[...TABS]} value={tab} onChange={(id) => setTab(id as TabId)} />
       </div>
 
-      <form id="event-form" className="detail-form-stack" onSubmit={onSubmit}>
+      <form
+        id="event-form"
+        className="detail-form-stack"
+        noValidate
+        onSubmit={onSubmit}
+      >
         <div className={tab === "basic" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
           <DetailSectionCard
             title="Event details"
@@ -584,7 +603,6 @@ export function EventForm({
               <AdminFormField label="Title" required>
                 <AdminTextInput
                   value={form.title}
-                  required
                   onChange={(e) => update("title", e.target.value)}
                 />
               </AdminFormField>
@@ -698,7 +716,6 @@ export function EventForm({
               <AdminFormField label="Starts" required>
                 <AdminTextInput
                   type="datetime-local"
-                  required
                   value={form.startAt}
                   onChange={(e) => update("startAt", e.target.value)}
                 />
@@ -1155,16 +1172,18 @@ export function EventForm({
             />
           </DetailSectionCard>
 
-          <div className="detail-inline-actions">
-            <button className="admin-btn" type="submit" disabled={busy}>
-              <Save size={16} aria-hidden />
-              {busy
-                ? "Saving…"
-                : mode === "create"
-                  ? "Create event"
-                  : "Save changes"}
-            </button>
-          </div>
+          {readyToPublish ? (
+            <div className="detail-inline-actions">
+              <button className="admin-btn" type="submit" disabled={busy}>
+                <Save size={16} aria-hidden />
+                {busy
+                  ? "Saving…"
+                  : mode === "create"
+                    ? "Create event"
+                    : "Save changes"}
+              </button>
+            </div>
+          ) : null}
 
           {mode === "edit" ? (
             <DetailDangerZone
@@ -1183,19 +1202,45 @@ export function EventForm({
       </form>
 
       <DetailStickyActionBar
-        visible={dirty && !busy}
-        primaryAction={{
-          label: mode === "create" ? "Create event" : "Save changes",
-          icon: Save,
-          loading: busy,
-          onClick: () =>
-            (document.getElementById("event-form") as HTMLFormElement)?.requestSubmit(),
-        }}
-        cancelAction={{
-          label: mode === "create" ? "Discard" : "Back to events",
-          href: mode === "create" ? "/admin/events" : "/admin/events",
-          variant: "ghost",
-        }}
+        tone="light"
+        visible={!busy}
+        cancelAction={
+          canGoBack
+            ? {
+                label: "Back",
+                icon: ChevronLeft,
+                variant: "ghost",
+                onClick: () => goToTab(-1),
+              }
+            : undefined
+        }
+        primaryAction={
+          canGoNext
+            ? {
+                label: "Next",
+                icon: ChevronRight,
+                onClick: () => goToTab(1),
+              }
+            : readyToPublish
+              ? {
+                  label:
+                    mode === "create"
+                      ? busy
+                        ? "Creating…"
+                        : "Create event"
+                      : busy
+                        ? "Saving…"
+                        : "Save changes",
+                  icon: Save,
+                  loading: busy,
+                  disabled: busy || (mode === "edit" && !dirty),
+                  onClick: () =>
+                    (
+                      document.getElementById("event-form") as HTMLFormElement
+                    )?.requestSubmit(),
+                }
+              : null
+        }
       />
     </DetailPageShell>
   );

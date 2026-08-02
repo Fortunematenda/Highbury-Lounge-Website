@@ -1,13 +1,15 @@
 {
   "nav": {
+    "home": "Kumba",
     "stay": "Kugara",
-    "events": "Zviitiko",
-    "meet": "Misangano",
     "dine": "Kudya",
+    "conferences": "Misangano",
+    "meet": "Misangano",
+    "events": "Zviitiko",
     "gallery": "Mifananidzo",
+    "about": "Nezvedu",
     "contact": "Taura nesu",
-    "bookStay": "Bhuka kugara kwako",
-    "home": "Kumba"
+    "bookStay": "Bhuka izvozvi"
   },
   "brand": {
     "homeAria": "Highbury Lounge kumba",

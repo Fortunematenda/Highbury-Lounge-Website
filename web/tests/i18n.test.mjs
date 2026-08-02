@@ -7,6 +7,7 @@ import {
   DEFAULT_LOCALE,
   detectBrowserLocale,
   isAppLocale,
+  parseAppLocale,
   LOCALES,
   INTL_LOCALE,
 } from "../lib/i18n/locales.ts";
@@ -52,6 +53,15 @@ test("isAppLocale validates codes", () => {
   assert.equal(isAppLocale("en"), true);
   assert.equal(isAppLocale("zh-CN"), true);
   assert.equal(isAppLocale("fr"), false);
+});
+
+test("parseAppLocale normalizes aliases and casing", () => {
+  assert.equal(parseAppLocale("zh-CN"), "zh-CN");
+  assert.equal(parseAppLocale("zh-cn"), "zh-CN");
+  assert.equal(parseAppLocale("zh_CN"), "zh-CN");
+  assert.equal(parseAppLocale("zh"), "zh-CN");
+  assert.equal(parseAppLocale("en-US"), "en");
+  assert.equal(parseAppLocale("fr"), null);
 });
 
 test("Chinese booking keys exist and differ from English", () => {

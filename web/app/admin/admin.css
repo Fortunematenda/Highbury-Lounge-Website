@@ -928,8 +928,13 @@ textarea.admin-textarea-fixed {
 
 .admin-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
+}
+
+.admin-calendar-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-calendar-dow {
@@ -990,6 +995,24 @@ textarea.admin-textarea-fixed {
   gap: 8px 12px;
   font-size: 13px;
   margin: 0;
+}
+
+@media (max-width: 960px) {
+  .admin-dl {
+    grid-template-columns: 1fr;
+    gap: 2px 0;
+  }
+
+  .admin-dl dt {
+    margin-top: 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .admin-dl dt:first-child {
+    margin-top: 0;
+  }
 }
 
 .admin-dl > div {
@@ -2501,6 +2524,7 @@ textarea.admin-textarea-fixed {
 
 .admin-card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -2753,6 +2777,17 @@ textarea.admin-textarea-fixed {
   min-width: 720px;
 }
 
+@media (max-width: 960px) {
+  .admin-room-availability {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-room-table {
+    min-width: 560px;
+  }
+}
+
 .admin-room-status {
   display: inline-flex;
   align-items: center;
@@ -2890,6 +2925,28 @@ textarea.admin-textarea-fixed {
   .admin-quick-actions .admin-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .admin-calendar-grid {
+    min-width: 640px;
+  }
+
+  .admin-calendar-day {
+    min-height: 72px;
+    font-size: 10px;
+  }
+
+  .menu-current-image {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-current-image img {
+    width: 100%;
+    height: 160px;
+  }
+
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3163,7 +3220,7 @@ textarea.admin-textarea-fixed {
 .room-toggle-list {
   display: grid;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .room-toggle {
@@ -3340,7 +3397,7 @@ textarea.admin-textarea-fixed {
 .detail-page-main,
 .detail-form-stack {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -3353,6 +3410,12 @@ textarea.admin-textarea-fixed {
 
 .detail-section-card {
   margin-bottom: 0;
+}
+
+.detail-section-body {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
 }
 
 .detail-section-head {
@@ -3527,6 +3590,21 @@ textarea.admin-textarea-fixed {
   margin-right: auto;
 }
 
+@media (max-width: 960px) {
+  .detail-sticky-bar {
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    margin: 0 -12px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .pms-fab {
+    bottom: max(84px, calc(72px + env(safe-area-inset-bottom)));
+  }
+}
+
 .detail-sticky-bar.is-actions-only {
   justify-content: flex-end;
   padding: 10px 12px;
@@ -3566,6 +3644,34 @@ textarea.admin-textarea-fixed {
   background: #fff;
   color: #2a1220;
   border-color: #fff;
+}
+
+.detail-sticky-bar.is-light {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 8px 0 4px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.detail-sticky-bar.is-light .admin-btn.ghost {
+  color: var(--admin-ink, #2a1220);
+  border-color: rgba(42, 18, 32, 0.18);
+  background: #fff;
+}
+
+.detail-sticky-bar.is-light .admin-btn.ghost:hover {
+  background: rgba(42, 18, 32, 0.04);
+}
+
+.detail-sticky-bar.is-light .admin-btn:not(.ghost):not(.danger):not(.secondary) {
+  background: var(--wine, #70163f);
+  color: #fff;
+  border-color: var(--wine, #70163f);
 }
 
 .detail-state-card {
@@ -4219,6 +4325,12 @@ textarea.admin-textarea-fixed {
   box-shadow: 0 1px 3px rgba(42, 18, 32, 0.08);
 }
 
+.pms-tab-panel {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
 .pms-tab-panel-hidden {
   display: none !important;
 }
@@ -4233,7 +4345,7 @@ textarea.admin-textarea-fixed {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid #e4dce0;

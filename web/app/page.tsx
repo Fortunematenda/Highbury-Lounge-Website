@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   PublicMenuSection,
@@ -54,7 +55,10 @@ type HomeRoom = {
   images: string[];
   price: number;
   capacity: number;
+  /** Compact meta for cards, e.g. "King bed · 2 guests" */
   detail: string;
+  /** Longer description for cards / listings */
+  summary: string;
 };
 
 type ApiPackage = {
@@ -165,7 +169,6 @@ export default function Home() {
     dine_image_2: "/images/food.jpg",
   });
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
-  const [roomPreview, setRoomPreview] = useState<HomeRoom | null>(null);
   const [conferencePreview, setConferencePreview] = useState<HomeVenue | null>(null);
   const [foodPreview, setFoodPreview] = useState<PublicFoodItem | null>(null);
   const [foodOrderOpen, setFoodOrderOpen] = useState(false);
@@ -239,11 +242,26 @@ export default function Home() {
         },
         room.translationsJson,
       );
-      const detailParts = [
-        localized.shortDescription || localized.description,
-        room.bedType,
+      const metaFromFields = [
+        room.bedType?.trim() || null,
         room.maxGuests ? `${room.maxGuests} guests` : null,
-      ].filter(Boolean);
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const short = (localized.shortDescription || "").trim();
+      const long = (localized.description || "").trim();
+      // Prefer a shortDescription that already lists bed/amenities as the meta line
+      // so we never append bedType/guests on top of it.
+      const detail =
+        (short.includes("·") ? short : metaFromFields || short) || localized.name;
+      const summary =
+        long && long !== detail && long !== short
+          ? long
+          : short.includes("·")
+            ? ""
+            : short && short !== detail
+              ? short
+              : "";
       return {
         id: room.slug,
         name: localized.name,
@@ -253,7 +271,8 @@ export default function Home() {
           : [room.featuredImage || "/images/deluxe-room.jpg"],
         price: room.promotionalPrice ?? room.pricePerNight,
         capacity: room.maxGuests,
-        detail: detailParts.join(" · ") || localized.name,
+        detail,
+        summary,
       };
     });
   }, [apiRooms, locale, settings.hero_image]);
@@ -420,7 +439,7 @@ export default function Home() {
             >
               {t("home.checkAvailability")}
             </button>
-            <a className="button ghost" href="#meet">
+            <a className="button ghost" href="#about">
               {t("home.exploreVenue")} <span>↗</span>
             </a>
           </div>
@@ -506,28 +525,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="intro section">
-        <div>
-          <p className="eyebrow">{t("home.introEyebrow")}</p>
-          <h2>{t("home.introTitle")}</h2>
-        </div>
-        <div className="intro-copy">
-          <p>{t("home.introText")}</p>
-          <div className="feature-row">
-            <span>✓ {t("home.featureParking")}</span>
-            <span>✓ {t("home.featureBreakfast")}</span>
-            <span>✓ {t("home.featureGardens")}</span>
-          </div>
-        </div>
-      </section>
+      <HomeUpcomingEvents />
 
       <section className="section rooms-section" id="stay">
-        <div className="section-head">
-          <div>
+        <div className="section-head rooms-section-head">
+          <div className="rooms-section-copy">
             <p className="eyebrow">{t("home.stayEyebrow")}</p>
-            <h2>{t("home.stayTitle")}</h2>
+            <h2 className="home-section-title rooms-section-title">{t("home.stayTitle")}</h2>
+            <p className="section-sub">{t("home.stayNote")}</p>
           </div>
-          <p className="price-note">{t("home.stayNote")}</p>
         </div>
         <div className="room-grid">
           {rooms.length === 0 ? (
@@ -535,10 +541,14 @@ export default function Home() {
           ) : (
             rooms.map((room) => (
             <article className="room-card" key={room.id}>
-              <img src={room.image} alt={room.name} />
+              <Link href={`/rooms/${room.id}`} className="room-card-media">
+                <img src={room.image} alt={room.name} />
+              </Link>
               <div className="room-card-content">
                 <div>
-                  <h3>{room.name}</h3>
+                  <h3>
+                    <Link href={`/rooms/${room.id}`}>{room.name}</Link>
+                  </h3>
                   <p>{room.detail}</p>
                 </div>
                 <div className="room-price">
@@ -547,16 +557,16 @@ export default function Home() {
                   <small>{t("home.nightRate")}</small>
                 </div>
               </div>
-              <button onClick={() => setRoomPreview(room)}>
+              <Link className="room-card-cta" href={`/rooms/${room.id}`}>
                 {t("rooms.previewRoom")} <span>→</span>
-              </button>
+              </Link>
             </article>
             ))
           )}
         </div>
       </section>
 
-      <section className="experience" id="meet">
+      <section className="experience" id="about">
         <div className="experience-image">
           <img src={settings.meet_image || "/images/conference.jpg"} alt="Highbury Lounge conference room prepared for a meeting" />
           <div className="capacity-badge">
@@ -566,7 +576,7 @@ export default function Home() {
         </div>
         <div className="experience-copy">
           <p className="eyebrow">{t("home.meetEyebrow")}</p>
-          <h2>{t("home.meetTitle")}</h2>
+          <h2 className="home-section-title">{t("home.meetTitle")}</h2>
           <p>{t("home.meetText")}</p>
           <ul>
             <li><span>01</span> {t("home.meetItem1")}</li>
@@ -579,11 +589,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section conference-section">
+      <section className="section conference-section" id="conferences">
         <div className="section-head">
           <div>
             <p className="eyebrow">{t("home.conferenceEyebrow")}</p>
-            <h2>{t("home.conferenceTitle")}</h2>
+            <h2 className="home-section-title conference-section-title">{t("home.conferenceTitle")}</h2>
           </div>
           <p className="price-note">{t("home.conferenceNote")}</p>
         </div>
@@ -609,25 +619,23 @@ export default function Home() {
         <div className="celebrate-shade" />
         <div>
           <p className="eyebrow light">{t("home.celebrateEyebrow")}</p>
-          <h2>{t("home.celebrateTitle")}</h2>
+          <h2 className="home-section-title">{t("home.celebrateTitle")}</h2>
           <p>{t("home.celebrateText")}</p>
           <div className="celebrate-actions">
-            <a className="button cream" href="/events">
+            <Link className="button cream" href="/events">
               Explore Events
-            </a>
-            <a className="button ghost light" href="/conference">
+            </Link>
+            <Link className="button ghost light" href="/conference">
               Host Your Event
-            </a>
+            </Link>
           </div>
         </div>
       </section>
 
-      <HomeUpcomingEvents />
-
       <section className="section dining-section" id="dine">
         <div className="dining-copy">
           <p className="eyebrow">{t("home.dineEyebrow")}</p>
-          <h2>{t("home.dineTitle")}</h2>
+          <h2 className="home-section-title">{t("home.dineTitle")}</h2>
           <p>{t("home.dineText")}</p>
           <button className="text-link text-link-button" onClick={() => openFoodOrder()}>
             {t("home.preOrderMeal")} →
@@ -664,14 +672,12 @@ export default function Home() {
         <div className="section-head">
           <div>
             <p className="eyebrow">{t("home.galleryEyebrow")}</p>
-            <h2>{t("home.galleryTitle")}</h2>
+            <h2 className="home-section-title">{t("home.galleryTitle")}</h2>
           </div>
         </div>
-        <div className="gallery-grid">
-          {gallery.length === 0 ? (
-            <p className="price-note">{t("home.galleryTitle")}</p>
-          ) : (
-            gallery.map((image, index) => (
+        {gallery.length > 0 ? (
+          <div className="gallery-grid">
+            {gallery.map((image, index) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={image.id}
@@ -679,15 +685,15 @@ export default function Home() {
                 src={image.imageUrl}
                 alt={image.altText || "Highbury Lounge"}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="contact-section" id="contact">
         <div>
           <p className="eyebrow light">{t("home.contactEyebrow")}</p>
-          <h2>{t("home.contactTitle")}</h2>
+          <h2 className="home-section-title">{t("home.contactTitle")}</h2>
           <p>{t("home.contactText")}</p>
           <div className="contact-actions">
             <button className="button cream" onClick={() => openBooking()}>{t("home.bookNow")}</button>
@@ -715,38 +721,6 @@ export default function Home() {
       <a className="whatsapp-float" href={whatsappHref(settings.whatsapp)} target="_blank" rel="noreferrer" aria-label={t("home.whatsappAria")}>
         <span>{t("whatsapp.chat")}</span> ↗
       </a>
-
-      {roomPreview && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setRoomPreview(null)}>
-          <section className="preview-modal" role="dialog" aria-modal="true" aria-labelledby="room-preview-title" onMouseDown={(event) => event.stopPropagation()}>
-            <button className="modal-close modal-close-light" onClick={() => setRoomPreview(null)} aria-label={t("home.closeRoomPreview")}>×</button>
-            <PreviewMediaGallery
-              images={roomPreview.images?.length ? roomPreview.images : [roomPreview.image]}
-              alt={roomPreview.name}
-              fallback="/images/deluxe-room.jpg"
-            />
-            <div className="preview-content">
-              <div>
-                <p className="eyebrow">{t("home.stayPreviewEyebrow")}</p>
-                <h2 id="room-preview-title">{roomPreview.name}</h2>
-                <p>{roomPreview.detail}</p>
-                <div className="preview-features">
-                  <span>✓ {t("home.featurePrivateRoom")}</span>
-                  <span>✓ {t("home.featureParking")}</span>
-                  <span>✓ {t("home.featureWifi")}</span>
-                  <span>✓ {t("home.featureBreakfast")}</span>
-                </div>
-              </div>
-              <aside>
-                <small>{t("booking.from")}</small>
-                <strong>{formatMoney(roomPreview.price, "USD", i18n.language)}</strong>
-                <span>{t("booking.perNight")}</span>
-                <button className="button primary" onClick={() => { setRoomPreview(null); openBooking(); }}>{t("booking.reserveNow")}</button>
-              </aside>
-            </div>
-          </section>
-        </div>
-      )}
 
       {conferencePreview && (
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setConferencePreview(null)}>

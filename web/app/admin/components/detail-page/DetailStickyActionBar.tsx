@@ -8,27 +8,39 @@ export function DetailStickyActionBar({
   visible,
   primaryAction,
   cancelAction,
+  tone = "dark",
 }: {
   message?: string;
   visible: boolean;
-  primaryAction: DetailAction;
+  primaryAction?: DetailAction | null;
   cancelAction?: DetailAction;
+  /** "light" removes the dark pill background (wizard / next-back bars). */
+  tone?: "dark" | "light";
 }) {
   if (!visible) return null;
+  if (!primaryAction && !cancelAction) return null;
   return (
     <div
-      className={`detail-sticky-bar${message ? "" : " is-actions-only"}`}
+      className={[
+        "detail-sticky-bar",
+        message ? "" : "is-actions-only",
+        tone === "light" ? "is-light" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       role="status"
     >
       {message ? <p>{message}</p> : null}
       <div className="detail-sticky-bar-actions">
         {cancelAction ? <DetailActionButton action={cancelAction} /> : null}
-        <DetailActionButton
-          action={{
-            ...primaryAction,
-            variant: primaryAction.variant ?? "primary",
-          }}
-        />
+        {primaryAction ? (
+          <DetailActionButton
+            action={{
+              ...primaryAction,
+              variant: primaryAction.variant ?? "primary",
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
 import { pickTranslated } from "@/lib/i18n/content";
-import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type Package = {
@@ -122,8 +121,7 @@ export default function ConferencePage() {
   return (
     <main className="booking-flow">
       <section className="booking-flow-panel">
-        <BackLink href="/#meet" label={t("conference.backToVenues")} preferHistory={false} />
-        <LanguageSelector variant="panel" />
+        <BackLink href="/#conferences" label={t("conference.backToVenues")} preferHistory={false} />
         <p className="eyebrow">{t("conference.eyebrow")}</p>
         <h1>{t("conference.title")}</h1>
         <p>{t("conference.intro")}</p>

@@ -51,6 +51,8 @@
   "backToVenues": "Dzokera kunzvimbo",
   "checkingAvailability": "Kutarisa kuwanikwa…",
   "noRoomsAvailable": "Hapana makamuri aripo pamazuva ako.",
+  "oneRoomAvailable": "Kamuri 1 riripo pamazuva ako",
+  "roomsAvailableCount": "Makamuri {{count}} aripo pamazuva ako",
   "loading": "Kutakura…",
   "preferredLanguage": "Mutauro waunoda",
   "guestLanguage": "Mutauro wemuenzi",

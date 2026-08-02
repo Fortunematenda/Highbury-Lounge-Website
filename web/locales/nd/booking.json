@@ -51,6 +51,8 @@
   "backToVenues": "Buyela ezindaweni",
   "checkingAvailability": "Ihlola ukutholakala…",
   "noRoomsAvailable": "Akukho amakamelo atholakalayo ngezinsuku zakho.",
+  "oneRoomAvailable": "Ikamelo eli-1 liyatholakala ngezinsuku zakho",
+  "roomsAvailableCount": "Amakamelo angu-{{count}} ayatholakala ngezinsuku zakho",
   "loading": "Iyalayisha…",
   "preferredLanguage": "Ulimi oluthandayo",
   "guestLanguage": "Ulimi lwesivakashi",

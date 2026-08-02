@@ -112,38 +112,40 @@ export default async function AdminCalendarPage({
       </form>
 
       <section className="admin-card">
-        <div className="admin-calendar-grid">
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const dayBookings = rows.filter(
-              (b) => b.checkIn <= date && b.checkOut > date,
-            );
-            const dayBlocks = blocks.filter(
-              (b) => b.startDate <= date && b.endDate > date,
-            );
-            return (
-              <div className="admin-calendar-day" key={date}>
-                <strong>{day}</strong>
-                {dayBookings.map((b) => (
-                  <Link
-                    key={b.id}
-                    href={`/admin/bookings/${b.id}`}
-                    className="admin-cal-item"
-                    style={{ borderLeftColor: statusColor(b.status) }}
-                    title={`${b.reference} · ${b.status}`}
-                  >
-                    {b.reference}
-                  </Link>
-                ))}
-                {dayBlocks.map((b) => (
-                  <span key={`b-${b.id}`} className="admin-cal-block">
-                    Block: {b.reason}
-                  </span>
-                ))}
-              </div>
-            );
-          })}
+        <div className="admin-calendar-scroll">
+          <div className="admin-calendar-grid">
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const dayBookings = rows.filter(
+                (b) => b.checkIn <= date && b.checkOut > date,
+              );
+              const dayBlocks = blocks.filter(
+                (b) => b.startDate <= date && b.endDate > date,
+              );
+              return (
+                <div className="admin-calendar-day" key={date}>
+                  <strong>{day}</strong>
+                  {dayBookings.map((b) => (
+                    <Link
+                      key={b.id}
+                      href={`/admin/bookings/${b.id}`}
+                      className="admin-cal-item"
+                      style={{ borderLeftColor: statusColor(b.status) }}
+                      title={`${b.reference} · ${b.status}`}
+                    >
+                      {b.reference}
+                    </Link>
+                  ))}
+                  {dayBlocks.map((b) => (
+                    <span key={`b-${b.id}`} className="admin-cal-block">
+                      Block: {b.reason}
+                    </span>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
     </div>

@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
 import { formatDate, formatMoney } from "@/lib/format";
-import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type RoomSummary = {
@@ -223,7 +222,6 @@ function BookInner() {
           href={`/rooms/search?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}&adults=${adults}&children=${children}&rooms=${rooms}`}
           label={t("booking.backToResults")}
         />
-        <LanguageSelector variant="panel" />
         <p className="eyebrow">{t("booking.reserveStay")}</p>
         <h1>
           {step === "form" ? t("booking.guestDetails") : t("booking.confirmBooking")}

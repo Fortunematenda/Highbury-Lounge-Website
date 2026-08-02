@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
 import { formatMoney } from "@/lib/format";
-import { LanguageSelector } from "@/lib/i18n/LanguageSelector";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 function whatsappHref(whatsapp: string, message: string) {
@@ -37,7 +36,6 @@ function SuccessInner() {
           href="/"
           label={t("actions.back")}
         />
-        <LanguageSelector variant="panel" />
         <span className="success-mark">✓</span>
         <p className="eyebrow">Highbury Lounge</p>
         <h1>{t("booking.reservationReceived")}</h1>

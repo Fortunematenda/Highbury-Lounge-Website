@@ -343,7 +343,15 @@ export function EventsPageClient({
         )}
       </section>
 
-      <section className="section events-past-section">
+      <section
+        className={[
+          "section",
+          "events-past-section",
+          past.length === 0 ? "is-empty" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className="section-head">
           <div>
             <p className="eyebrow">LOOKING BACK</p>
@@ -351,7 +359,7 @@ export function EventsPageClient({
           </div>
         </div>
         {past.length === 0 ? (
-          <p className="muted">No past events to show yet.</p>
+          <p className="muted events-past-empty">No past events to show yet.</p>
         ) : (
           <>
             <div className="events-grid events-grid--past">
