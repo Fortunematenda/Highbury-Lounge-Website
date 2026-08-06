@@ -4,9 +4,9 @@
  * quality. Returns a File suitable for FormData upload.
  */
 
-const DEFAULT_MAX_DIMENSION = 1600;
-const DEFAULT_QUALITY = 0.75;
-const DEFAULT_MAX_BYTES = 700 * 1024; // 700 KB — keep multipart body under wrangler dev 1 MB limit
+const DEFAULT_MAX_DIMENSION = 1280;
+const DEFAULT_QUALITY = 0.70;
+const DEFAULT_MAX_BYTES = 500 * 1024; // 500 KB — keep multipart body well under wrangler dev 1 MB limit
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -76,9 +76,9 @@ export async function compressImage(
     ext = "jpg";
   }
 
-  // If still too large, reduce quality iteratively
+  // If still too large, reduce quality iteratively down to a minimum
   let q = quality - 0.1;
-  while (blob.size > maxBytes && q > 0.3) {
+  while (blob.size > maxBytes && q > 0.1) {
     blob = await canvasToBlob(canvas, `image/${ext === "webp" ? "webp" : "jpeg"}`, q);
     q -= 0.1;
   }
