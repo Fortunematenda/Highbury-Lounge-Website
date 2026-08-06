@@ -77,10 +77,10 @@ export async function compressImage(
   }
 
   // If still too large, reduce quality iteratively down to a minimum
-  let q = quality - 0.1;
-  while (blob.size > maxBytes && q > 0.1) {
+  let q = Math.max(0.05, quality - 0.05);
+  while (blob.size > maxBytes && q >= 0.05) {
     blob = await canvasToBlob(canvas, `image/${ext === "webp" ? "webp" : "jpeg"}`, q);
-    q -= 0.1;
+    q -= 0.05;
   }
 
   const name = file.name.replace(/\.[^.]+$/, `.${ext}`);

@@ -34,6 +34,8 @@ type Props = {
   endpoints?: AdminImageGalleryEndpoints;
   onPendingFilesChange?: (files: File[]) => void;
   onFeaturedChange?: (url: string | null) => void;
+  /** Called whenever the saved image list changes (upload/remove/feature). */
+  onImagesChange?: (images: GalleryImage[]) => void;
   label?: string;
   hint?: string;
   /** Single-image mode (e.g. package cover) */
@@ -47,6 +49,7 @@ export function AdminImageGalleryField({
   endpoints,
   onPendingFilesChange,
   onFeaturedChange,
+  onImagesChange,
   label = "Images",
   hint = "Upload JPG, PNG or WebP. The featured image is shown first.",
   single = false,
@@ -118,6 +121,7 @@ export function AdminImageGalleryField({
       setImages(nextImages);
       setFeatured(nextFeatured);
       onFeaturedChange?.(nextFeatured);
+      onImagesChange?.(nextImages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -133,9 +137,11 @@ export function AdminImageGalleryField({
     setError("");
     try {
       const data = await endpoints.remove(imageId);
-      setImages(data.images ?? images.filter((img) => img.id !== imageId));
+      const nextImages = data.images ?? images.filter((img) => img.id !== imageId);
+      setImages(nextImages);
       setFeatured(data.featuredUrl ?? null);
       onFeaturedChange?.(data.featuredUrl ?? null);
+      onImagesChange?.(nextImages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove image");
     } finally {

@@ -900,6 +900,10 @@ export function EventForm({
                 setPendingGallery(files);
                 markDirty();
               }}
+              onImagesChange={(next) => {
+                setGallery(next.map((img) => img.url));
+                markDirty();
+              }}
             />
           </DetailSectionCard>
         </div>
