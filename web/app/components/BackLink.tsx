@@ -30,7 +30,7 @@ export function BackLink({
   }
 
   return (
-    <Link className={className} href={href} onClick={onClick}>
+    <Link className={className} href={href} onClick={onClick} prefetch={false}>
       <span aria-hidden="true">←</span>
       {label}
     </Link>

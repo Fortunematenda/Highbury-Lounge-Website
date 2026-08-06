@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AdminLink from "@/app/admin/components/AdminLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -282,7 +282,7 @@ export function AdminShell({
                     ? unreadNotifications
                     : 0;
                 return (
-                  <Link
+                  <AdminLink
                     key={item.href}
                     href={item.href}
                     className={active ? "is-active" : undefined}
@@ -297,7 +297,7 @@ export function AdminShell({
                         {badge > 99 ? "99+" : badge}
                       </em>
                     ) : null}
-                  </Link>
+                  </AdminLink>
                 );
               })}
             </div>
@@ -338,12 +338,12 @@ export function AdminShell({
               >
                 {menuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
-              <Link href="/admin" className="admin-appbar-brand" title="Highbury Lounge">
+              <AdminLink href="/admin" className="admin-appbar-brand" title="Highbury Lounge">
                 <AdminBrandLogo
                   className="admin-appbar-logo"
                   preferDark
                 />
-              </Link>
+              </AdminLink>
               <div className="admin-appbar-title-block">
                 <p className="admin-appbar-eyebrow">Highbury Lounge</p>
                 <p className="admin-appbar-title">{title}</p>
@@ -375,13 +375,13 @@ export function AdminShell({
                       <span>{user.email}</span>
                       <span>{user.roleName}</span>
                     </div>
-                    <Link
+                    <AdminLink
                       href="/admin/settings"
                       role="menuitem"
                       onClick={() => setProfileOpen(false)}
                     >
                       Settings
-                    </Link>
+                    </AdminLink>
                     <form action="/api/admin/auth/logout" method="post">
                       <button type="submit" role="menuitem">
                         <LogOut size={14} aria-hidden /> Log out

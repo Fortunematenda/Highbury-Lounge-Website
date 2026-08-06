@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { compressImage } from "@/lib/compress-image";
+import { uploadEventImage } from "@/app/admin/events/event-image-upload";
 import {
   AdminImageGalleryField,
   type AdminImageGalleryEndpoints,
@@ -226,23 +226,6 @@ function buildInitialState(initial?: EventRecord | null): FormState {
   };
 }
 
-async function uploadEventImage(
-  eventId: number,
-  rawFile: File,
-  kind: "cover" | "poster" | "gallery" | "social",
-) {
-  const file = await compressImage(rawFile);
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("kind", kind);
-  const res = await fetch(`/api/admin/events/${eventId}/image`, {
-    method: "POST",
-    body: fd,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Image upload failed");
-  return data as { imageUrl?: string; event?: { galleryJson?: string | null } };
-}
 
 function singleImageEndpoints(
   eventId: number,
