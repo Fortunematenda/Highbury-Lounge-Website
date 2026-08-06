@@ -4,9 +4,9 @@
  * quality. Returns a File suitable for FormData upload.
  */
 
-const DEFAULT_MAX_DIMENSION = 1920;
-const DEFAULT_QUALITY = 0.80;
-const DEFAULT_MAX_BYTES = 1 * 1024 * 1024; // 1 MB — stay well under workerd/Vite limits
+const DEFAULT_MAX_DIMENSION = 1600;
+const DEFAULT_QUALITY = 0.75;
+const DEFAULT_MAX_BYTES = 700 * 1024; // 700 KB — keep multipart body under wrangler dev 1 MB limit
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
