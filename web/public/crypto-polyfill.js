@@ -76,9 +76,12 @@
     },
   };
 
-  try {
-    cryptoObj.subtle = subtlePolyfill;
-  } catch (e) {
+  function install() {
+    try {
+      cryptoObj.subtle = subtlePolyfill;
+      return;
+    } catch (e) {}
+
     try {
       Object.defineProperty(cryptoObj, "subtle", {
         value: subtlePolyfill,
@@ -86,9 +89,40 @@
         configurable: true,
         enumerable: true,
       });
-    } catch (e2) {
-      // Cannot patch crypto. Provide a global fallback for code that checks it.
-      globalThis.__subtleCryptoPolyfill = subtlePolyfill;
+      return;
+    } catch (e) {}
+
+    if (typeof Crypto !== "undefined") {
+      try {
+        Object.defineProperty(Crypto.prototype, "subtle", {
+          get: function () {
+            return subtlePolyfill;
+          },
+          configurable: true,
+          enumerable: true,
+        });
+        return;
+      } catch (e) {}
     }
+
+    try {
+      var orig = cryptoObj;
+      Object.defineProperty(globalThis, "crypto", {
+        value: new Proxy(orig, {
+          get: function (target, prop) {
+            return prop === "subtle" ? subtlePolyfill : target[prop];
+          },
+        }),
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+      return;
+    } catch (e) {}
+
+    // Last-resort: expose a named global for code that checks it.
+    globalThis.__subtleCryptoPolyfill = subtlePolyfill;
   }
+
+  install();
 })();
