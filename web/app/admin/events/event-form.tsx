@@ -229,7 +229,7 @@ function buildInitialState(initial?: EventRecord | null): FormState {
 
 function singleImageEndpoints(
   eventId: number,
-  kind: "cover" | "poster" | "social",
+  kind: "cover",
 ): AdminImageGalleryEndpoints {
   return {
     async upload(file) {
@@ -240,23 +240,6 @@ function singleImageEndpoints(
         image: url ? { id: eventId, url } : undefined,
         images: url ? [{ id: eventId, url }] : [],
       };
-    },
-  };
-}
-
-function galleryEndpoints(eventId: number): AdminImageGalleryEndpoints {
-  return {
-    async upload(file) {
-      const data = await uploadEventImage(eventId, file, "gallery");
-      let gallery: string[] = [];
-      try {
-        gallery = data.event?.galleryJson
-          ? (JSON.parse(data.event.galleryJson) as string[])
-          : [];
-      } catch {
-        gallery = [];
-      }
-      return { images: gallery.map((url, index) => ({ id: index, url })) };
     },
   };
 }
@@ -289,17 +272,7 @@ export function EventForm({
   const [coverImage, setCoverImage] = useState<string | null>(
     initial?.coverImage ?? null,
   );
-  const [posterImage, setPosterImage] = useState<string | null>(
-    initial?.posterImage ?? null,
-  );
-  const [socialImage, setSocialImage] = useState<string | null>(
-    initial?.socialImage ?? null,
-  );
-  const [gallery, setGallery] = useState<string[]>(initial?.gallery ?? []);
   const [pendingCover, setPendingCover] = useState<File[]>([]);
-  const [pendingPoster, setPendingPoster] = useState<File[]>([]);
-  const [pendingSocial, setPendingSocial] = useState<File[]>([]);
-  const [pendingGallery, setPendingGallery] = useState<File[]>([]);
 
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -385,50 +358,16 @@ export function EventForm({
       seoTitle: form.seoTitle.trim() || null,
       seoDescription: form.seoDescription.trim() || null,
       coverImage,
-      posterImage,
-      gallery,
-      socialImage,
+      posterImage: coverImage,
+      gallery: [],
+      socialImage: coverImage,
     };
   }
 
   async function uploadPendingImages(eventId: number) {
-    const jobs: Array<Promise<void>> = [];
-    if (pendingCover[0]) {
-      jobs.push(
-        uploadEventImage(eventId, pendingCover[0], "cover").then((data) => {
-          if (data.imageUrl) setCoverImage(data.imageUrl);
-        }),
-      );
-    }
-    if (pendingPoster[0]) {
-      jobs.push(
-        uploadEventImage(eventId, pendingPoster[0], "poster").then((data) => {
-          if (data.imageUrl) setPosterImage(data.imageUrl);
-        }),
-      );
-    }
-    if (pendingSocial[0]) {
-      jobs.push(
-        uploadEventImage(eventId, pendingSocial[0], "social").then((data) => {
-          if (data.imageUrl) setSocialImage(data.imageUrl);
-        }),
-      );
-    }
-    for (const file of pendingGallery) {
-      jobs.push(
-        uploadEventImage(eventId, file, "gallery").then((data) => {
-          try {
-            const parsed = data.event?.galleryJson
-              ? (JSON.parse(data.event.galleryJson) as string[])
-              : null;
-            if (parsed) setGallery(parsed);
-          } catch {
-            /* ignore */
-          }
-        }),
-      );
-    }
-    if (jobs.length) await Promise.all(jobs);
+    if (!pendingCover[0]) return;
+    const data = await uploadEventImage(eventId, pendingCover[0], "cover");
+    if (data.imageUrl) setCoverImage(data.imageUrl);
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -462,9 +401,6 @@ export function EventForm({
         await uploadPendingImages(eventId);
       }
       setPendingCover([]);
-      setPendingPoster([]);
-      setPendingSocial([]);
-      setPendingGallery([]);
 
       toast.success(mode === "create" ? "Event created" : "Event saved");
       setDirty(false);
@@ -561,9 +497,9 @@ export function EventForm({
           <>
             <section className="admin-card detail-section-card detail-preview-card">
               <div className="detail-preview-media">
-                {coverImage || posterImage ? (
+                {coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={coverImage || posterImage || ""} alt="" />
+                  <img src={coverImage} alt="" />
                 ) : (
                   <div className="detail-preview-placeholder">No cover photo</div>
                 )}
@@ -834,8 +770,8 @@ export function EventForm({
 
         <div className={tab === "media" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
           <DetailSectionCard
-            title="Cover image"
-            description="Main image shown on the events list and hero."
+            title="Event image"
+            description="Main image shown on the events list, hero and event page."
             icon={ImageIcon}
           >
             <AdminImageGalleryField
@@ -848,60 +784,11 @@ export function EventForm({
                   : undefined
               }
               single
-              label="Cover photo"
-              hint="Wide image used on listings and the hero banner."
+              label="Event photo"
+              hint="Upload one image for this event. It's used everywhere the event is shown."
               onFeaturedChange={setCoverImage}
               onPendingFilesChange={(files) => {
                 setPendingCover(files);
-                markDirty();
-              }}
-            />
-          </DetailSectionCard>
-
-          <DetailSectionCard
-            title="Poster image"
-            description="Portrait image, ideal for social sharing tiles."
-            icon={ImageIcon}
-          >
-            <AdminImageGalleryField
-              recordId={mode === "edit" ? initial?.id : null}
-              featuredImage={posterImage}
-              initialImages={posterImage ? [{ id: 0, url: posterImage }] : []}
-              endpoints={
-                mode === "edit" && initial
-                  ? singleImageEndpoints(initial.id, "poster")
-                  : undefined
-              }
-              single
-              label="Poster photo"
-              hint="Optional. Shown in poster-style layouts."
-              onFeaturedChange={setPosterImage}
-              onPendingFilesChange={(files) => {
-                setPendingPoster(files);
-                markDirty();
-              }}
-            />
-          </DetailSectionCard>
-
-          <DetailSectionCard
-            title="Gallery"
-            description="Extra photos shown on the event page."
-            icon={ImageIcon}
-          >
-            <AdminImageGalleryField
-              recordId={mode === "edit" ? initial?.id : null}
-              initialImages={gallery.map((url, index) => ({ id: index, url }))}
-              endpoints={
-                mode === "edit" && initial ? galleryEndpoints(initial.id) : undefined
-              }
-              label="Gallery images"
-              hint="Upload JPG, PNG or WebP. Images are added in upload order."
-              onPendingFilesChange={(files) => {
-                setPendingGallery(files);
-                markDirty();
-              }}
-              onImagesChange={(next) => {
-                setGallery(next.map((img) => img.url));
                 markDirty();
               }}
             />
@@ -1231,24 +1118,6 @@ export function EventForm({
                 </AdminFormField>
               </DetailFieldSpan>
             </DetailFieldGrid>
-            <AdminImageGalleryField
-              recordId={mode === "edit" ? initial?.id : null}
-              featuredImage={socialImage}
-              initialImages={socialImage ? [{ id: 0, url: socialImage }] : []}
-              endpoints={
-                mode === "edit" && initial
-                  ? singleImageEndpoints(initial.id, "social")
-                  : undefined
-              }
-              single
-              label="Social share image"
-              hint="Falls back to the cover or poster image when empty."
-              onFeaturedChange={setSocialImage}
-              onPendingFilesChange={(files) => {
-                setPendingSocial(files);
-                markDirty();
-              }}
-            />
           </DetailSectionCard>
 
           {readyToPublish ? (
