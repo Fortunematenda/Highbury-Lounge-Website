@@ -2,74 +2,68 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { actionLabel } from "@/lib/event-constants";
+import { EventReservationModal } from "@/app/events/components/EventReservationModal";
 import {
   eventImage,
   formatEventDayNumber,
   formatEventMonth,
   formatEventTime,
   formatEventWeekday,
+  resolveEventAction,
+  type PublicEvent,
 } from "@/app/events/lib";
 
-type HomeEvent = {
-  id: number;
-  title: string;
-  slug: string;
-  startAt: string;
-  coverImage: string | null;
-  posterImage: string | null;
-  actionType: string;
-  customActionLabel: string | null;
-  externalBookingUrl: string | null;
-  canReserve: boolean;
-};
-
-function ctaLabel(event: HomeEvent) {
-  if (event.actionType === "none") return "View Event";
-  if (
-    event.canReserve ||
-    event.actionType === "whatsapp" ||
-    event.actionType === "external"
-  ) {
-    return actionLabel(event.actionType, event.customActionLabel);
-  }
-  return actionLabel(event.actionType, event.customActionLabel) || "View Event";
-}
+type HomeEvent = PublicEvent;
 
 function dayNumber(startAt: string) {
   const n = Number(formatEventDayNumber(startAt));
   return Number.isFinite(n) ? String(n) : "--";
 }
 
-function EventActionButton({ event }: { event: HomeEvent }) {
-  const label = ctaLabel(event);
+function EventActionButton({
+  event,
+  onReserve,
+}: {
+  event: HomeEvent;
+  onReserve: (event: HomeEvent) => void;
+}) {
+  const action = resolveEventAction(event);
   const className = "button outline home-event-action";
 
-  if (
-    event.actionType === "external" &&
-    event.externalBookingUrl &&
-    !event.canReserve
-  ) {
+  if (action.kind === "reserve") {
     return (
-      <a
+      <button
+        type="button"
         className={className}
-        href={event.externalBookingUrl}
-        target="_blank"
-        rel="noreferrer"
+        onClick={() => onReserve(event)}
       >
-        {label}
+        {action.label}
+      </button>
+    );
+  }
+
+  if (action.kind === "whatsapp" || action.kind === "external") {
+    return (
+      <a className={className} href={action.href} target="_blank" rel="noreferrer">
+        {action.label}
       </a>
     );
   }
 
   return (
     <Link className={className} href={`/events/${event.slug}`}>
-      {label}
+      {action.label}
     </Link>
   );
 }
 
-function EventCard({ event }: { event: HomeEvent }) {
+function EventCard({
+  event,
+  onReserve,
+}: {
+  event: HomeEvent;
+  onReserve: (event: HomeEvent) => void;
+}) {
   const image = eventImage(event);
   const weekday = formatEventWeekday(event.startAt, true);
   const time = formatEventTime(event.startAt);
@@ -120,7 +114,7 @@ function EventCard({ event }: { event: HomeEvent }) {
         </div>
 
         <div className="home-event-action-wrap">
-          <EventActionButton event={event} />
+          <EventActionButton event={event} onReserve={onReserve} />
         </div>
       </div>
     </article>
@@ -130,6 +124,13 @@ function EventCard({ event }: { event: HomeEvent }) {
 export function HomeUpcomingEvents() {
   const [events, setEvents] = useState<HomeEvent[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<HomeEvent | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  function openReservation(event: HomeEvent) {
+    setSelectedEvent(event);
+    setModalOpen(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -188,10 +189,16 @@ export function HomeUpcomingEvents() {
 
         <div className={gridClass}>
           {events.slice(0, 3).map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} onReserve={openReservation} />
           ))}
         </div>
       </div>
+
+      <EventReservationModal
+        event={selectedEvent}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </section>
   );
 }

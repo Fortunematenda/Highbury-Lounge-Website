@@ -130,12 +130,29 @@ export function EventReservationModal({ event, open, onClose, onSuccess }: Props
     if (evt.target === evt.currentTarget) onClose();
   }
 
+  function validate(): string | null {
+    if (!form.fullName.trim()) return "Please enter your full name.";
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email.trim() || !emailPattern.test(form.email.trim())) {
+      return "Please enter a valid email address.";
+    }
+    if (!form.phone.trim()) return "Please enter a phone number.";
+    if (!Number.isFinite(Number(form.guestCount)) || Number(form.guestCount) < 1) {
+      return "Please select at least 1 guest.";
+    }
+    if (!form.consentAccepted) {
+      return "Please accept the consent checkbox to continue.";
+    }
+    return null;
+  }
+
   async function onSubmit(evt: FormEvent) {
     evt.preventDefault();
-    if (!event) return;
+    if (!event || submitting) return;
     setError("");
-    if (!form.consentAccepted) {
-      setError("Please accept the consent checkbox to continue.");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
     setSubmitting(true);

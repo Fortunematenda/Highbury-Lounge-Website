@@ -170,7 +170,90 @@ export function AdminImageGalleryField({
     syncPending(pending.filter((p) => p.key !== key));
   }
 
-  const showEmpty = images.length === 0 && pending.length === 0 && !featured;
+  /** In single-image mode there is exactly one source of truth for the preview:
+   *  a newly selected (pending) file takes priority, otherwise the saved image. */
+  const singlePreviewUrl = single
+    ? pending[0]?.previewUrl ?? images[0]?.url ?? featured ?? null
+    : null;
+
+  async function removeSingle() {
+    if (single && pending[0]) {
+      URL.revokeObjectURL(pending[0].previewUrl);
+      syncPending([]);
+    }
+    const savedImage = images[0];
+    if (single && savedImage && endpoints?.remove) {
+      await removeSaved(savedImage.id);
+      return;
+    }
+    setImages([]);
+    setFeatured(null);
+    onFeaturedChange?.(null);
+    onImagesChange?.([]);
+  }
+
+  const showEmpty = single
+    ? !singlePreviewUrl
+    : images.length === 0 && pending.length === 0 && !featured;
+
+  if (single) {
+    return (
+      <div className="room-image-field">
+        <span className="room-image-label">{label}</span>
+        {error ? <div className="admin-error">{error}</div> : null}
+
+        <div
+          className="menu-upload-dropzone"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            void uploadFiles(e.dataTransfer.files);
+          }}
+        >
+          <p>Drag & drop a photo here, or</p>
+          <button
+            type="button"
+            className="admin-btn secondary"
+            disabled={busy}
+            onClick={() => inputRef.current?.click()}
+          >
+            {busy ? "Uploading…" : singlePreviewUrl ? "Replace image" : "Add image"}
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            hidden
+            onChange={(e) => void uploadFiles(e.target.files)}
+          />
+        </div>
+
+        {showEmpty ? <p className="admin-muted">No image yet.</p> : null}
+
+        {singlePreviewUrl ? (
+          <div className="admin-single-image-preview">
+            <figure className="admin-single-image-tile">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={singlePreviewUrl} alt="" />
+              <span className="menu-featured-tag">Featured</span>
+            </figure>
+            <div className="admin-actions">
+              <button
+                type="button"
+                className="admin-btn danger"
+                disabled={busy}
+                onClick={() => void removeSingle()}
+              >
+                Remove image
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <p className="admin-muted room-image-hint">{hint}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="room-image-field">
@@ -192,13 +275,13 @@ export function AdminImageGalleryField({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? "Uploading…" : single ? "Add image" : "Add images"}
+          {busy ? "Uploading…" : "Add images"}
         </button>
         <input
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/jpg,image/png,image/webp"
-          multiple={!single}
+          multiple
           hidden
           onChange={(e) => void uploadFiles(e.target.files)}
         />

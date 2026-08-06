@@ -1,9 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Inter, Playfair_Display } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { PublicChrome } from "@/app/components/SiteHeader";
 import { parseAppLocale, type AppLocale } from "@/lib/i18n/locales";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Highbury Lounge · Kadoma",
@@ -63,7 +76,7 @@ export default async function RootLayout({
   const isAdmin = pathname.startsWith("/admin");
 
   return (
-    <html lang={initialLocale ?? "en"}>
+    <html lang={initialLocale ?? "en"} className={`${inter.variable} ${playfair.variable}`}>
       <Script
         src="/crypto-polyfill.js"
         strategy="beforeInteractive"

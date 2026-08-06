@@ -669,6 +669,16 @@
   min-width: 0;
 }
 
+.admin-select {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  padding: 0 40px 0 12px;
+  line-height: 48px;
+  align-self: start;
+  appearance: auto;
+}
+
 .admin-shell textarea,
 .admin-textarea,
 textarea.admin-input,
@@ -2137,6 +2147,30 @@ textarea.admin-textarea-fixed {
   font-size: 12px;
 }
 
+.admin-single-image-preview {
+  max-width: 420px;
+}
+
+.admin-single-image-tile {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+  position: relative;
+}
+
+.admin-single-image-tile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.admin-single-image-preview .admin-actions {
+  padding-top: 10px;
+}
+
 @media (max-width: 960px) {
   .menu-desktop-only {
     display: none !important;
@@ -3445,6 +3479,7 @@ textarea.admin-textarea-fixed {
 .detail-field-grid {
   display: grid;
   gap: 14px;
+  align-items: start;
 }
 
 .detail-field-grid.cols-1 {

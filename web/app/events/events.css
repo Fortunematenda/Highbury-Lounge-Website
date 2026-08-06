@@ -1053,3 +1053,100 @@
     transform: none;
   }
 }
+
+/* ---------- Book Tickets / reservation modal ---------- */
+.event-reservation-modal {
+  width: min(600px, 100%);
+  max-height: 90vh;
+  background: var(--cream, #fdf8f3);
+  font-family: var(--font-inter), Arial, sans-serif;
+}
+
+.event-reservation-modal .eyebrow {
+  color: var(--wine);
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.event-reservation-modal h2 {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-top: 6px;
+}
+
+.event-reservation-modal .event-modal-subtitle {
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #6b5a60;
+  margin: 6px 0 0;
+}
+
+.event-reservation-modal form {
+  gap: 18px;
+}
+
+.event-reservation-modal label {
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b5a60;
+}
+
+.event-reservation-modal input,
+.event-reservation-modal select,
+.event-reservation-modal textarea {
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+}
+
+.event-reservation-modal input::placeholder,
+.event-reservation-modal textarea::placeholder {
+  color: #a8989e;
+}
+
+.event-reservation-modal .event-modal-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 13px;
+  color: #6b5a60;
+}
+
+.event-reservation-modal .form-submit {
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--wine);
+  width: 100%;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .event-reservation-modal {
+    width: 100%;
+    padding: 28px 16px 20px;
+  }
+  .event-reservation-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+}
