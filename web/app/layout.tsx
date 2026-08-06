@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { cookies, headers } from "next/headers";
 import { PublicChrome } from "@/app/components/SiteHeader";
 import { parseAppLocale, type AppLocale } from "@/lib/i18n/locales";
@@ -63,6 +64,10 @@ export default async function RootLayout({
 
   return (
     <html lang={initialLocale ?? "en"}>
+      <Script
+        src="/crypto-polyfill.js"
+        strategy="beforeInteractive"
+      />
       <body className="antialiased">
         {isAdmin ? (
           children
