@@ -123,7 +123,7 @@ export async function countReservedGuests(eventId: number) {
   const db = getDb();
   const [row] = await db
     .select({
-      value: sql<number>`coalesce(sum(${eventReservations.guestCount}), 0)`,
+      value: sql<number>`coalesce(sum(${eventReservations.guestCount}), 0)`.mapWith(Number),
     })
     .from(eventReservations)
     .where(
@@ -834,25 +834,22 @@ export async function createEventReservation(params: {
     );
   }
 
-  // Light duplicate protection: same email + event within 2 minutes
-  const recent = await db
+  // Prevent duplicate reservations: same email + event with an active status
+  const existing = await db
     .select({ id: eventReservations.id })
     .from(eventReservations)
     .where(
       and(
         eq(eventReservations.eventId, event.id),
         eq(eventReservations.email, email),
-        gte(
-          eventReservations.createdAt,
-          new Date(Date.now() - 120_000).toISOString().slice(0, 19).replace("T", " "),
-        ),
+        inArray(eventReservations.status, ["Pending", "Confirmed", "Attended"]),
       ),
     )
     .limit(1);
-  if (recent.length) {
+  if (existing.length) {
     throw new EventError(
-      "A reservation was just submitted with this email. Please wait a moment.",
-      429,
+      "You already have a reservation for this event.",
+      409,
     );
   }
 

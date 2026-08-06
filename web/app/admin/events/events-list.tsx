@@ -273,7 +273,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
                 <td>{entryLabel(row)}</td>
                 <td>{capacityLabel(row)}</td>
                 <td>
-                  <Link href={`/admin/events/reservations?eventId=${row.id}`}>
+                  <Link href={`/admin/events/reservations?eventId=${row.id}`} prefetch={false}>
                     {row.reservationCount}
                   </Link>
                 </td>

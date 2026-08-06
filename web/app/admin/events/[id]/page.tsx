@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getDb } from "@/db";
 import { eventReservations, events } from "@/db/schema";
@@ -42,6 +42,10 @@ function parseProgramme(
   }
 }
 
+function isNextRouterError(err: unknown): boolean {
+  return typeof (err as { digest?: string })?.digest === "string";
+}
+
 export default async function EditEventPage({
   params,
 }: {
@@ -52,21 +56,56 @@ export default async function EditEventPage({
   const eventId = Number(id);
   if (!Number.isFinite(eventId)) notFound();
 
-  const db = getDb();
-  const [event] = await db
-    .select()
-    .from(events)
-    .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
-    .limit(1);
-  if (!event) notFound();
+  let event;
+  let reservedGuests: number = 0;
+  let reservationRow: { count: number } | undefined;
+  let reservations: {
+    id: number;
+    reference: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    guestCount: number;
+    status: string;
+    createdAt: string;
+  }[] = [];
+  let lastChange: Awaited<ReturnType<typeof getLatestEntityChange>> = null;
+  try {
+    const db = getDb();
+    [event] = await db
+      .select()
+      .from(events)
+      .where(and(eq(events.id, eventId), isNull(events.deletedAt)))
+      .limit(1);
+    if (!event) notFound();
 
-  const reservedGuests = await countReservedGuests(eventId);
-  const [reservationRow] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(eventReservations)
-    .where(eq(eventReservations.eventId, eventId));
+    reservedGuests = await countReservedGuests(eventId);
+    [reservationRow] = await db
+      .select({ count: sql<number>`count(*)`.mapWith(Number) })
+      .from(eventReservations)
+      .where(eq(eventReservations.eventId, eventId));
 
-  const lastChange = await getLatestEntityChange("event", eventId);
+    reservations = await db
+      .select({
+        id: eventReservations.id,
+        reference: eventReservations.reference,
+        fullName: eventReservations.fullName,
+        email: eventReservations.email,
+        phone: eventReservations.phone,
+        guestCount: eventReservations.guestCount,
+        status: eventReservations.status,
+        createdAt: eventReservations.createdAt,
+      })
+      .from(eventReservations)
+      .where(eq(eventReservations.eventId, eventId))
+      .orderBy(desc(eventReservations.createdAt));
+
+    lastChange = await getLatestEntityChange("event", eventId);
+  } catch (err) {
+    if (isNextRouterError(err)) throw err;
+    console.error("[admin/events/[id]] Failed to load event:", err);
+    notFound();
+  }
 
   const record: EventRecord = {
     id: event.id,
@@ -121,6 +160,7 @@ export default async function EditEventPage({
       initial={record}
       reservedGuests={reservedGuests}
       reservationCount={Number(reservationRow?.count ?? 0)}
+      reservations={reservations}
       lastChange={
         lastChange
           ? {

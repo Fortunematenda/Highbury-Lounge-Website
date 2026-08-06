@@ -538,10 +538,7 @@ export default function Home() {
           </div>
         </div>
         <div className="room-grid">
-          {rooms.length === 0 ? (
-            <p className="price-note">{t("home.stayNote")}</p>
-          ) : (
-            rooms.map((room) => (
+          {rooms.map((room) => (
             <article className="room-card" key={room.id}>
               <Link href={`/rooms/${room.id}`} className="room-card-media">
                 <img src={room.image} alt={room.name} />
@@ -563,8 +560,7 @@ export default function Home() {
                 {t("rooms.previewRoom")} <span>→</span>
               </Link>
             </article>
-            ))
-          )}
+            ))}
         </div>
       </section>
 

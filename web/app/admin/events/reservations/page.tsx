@@ -4,11 +4,15 @@ import { getDb } from "@/db";
 import { eventReservations, events } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { RESERVATION_STATUSES, isReservationStatus } from "@/lib/event-constants";
-import { ReservationsList } from "./reservations-list";
+import { ReservationsList, type ReservationRow } from "./reservations-list";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 30;
+
+function isNextRouterError(err: unknown): boolean {
+  return typeof (err as { digest?: string })?.digest === "string";
+}
 
 export default async function AdminEventReservationsPage({
   searchParams,
@@ -22,49 +26,55 @@ export default async function AdminEventReservationsPage({
   const eventId = Number(params.eventId ?? "");
   const page = Math.max(1, Number(params.page ?? "1") || 1);
 
-  const db = getDb();
-  const filters = [];
-  if (status && isReservationStatus(status)) {
-    filters.push(eq(eventReservations.status, status));
-  }
-  if (Number.isFinite(eventId) && eventId > 0) {
-    filters.push(eq(eventReservations.eventId, eventId));
-  }
-  if (q) {
-    const pattern = `%${q}%`;
-    filters.push(
-      or(
-        like(eventReservations.reference, pattern),
-        like(eventReservations.fullName, pattern),
-        like(eventReservations.email, pattern),
-        like(eventReservations.phone, pattern),
-        like(events.title, pattern),
-      )!,
-    );
-  }
+  let rows: ReservationRow[] = [];
+  try {
+    const db = getDb();
+    const filters = [];
+    if (status && isReservationStatus(status)) {
+      filters.push(eq(eventReservations.status, status));
+    }
+    if (Number.isFinite(eventId) && eventId > 0) {
+      filters.push(eq(eventReservations.eventId, eventId));
+    }
+    if (q) {
+      const pattern = `%${q}%`;
+      filters.push(
+        or(
+          like(eventReservations.reference, pattern),
+          like(eventReservations.fullName, pattern),
+          like(eventReservations.email, pattern),
+          like(eventReservations.phone, pattern),
+          like(events.title, pattern),
+        )!,
+      );
+    }
 
-  const rows = await db
-    .select({
-      id: eventReservations.id,
-      reference: eventReservations.reference,
-      fullName: eventReservations.fullName,
-      email: eventReservations.email,
-      phone: eventReservations.phone,
-      guestCount: eventReservations.guestCount,
-      status: eventReservations.status,
-      reservationType: eventReservations.reservationType,
-      createdAt: eventReservations.createdAt,
-      eventId: events.id,
-      eventTitle: events.title,
-      eventSlug: events.slug,
-      eventStartAt: events.startAt,
-    })
-    .from(eventReservations)
-    .leftJoin(events, eq(eventReservations.eventId, events.id))
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(desc(eventReservations.createdAt))
-    .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE);
+    rows = await db
+      .select({
+        id: eventReservations.id,
+        reference: eventReservations.reference,
+        fullName: eventReservations.fullName,
+        email: eventReservations.email,
+        phone: eventReservations.phone,
+        guestCount: eventReservations.guestCount,
+        status: eventReservations.status,
+        reservationType: eventReservations.reservationType,
+        createdAt: eventReservations.createdAt,
+        eventId: events.id,
+        eventTitle: events.title,
+        eventSlug: events.slug,
+        eventStartAt: events.startAt,
+      })
+      .from(eventReservations)
+      .leftJoin(events, eq(eventReservations.eventId, events.id))
+      .where(filters.length ? and(...filters) : undefined)
+      .orderBy(desc(eventReservations.createdAt))
+      .limit(PAGE_SIZE)
+      .offset((page - 1) * PAGE_SIZE);
+  } catch (err) {
+    if (isNextRouterError(err)) throw err;
+    console.error("[admin/events/reservations] Failed to load reservations:", err);
+  }
 
   const eventLabel =
     Number.isFinite(eventId) && eventId > 0

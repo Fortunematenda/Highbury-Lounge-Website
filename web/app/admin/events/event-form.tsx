@@ -13,10 +13,12 @@ import {
   Sparkles,
   Ticket,
   Trash2,
+  Users,
   Wallet,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { compressImage } from "@/lib/compress-image";
 import {
   AdminImageGalleryField,
   type AdminImageGalleryEndpoints,
@@ -29,7 +31,6 @@ import {
 } from "@/app/admin/components/form-fields";
 import { PmsTabs } from "@/app/admin/components/pms";
 import {
-  DetailDangerZone,
   DetailFieldGrid,
   DetailFieldSpan,
   DetailMetadataCard,
@@ -45,16 +46,28 @@ import {
   EVENT_STATUSES,
 } from "@/lib/event-constants";
 
-const TABS = [
+const BASE_TABS = [
   { id: "basic", label: "Basic", icon: Sparkles },
   { id: "schedule", label: "Schedule", icon: CalendarClock },
   { id: "media", label: "Media", icon: ImageIcon },
   { id: "pricing", label: "Pricing", icon: Wallet },
   { id: "reservation", label: "Reservation", icon: Ticket },
+  { id: "guests", label: "Guests", icon: Users },
   { id: "publication", label: "Publication", icon: Megaphone },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof BASE_TABS)[number]["id"];
+
+export type ReservationRow = {
+  id: number;
+  reference: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  guestCount: number;
+  status: string;
+  createdAt: string;
+};
 
 const STATUS_TONE: Record<
   string,
@@ -215,9 +228,10 @@ function buildInitialState(initial?: EventRecord | null): FormState {
 
 async function uploadEventImage(
   eventId: number,
-  file: File,
+  rawFile: File,
   kind: "cover" | "poster" | "gallery" | "social",
 ) {
+  const file = await compressImage(rawFile);
   const fd = new FormData();
   fd.append("file", file);
   fd.append("kind", kind);
@@ -269,15 +283,21 @@ export function EventForm({
   initial,
   reservedGuests = 0,
   reservationCount = 0,
+  reservations,
   lastChange,
 }: {
   mode: "create" | "edit";
   initial?: EventRecord | null;
   reservedGuests?: number;
   reservationCount?: number;
+  reservations?: ReservationRow[];
   lastChange?: { label: string; email: string | null; at: string } | null;
 }) {
   const router = useRouter();
+  const allReservations = reservations ?? [];
+  const TABS = BASE_TABS.filter(
+    (t) => t.id !== "guests" || (mode === "edit" && allReservations.length > 0),
+  );
   const [tab, setTab] = useState<TabId>("basic");
   const [form, setForm] = useState<FormState>(() => buildInitialState(initial));
   const [programme, setProgramme] = useState<ProgrammeItem[]>(
@@ -501,6 +521,10 @@ export function EventForm({
 
   const title = mode === "create" ? "Add event" : initial?.title || "Edit event";
   const showFullEntry = form.entryType === "fixed" || form.entryType === "from";
+  const guestsTabLabel = allReservations.length > 0 ? `Guests (${allReservations.length})` : "Guests";
+  const displayTabs = TABS.map((t) =>
+    t.id === "guests" ? { ...t, label: guestsTabLabel } : t,
+  );
   const tabIndex = TABS.findIndex((item) => item.id === tab);
   const canGoBack = tabIndex > 0;
   const canGoNext = tabIndex >= 0 && tabIndex < TABS.length - 1;
@@ -598,7 +622,7 @@ export function EventForm({
       }
     >
       <div className="pms-tabs-sticky">
-        <PmsTabs tabs={[...TABS]} value={tab} onChange={(id) => setTab(id as TabId)} />
+        <PmsTabs tabs={[...displayTabs]} value={tab} onChange={(id) => setTab(id as TabId)} />
       </div>
 
       <form
@@ -1094,6 +1118,60 @@ export function EventForm({
           </DetailSectionCard>
         </div>
 
+        <div className={tab === "guests" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
+          <DetailSectionCard
+            title="Guest reservations"
+            description={
+              allReservations.length === 0
+                ? "No reservations for this event yet."
+                : `${reservationCount} reservation(s) · ${reservedGuests} guest(s) reserved`
+            }
+            icon={Users}
+          >
+            {allReservations.length === 0 ? (
+              <p className="admin-muted">Reservations will appear here once guests submit them.</p>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Reference</th>
+                      <th>Guest</th>
+                      <th>Phone</th>
+                      <th className="numeric">Guests</th>
+                      <th>Status</th>
+                      <th>Submitted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allReservations.map((r) => (
+                      <tr
+                        key={r.id}
+                        className="admin-row"
+                        onClick={() =>
+                          router.push(`/admin/events/reservations/${r.id}`)
+                        }
+                      >
+                        <td>{r.reference}</td>
+                        <td>
+                          <div>{r.fullName}</div>
+                          <div className="admin-muted">{r.email}</div>
+                        </td>
+                        <td>{r.phone}</td>
+                        <td className="numeric">{r.guestCount}</td>
+                        <td>
+                          <StatusBadge status={r.status} />
+                        </td>
+                        <td>{r.createdAt.slice(0, 10)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </DetailSectionCard>
+        </div>
+
         <div className={tab === "publication" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
           <DetailSectionCard
             title="Publishing"
@@ -1200,19 +1278,6 @@ export function EventForm({
           ) : null}
         </div>
 
-        {mode === "edit" ? (
-          <DetailDangerZone
-            title="Delete event"
-            description="Remove this event from the website and admin list. Reservations stay for your records."
-            action={{
-              label: deleting ? "Deleting…" : "Delete event",
-              icon: Trash2,
-              loading: deleting,
-              disabled: busy || deleting,
-              onClick: () => void onDelete(),
-            }}
-          />
-        ) : null}
       </form>
 
       <DetailStickyActionBar

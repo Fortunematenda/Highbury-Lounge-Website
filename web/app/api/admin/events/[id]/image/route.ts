@@ -11,6 +11,10 @@ import {
   UploadError,
 } from "@/lib/uploads";
 
+export function GET() {
+  return jsonError("Use POST to upload an image.", 405);
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

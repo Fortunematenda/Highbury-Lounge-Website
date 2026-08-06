@@ -3,16 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  AdminClickableRow,
-  AdminRowActions,
-  type AdminRowAction,
-} from "@/app/admin/components/AdminRowActions";
+import { AdminClickableRow } from "@/app/admin/components/AdminRowActions";
 import {
   AdminMobileCard,
   AdminMobileMeta,
 } from "@/app/admin/components/AdminMobileCard";
-import { StatusBadge } from "@/app/admin/components/detail-page";
 import { RESERVATION_STATUSES } from "@/lib/event-constants";
 import { formatDate } from "@/lib/format";
 
@@ -57,16 +52,10 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
     }
   }
 
-  function actionsFor(row: ReservationRow): AdminRowAction[] {
-    const busy = busyId === row.id;
-    return [
-      { label: "Open", href: `/admin/events/reservations/${row.id}` },
-      ...RESERVATION_STATUSES.filter((s) => s !== row.status).map((s) => ({
-        label: `Mark as ${s}`,
-        disabled: busy,
-        onClick: () => void setStatus(row, s),
-      })),
-    ];
+  function onStatusChange(row: ReservationRow, value: string) {
+    if (!RESERVATION_STATUSES.includes(value as (typeof RESERVATION_STATUSES)[number])) return;
+    if (value === row.status) return;
+    setStatus(row, value);
   }
 
   if (rows.length === 0) {
@@ -115,15 +104,23 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
                 </td>
                 <td>{row.guestCount}</td>
                 <td>
-                  <StatusBadge status={row.status} />
+                  <select
+                    className="admin-input"
+                    value={row.status}
+                    disabled={busyId === row.id}
+                    onChange={(e) => onStatusChange(row, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ minWidth: 120, width: "auto" }}
+                  >
+                    {RESERVATION_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td>{formatDate(row.createdAt.slice(0, 10))}</td>
-                <td>
-                  <AdminRowActions
-                    label={`Actions for ${row.reference}`}
-                    actions={actionsFor(row)}
-                  />
-                </td>
+                <td aria-label="Actions" />
               </AdminClickableRow>
             ))}
           </tbody>
@@ -137,10 +134,22 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
             title={row.reference}
             subtitle={row.fullName}
             href={`/admin/events/reservations/${row.id}`}
-            actions={actionsFor(row)}
           >
             <div style={{ marginBottom: 10 }}>
-              <StatusBadge status={row.status} />
+              <select
+                className="admin-input"
+                value={row.status}
+                disabled={busyId === row.id}
+                onChange={(e) => onStatusChange(row, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: "100%" }}
+              >
+                {RESERVATION_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
             </div>
             <AdminMobileMeta
               items={[

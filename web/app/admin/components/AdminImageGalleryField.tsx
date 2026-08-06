@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { compressImage } from "@/lib/compress-image";
 
 export type GalleryImage = {
   id: number;
@@ -82,6 +83,8 @@ export function AdminImageGalleryField({
     setError("");
     let files = Array.from(fileList);
     if (single) files = files.slice(0, 1);
+    // Compress large images client-side to avoid 413 errors
+    files = await Promise.all(files.map((f) => compressImage(f)));
 
     if (!recordId || !endpoints) {
       for (const item of pending) URL.revokeObjectURL(item.previewUrl);
