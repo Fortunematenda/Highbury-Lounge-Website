@@ -27,7 +27,10 @@ services:
 
 volumes:
   highbury-wrangler:
+    external: true
+    name: highbury-lounge_highbury-wrangler
 
 networks:
   default:
     name: highbury-lounge-network
+    external: true
