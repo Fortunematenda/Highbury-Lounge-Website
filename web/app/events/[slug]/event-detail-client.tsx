@@ -16,7 +16,6 @@ import { EventReservationModal } from "../components/EventReservationModal";
 import {
   eventBannerImage,
   eventMapsHref,
-  eventPosterImage,
   formatEventDate,
   formatEventTimeRange,
   resolveEventAction,
@@ -119,19 +118,6 @@ export function EventDetailClient({ event, related, whatsappNumber }: Props) {
 
       <div className="event-detail-layout">
         <article className="event-detail-content">
-          <figure className="event-detail-poster">
-            <div className="event-detail-poster-frame">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={eventPosterImage(event)}
-                alt={`${event.title} poster`}
-              />
-            </div>
-            <figcaption className="event-detail-poster-caption">
-              Event poster
-            </figcaption>
-          </figure>
-
           {event.availability === "Postponed" ? (
             <p className="form-error" role="status">
               This event has been postponed. Please check back for updated

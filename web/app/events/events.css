@@ -634,32 +634,6 @@
   );
   pointer-events: none;
 }
-.event-detail-poster {
-  margin: 0 0 28px;
-  max-width: 520px;
-}
-.event-detail-poster-frame {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  background: #f3eee9;
-  border: 1px solid var(--line, #e8e1db);
-  box-shadow: 0 16px 40px rgba(36, 27, 31, 0.1);
-}
-.event-detail-poster-frame img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: min(72vh, 760px);
-  object-fit: contain;
-  object-position: center;
-  background: #f3eee9;
-}
-.event-detail-poster-caption {
-  margin: 10px 0 0;
-  font-size: 13px;
-  color: var(--muted, #6d6065);
-}
 .event-detail-hero-copy {
   position: relative;
   z-index: 3;
