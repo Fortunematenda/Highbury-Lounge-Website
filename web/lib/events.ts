@@ -111,7 +111,7 @@ async function uniqueSlug(base: string, excludeId?: number) {
     const [existing] = await db
       .select({ id: events.id })
       .from(events)
-      .where(eq(events.slug, candidate))
+      .where(and(eq(events.slug, candidate), isNull(events.deletedAt)))
       .limit(1);
     if (!existing || existing.id === excludeId) return candidate;
     i += 1;

@@ -376,6 +376,15 @@ export function EventForm({
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
+
+    // Never create when we already have an event id (edit must PATCH).
+    const editingId =
+      mode === "edit" && initial?.id && Number.isFinite(initial.id)
+        ? initial.id
+        : null;
+    const isCreate = editingId == null;
+
     if (!form.title.trim()) {
       toast.error("Enter an event title.");
       setTab("basic");
@@ -386,7 +395,7 @@ export function EventForm({
       setTab("schedule");
       return;
     }
-    if (mode === "create" && !coverImage && !pendingCover[0]) {
+    if (isCreate && !coverImage && !pendingCover[0]) {
       toast.error("Add an event image before creating.");
       setTab("media");
       return;
@@ -395,9 +404,9 @@ export function EventForm({
     try {
       const payload = buildPayload();
       const res = await fetch(
-        mode === "create" ? "/api/admin/events" : `/api/admin/events/${initial!.id}`,
+        isCreate ? "/api/admin/events" : `/api/admin/events/${editingId}`,
         {
-          method: mode === "create" ? "POST" : "PATCH",
+          method: isCreate ? "POST" : "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
@@ -405,18 +414,18 @@ export function EventForm({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not save event");
 
-      const eventId = data.event?.id ?? initial?.id;
+      const eventId = data.event?.id ?? editingId;
       if (eventId && pendingCover[0]) {
         await uploadPendingImages(eventId);
-      } else if (mode === "create" && !coverImage) {
+      } else if (isCreate && !coverImage) {
         throw new Error("Event was created but the image was missing. Open it and upload an image.");
       }
       setPendingCover([]);
 
-      toast.success(mode === "create" ? "Event created" : "Event saved");
+      toast.success(isCreate ? "Event created" : "Event saved");
       setDirty(false);
-      if (mode === "create" && eventId) {
-        router.push(`/admin/events/${eventId}`);
+      if (isCreate && eventId) {
+        router.replace(`/admin/events/${eventId}`);
       } else {
         router.refresh();
       }
@@ -461,7 +470,14 @@ export function EventForm({
   const readyToPublish =
     form.title.trim().length > 0 &&
     Boolean(form.startAt) &&
-    Boolean(coverImage || pendingCover[0]);
+    (mode === "edit" || Boolean(coverImage || pendingCover[0]));
+  const missingForSubmit = [
+    !form.title.trim() ? "a title" : null,
+    !form.startAt ? "a start date & time" : null,
+    mode === "create" && !(coverImage || pendingCover[0])
+      ? "an event image"
+      : null,
+  ].filter(Boolean);
 
   function goToTab(direction: -1 | 1) {
     const next = TABS[tabIndex + direction];
@@ -1146,12 +1162,7 @@ export function EventForm({
             <p className="admin-muted">
               {mode === "create" ? "Create event" : "Save"} is available once you
               add{" "}
-              {[
-                !form.title.trim() ? "a title" : null,
-                !form.startAt ? "a start date & time" : null,
-                !(coverImage || pendingCover[0]) ? "an event image" : null,
-              ]
-                .filter(Boolean)
+              {missingForSubmit
                 .join(", ")
                 .replace(/, ([^,]+)$/, " and $1")}
               .
