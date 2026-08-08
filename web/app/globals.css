@@ -1741,8 +1741,8 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
     background: transparent;
     box-shadow: none;
     pointer-events: auto;
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     border-bottom-color: rgba(255,255,255,.25);
   }
   .site-header.is-solid {
