@@ -2126,6 +2126,21 @@ textarea.admin-textarea-fixed {
   margin: 8px 0 16px;
 }
 
+/* Visually hidden — keep in layout so mobile browsers accept programmatic .click() */
+.admin-file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .room-image-label {
   display: block;
   font-size: 13px;

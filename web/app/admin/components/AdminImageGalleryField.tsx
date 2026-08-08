@@ -84,25 +84,25 @@ export function AdminImageGalleryField({
   async function uploadFiles(fileList: FileList | null) {
     if (!fileList?.length) return;
     setError("");
-    let files = Array.from(fileList);
-    if (single) files = files.slice(0, 1);
-    // Compress large images client-side to avoid 413 errors
-    files = await Promise.all(files.map((f) => compressImage(f)));
-
-    if (!recordId || !endpoints) {
-      for (const item of pending) URL.revokeObjectURL(item.previewUrl);
-      const next = files.map((file) => ({
-        key: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
-        file,
-        previewUrl: URL.createObjectURL(file),
-      }));
-      syncPending(next);
-      if (inputRef.current) inputRef.current.value = "";
-      return;
-    }
-
     setBusy(true);
     try {
+      let files = Array.from(fileList);
+      if (single) files = files.slice(0, 1);
+      // Compress large images client-side to avoid 413 errors.
+      // Must be inside try/catch — phone HEIC/odd MIME often fails here.
+      files = await Promise.all(files.map((f) => compressImage(f)));
+
+      if (!recordId || !endpoints) {
+        for (const item of pending) URL.revokeObjectURL(item.previewUrl);
+        const next = files.map((file) => ({
+          key: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`,
+          file,
+          previewUrl: URL.createObjectURL(file),
+        }));
+        syncPending(next);
+        return;
+      }
+
       let nextImages = images;
       let nextFeatured = featured;
       for (const file of files) {
@@ -217,13 +217,19 @@ export function AdminImageGalleryField({
             disabled={busy}
             onClick={() => inputRef.current?.click()}
           >
-            {busy ? "Uploading…" : singlePreviewUrl ? "Replace image" : "Add image"}
+            {busy
+              ? singlePreviewUrl
+                ? "Uploading…"
+                : "Preparing…"
+              : singlePreviewUrl
+                ? "Replace image"
+                : "Add image"}
           </button>
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
-            hidden
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*"
+            className="admin-file-input-hidden"
             onChange={(e) => void uploadFiles(e.target.files)}
           />
         </div>
@@ -280,9 +286,9 @@ export function AdminImageGalleryField({
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
+          accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*"
           multiple
-          hidden
+          className="admin-file-input-hidden"
           onChange={(e) => void uploadFiles(e.target.files)}
         />
       </div>

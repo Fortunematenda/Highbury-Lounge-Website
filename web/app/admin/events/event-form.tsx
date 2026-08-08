@@ -785,7 +785,7 @@ export function EventForm({
               }
               single
               label="Event photo"
-              hint="Upload one image for this event. It's used everywhere the event is shown."
+              hint="Upload one JPG, PNG or WebP. On iPhone, if it fails, export the photo as JPG or take a new one."
               onFeaturedChange={setCoverImage}
               onPendingFilesChange={(files) => {
                 setPendingCover(files);
@@ -1131,7 +1131,21 @@ export function EventForm({
                     : "Save changes"}
               </button>
             </div>
-          ) : null}
+          ) : (
+            <p className="admin-muted">
+              {mode === "create" ? "Create event" : "Save"} is available once you
+              add{" "}
+              {[
+                !form.title.trim() ? "a title" : null,
+                !form.startAt ? "a start date & time" : null,
+                !(coverImage || pendingCover[0]) ? "an event image" : null,
+              ]
+                .filter(Boolean)
+                .join(", ")
+                .replace(/, ([^,]+)$/, " and $1")}
+              .
+            </p>
+          )}
         </div>
 
       </form>
