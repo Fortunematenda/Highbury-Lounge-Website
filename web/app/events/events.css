@@ -252,7 +252,7 @@
   align-items: center;
   gap: 8px;
   min-height: 42px;
-  padding: 0 14px;
+  padding: 0 12px 0 14px;
   border: 1px solid var(--line);
   background: white;
   color: var(--ink);
@@ -264,6 +264,19 @@
   color: var(--ink);
   font-size: 13px;
   font-weight: 700;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 2px;
+  cursor: pointer;
+}
+.events-range-select select::-ms-expand {
+  display: none;
+}
+.events-range-select svg {
+  flex: 0 0 auto;
+  color: #6d6065;
+  pointer-events: none;
 }
 .events-free-toggle {
   display: inline-flex;
