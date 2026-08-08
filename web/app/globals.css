@@ -931,20 +931,20 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 /* Space for the booking strip that overlaps the hero bottom */
 .hero-block + .home-events-section,
 .hero-block + .rooms-section {
-  padding-top: 96px;
+  padding-top: 56px;
 }
 
 .home-events-section {
   background: #fffdf9;
-  padding-block: clamp(56px, 5.5vw, 80px);
-  padding-bottom: max(clamp(56px, 5.5vw, 80px), calc(24px + env(safe-area-inset-bottom, 0px)));
+  padding-block: clamp(36px, 4vw, 52px);
+  padding-bottom: max(clamp(36px, 4vw, 52px), calc(16px + env(safe-area-inset-bottom, 0px)));
 }
 .home-events-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 28px;
+  gap: 20px;
+  margin-bottom: 18px;
 }
 .home-events-copy {
   max-width: min(720px, 100%);
@@ -953,13 +953,13 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 }
 .home-events-copy h2,
 .upcoming-events-title {
-  margin: 0 0 12px;
+  margin: 0 0 6px;
 }
 .home-events-sub {
   margin: 0;
   color: #6d6065;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.45;
   max-width: none;
   white-space: nowrap;
 }
@@ -970,12 +970,12 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 }
 .home-events-all {
   flex: 0 0 auto;
-  min-height: 46px;
+  min-height: 42px;
   white-space: nowrap;
 }
 .home-events-grid {
   display: grid;
-  gap: clamp(20px, 2vw, 30px);
+  gap: clamp(14px, 1.5vw, 22px);
   align-items: stretch;
 }
 .home-events-grid.is-three {
@@ -986,7 +986,7 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
   max-width: 1100px;
 }
 .home-events-grid.is-one {
-  grid-template-columns: minmax(0, 520px);
+  grid-template-columns: minmax(0, min(100%, 780px));
 }
 
 .home-event-card {
@@ -1023,9 +1023,9 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 18px;
-  min-height: 108px;
-  padding: 16px;
+  gap: 14px;
+  min-height: 0;
+  padding: 12px 14px;
   background: #ffffff;
   border-top: 0;
   flex: 1 1 auto;
@@ -1105,7 +1105,7 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
   }
   .home-events-grid.is-one {
     grid-template-columns: minmax(0, 1fr);
-    max-width: 560px;
+    max-width: 720px;
   }
   .intro-grid {
     gap: clamp(40px, 6vw, 72px);
@@ -1124,8 +1124,8 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 }
 @media (max-width: 720px) {
   .home-events-section {
-    padding-block: clamp(48px, 10vw, 64px);
-    padding-bottom: max(clamp(48px, 10vw, 64px), 88px);
+    padding-block: clamp(28px, 6vw, 40px);
+    padding-bottom: max(clamp(28px, 6vw, 40px), 72px);
   }
   .home-event-image-wrap {
     aspect-ratio: 16 / 10;
@@ -1820,7 +1820,7 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   }
   .hero-block + .home-events-section,
   .hero-block + .rooms-section {
-    padding-top: 28px;
+    padding-top: 20px;
   }
   .intro {
     padding-block: 72px 56px;
