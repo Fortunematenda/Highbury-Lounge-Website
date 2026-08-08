@@ -1147,18 +1147,7 @@ export function EventForm({
             </DetailFieldGrid>
           </DetailSectionCard>
 
-          {readyToPublish ? (
-            <div className="detail-inline-actions">
-              <button className="admin-btn" type="submit" disabled={busy}>
-                <Save size={16} aria-hidden />
-                {busy
-                  ? "Saving…"
-                  : mode === "create"
-                    ? "Create event"
-                    : "Save changes"}
-              </button>
-            </div>
-          ) : (
+          {!readyToPublish ? (
             <p className="admin-muted">
               {mode === "create" ? "Create event" : "Save"} is available once you
               add{" "}
@@ -1167,7 +1156,7 @@ export function EventForm({
                 .replace(/, ([^,]+)$/, " and $1")}
               .
             </p>
-          )}
+          ) : null}
         </div>
 
       </form>

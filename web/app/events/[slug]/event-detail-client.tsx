@@ -89,11 +89,6 @@ export function EventDetailClient({ event, related, whatsappNumber }: Props) {
       </nav>
 
       <section className="event-detail-hero">
-        <span
-          className="event-media-backdrop"
-          aria-hidden="true"
-          style={{ backgroundImage: `url(${eventImage(event)})` }}
-        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={eventImage(event)} alt="" aria-hidden="true" />
         <div className="event-detail-hero-shade" />
