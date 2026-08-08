@@ -250,6 +250,9 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
                           objectFit: "cover",
                           flexShrink: 0,
                         }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
                     ) : null}
                     <div>

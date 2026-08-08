@@ -46,9 +46,14 @@ export async function POST(
     };
 
     if (kind === "cover") {
-      const oldKey = storageKeyFromUploadUrl(existing.coverImage);
-      patch.coverImage = uploaded.imageUrl;
-      if (oldKey) await deleteStoredObject(oldKey);
+      // Single event image is used as cover, poster and social.
+      for (const field of ["coverImage", "posterImage", "socialImage"] as const) {
+        const oldKey = storageKeyFromUploadUrl(existing[field]);
+        patch[field] = uploaded.imageUrl;
+        if (oldKey && oldKey !== storageKeyFromUploadUrl(uploaded.imageUrl)) {
+          await deleteStoredObject(oldKey);
+        }
+      }
     } else if (kind === "poster") {
       const oldKey = storageKeyFromUploadUrl(existing.posterImage);
       patch.posterImage = uploaded.imageUrl;

@@ -240,7 +240,14 @@ export function AdminImageGalleryField({
           <div className="admin-single-image-preview">
             <figure className="admin-single-image-tile">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={singlePreviewUrl} alt="" />
+              <img
+                src={singlePreviewUrl}
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  setError("Image missing or broken — upload a new one.");
+                }}
+              />
               <span className="menu-featured-tag">Featured</span>
             </figure>
             <div className="admin-actions">

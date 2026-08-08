@@ -365,9 +365,13 @@ export function EventForm({
   }
 
   async function uploadPendingImages(eventId: number) {
-    if (!pendingCover[0]) return;
+    if (!pendingCover[0]) return null;
     const data = await uploadEventImage(eventId, pendingCover[0], "cover");
-    if (data.imageUrl) setCoverImage(data.imageUrl);
+    if (!data.imageUrl) {
+      throw new Error("Image upload did not return a URL.");
+    }
+    setCoverImage(data.imageUrl);
+    return data.imageUrl;
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -380,6 +384,11 @@ export function EventForm({
     if (!form.startAt) {
       toast.error("Set a start date and time.");
       setTab("schedule");
+      return;
+    }
+    if (mode === "create" && !coverImage && !pendingCover[0]) {
+      toast.error("Add an event image before creating.");
+      setTab("media");
       return;
     }
     setBusy(true);
@@ -397,8 +406,10 @@ export function EventForm({
       if (!res.ok) throw new Error(data.error || "Could not save event");
 
       const eventId = data.event?.id ?? initial?.id;
-      if (eventId) {
+      if (eventId && pendingCover[0]) {
         await uploadPendingImages(eventId);
+      } else if (mode === "create" && !coverImage) {
+        throw new Error("Event was created but the image was missing. Open it and upload an image.");
       }
       setPendingCover([]);
 
