@@ -192,6 +192,11 @@ export function EventsPageClient({
           </div>
           <div className="event-featured-card">
             <Link href={`/events/${featured.slug}`} className="event-featured-media">
+              <span
+                className="event-media-backdrop"
+                aria-hidden="true"
+                style={{ backgroundImage: `url(${eventImage(featured)})` }}
+              />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={eventImage(featured)} alt={featured.title} />
             </Link>

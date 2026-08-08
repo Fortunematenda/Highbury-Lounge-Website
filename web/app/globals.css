@@ -997,20 +997,37 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
 }
 .home-event-image-wrap {
   display: block;
+  position: relative;
   width: 100%;
   height: 160px;
   overflow: hidden;
-  background: #e9e5e1;
+  background: #1a1216;
+  isolation: isolate;
+}
+.home-event-image-wrap .event-media-backdrop {
+  position: absolute;
+  inset: -20%;
+  background-position: center;
+  background-size: cover;
+  filter: blur(28px) saturate(1.15);
+  transform: scale(1.12);
+  opacity: 0.48;
+  pointer-events: none;
+  z-index: 0;
 }
 .home-event-image-wrap img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
-  transition: transform .45s ease;
+  transition: transform 0.45s ease, filter 0.45s ease;
 }
 .home-event-card:hover .home-event-image-wrap img {
-  transform: scale(1.03);
+  transform: scale(1.02);
+  filter: brightness(1.03);
 }
 .home-event-information {
   display: grid;

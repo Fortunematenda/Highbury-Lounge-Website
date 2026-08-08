@@ -76,6 +76,11 @@ function EventCard({
         className="home-event-image-wrap"
         aria-label={event.title}
       >
+        <span
+          className="event-media-backdrop"
+          aria-hidden="true"
+          style={{ backgroundImage: `url(${image})` }}
+        />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
@@ -86,6 +91,10 @@ function EventCard({
             if (img.dataset.fallback) return;
             img.dataset.fallback = "1";
             img.src = "/images/events.jpg";
+            const backdrop = img.previousElementSibling as HTMLElement | null;
+            if (backdrop?.classList.contains("event-media-backdrop")) {
+              backdrop.style.backgroundImage = 'url("/images/events.jpg")';
+            }
           }}
         />
       </Link>
