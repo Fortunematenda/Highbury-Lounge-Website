@@ -36,7 +36,6 @@ import {
   DetailMetadataCard,
   DetailPageShell,
   DetailSectionCard,
-  DetailStickyActionBar,
   StatusBadge,
 } from "@/app/admin/components/detail-page";
 import {
@@ -1210,49 +1209,44 @@ export function EventForm({
           ) : null}
         </div>
 
+        <div className="event-form-footer" role="group" aria-label="Form actions">
+          {canGoBack ? (
+            <button
+              type="button"
+              className="admin-btn ghost"
+              onClick={() => goToTab(-1)}
+            >
+              <ChevronLeft size={16} aria-hidden />
+              Back
+            </button>
+          ) : null}
+          {canGoNext ? (
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={() => goToTab(1)}
+            >
+              Next
+              <ChevronRight size={16} aria-hidden />
+            </button>
+          ) : readyToPublish ? (
+            <button
+              type="submit"
+              className="admin-btn"
+              disabled={busy || (mode === "edit" && !dirty)}
+            >
+              <Save size={16} aria-hidden />
+              {mode === "create"
+                ? busy
+                  ? "Creating…"
+                  : "Create event"
+                : busy
+                  ? "Saving…"
+                  : "Save changes"}
+            </button>
+          ) : null}
+        </div>
       </form>
-
-      <DetailStickyActionBar
-        tone="light"
-        visible={!busy}
-        cancelAction={
-          canGoBack
-            ? {
-                label: "Back",
-                icon: ChevronLeft,
-                variant: "ghost",
-                onClick: () => goToTab(-1),
-              }
-            : undefined
-        }
-        primaryAction={
-          canGoNext
-            ? {
-                label: "Next",
-                icon: ChevronRight,
-                onClick: () => goToTab(1),
-              }
-            : readyToPublish
-              ? {
-                  label:
-                    mode === "create"
-                      ? busy
-                        ? "Creating…"
-                        : "Create event"
-                      : busy
-                        ? "Saving…"
-                        : "Save changes",
-                  icon: Save,
-                  loading: busy,
-                  disabled: busy || (mode === "edit" && !dirty),
-                  onClick: () =>
-                    (
-                      document.getElementById("event-form") as HTMLFormElement
-                    )?.requestSubmit(),
-                }
-              : null
-        }
-      />
     </DetailPageShell>
   );
 }

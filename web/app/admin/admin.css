@@ -3711,6 +3711,32 @@ textarea.admin-textarea-fixed {
   justify-content: flex-end;
 }
 
+.detail-sticky-bar.is-light.is-actions-only {
+  justify-content: flex-end;
+}
+
+.detail-sticky-bar.is-light .detail-sticky-bar-actions {
+  margin-left: auto;
+  width: auto;
+  justify-content: flex-end;
+}
+
+.event-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 16px 0 8px;
+  border-top: 1px solid rgba(42, 18, 32, 0.08);
+  background: var(--admin-page, #f6f4f5);
+}
+
+.event-form-footer .admin-btn {
+  flex: 0 0 auto;
+}
+
 .detail-sticky-bar.is-light .admin-btn.ghost {
   color: var(--admin-ink, #2a1220);
   border-color: rgba(42, 18, 32, 0.18);
