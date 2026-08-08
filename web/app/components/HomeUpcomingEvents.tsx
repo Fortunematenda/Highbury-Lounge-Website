@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { EventReservationModal } from "@/app/events/components/EventReservationModal";
 import {
-  eventImage,
+  eventBannerImage,
   formatEventDayNumber,
   formatEventMonth,
   formatEventTime,
@@ -64,7 +64,7 @@ function EventCard({
   event: HomeEvent;
   onReserve: (event: HomeEvent) => void;
 }) {
-  const image = eventImage(event);
+  const image = eventBannerImage(event);
   const weekday = formatEventWeekday(event.startAt, true);
   const time = formatEventTime(event.startAt);
   const href = `/events/${event.slug}`;

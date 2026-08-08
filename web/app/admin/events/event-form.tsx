@@ -229,7 +229,7 @@ function buildInitialState(initial?: EventRecord | null): FormState {
 
 function singleImageEndpoints(
   eventId: number,
-  kind: "cover",
+  kind: "cover" | "poster",
 ): AdminImageGalleryEndpoints {
   return {
     async upload(file) {
@@ -272,7 +272,11 @@ export function EventForm({
   const [coverImage, setCoverImage] = useState<string | null>(
     initial?.coverImage ?? null,
   );
+  const [posterImage, setPosterImage] = useState<string | null>(
+    initial?.posterImage ?? initial?.coverImage ?? null,
+  );
   const [pendingCover, setPendingCover] = useState<File[]>([]);
+  const [pendingPoster, setPendingPoster] = useState<File[]>([]);
 
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -358,20 +362,38 @@ export function EventForm({
       seoTitle: form.seoTitle.trim() || null,
       seoDescription: form.seoDescription.trim() || null,
       coverImage,
-      posterImage: coverImage,
+      posterImage: posterImage || coverImage,
       gallery: [],
-      socialImage: coverImage,
+      socialImage: posterImage || coverImage,
     };
   }
 
   async function uploadPendingImages(eventId: number) {
-    if (!pendingCover[0]) return null;
-    const data = await uploadEventImage(eventId, pendingCover[0], "cover");
-    if (!data.imageUrl) {
-      throw new Error("Image upload did not return a URL.");
+    let nextCover = coverImage;
+    let nextPoster = posterImage;
+    if (pendingCover[0]) {
+      const data = await uploadEventImage(eventId, pendingCover[0], "cover");
+      if (!data.imageUrl) {
+        throw new Error("Banner upload did not return a URL.");
+      }
+      nextCover = data.imageUrl;
+      setCoverImage(data.imageUrl);
+      setPendingCover([]);
+      if (!nextPoster) {
+        nextPoster = data.imageUrl;
+        setPosterImage(data.imageUrl);
+      }
     }
-    setCoverImage(data.imageUrl);
-    return data.imageUrl;
+    if (pendingPoster[0]) {
+      const data = await uploadEventImage(eventId, pendingPoster[0], "poster");
+      if (!data.imageUrl) {
+        throw new Error("Poster upload did not return a URL.");
+      }
+      nextPoster = data.imageUrl;
+      setPosterImage(data.imageUrl);
+      setPendingPoster([]);
+    }
+    return { coverImage: nextCover, posterImage: nextPoster };
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -415,12 +437,11 @@ export function EventForm({
       if (!res.ok) throw new Error(data.error || "Could not save event");
 
       const eventId = data.event?.id ?? editingId;
-      if (eventId && pendingCover[0]) {
+      if (eventId && (pendingCover[0] || pendingPoster[0])) {
         await uploadPendingImages(eventId);
       } else if (isCreate && !coverImage) {
         throw new Error("Event was created but the image was missing. Open it and upload an image.");
       }
-      setPendingCover([]);
 
       toast.success(isCreate ? "Event created" : "Event saved");
       setDirty(false);
@@ -797,8 +818,8 @@ export function EventForm({
 
         <div className={tab === "media" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
           <DetailSectionCard
-            title="Event image"
-            description="Main image shown on the events list, hero and event page."
+            title="Website banner"
+            description="Wide image for event cards and the detail hero. Best at about 1600×700."
             icon={ImageIcon}
           >
             <AdminImageGalleryField
@@ -811,11 +832,41 @@ export function EventForm({
                   : undefined
               }
               single
-              label="Event photo"
-              hint="Upload one JPG, PNG or WebP. On iPhone, if it fails, export the photo as JPG or take a new one."
-              onFeaturedChange={setCoverImage}
+              label="Website banner"
+              hint="Landscape JPG, PNG or WebP. Cards and the hero crop with object-fit cover — do not stretch."
+              onFeaturedChange={(url) => {
+                setCoverImage(url);
+                markDirty();
+              }}
               onPendingFilesChange={(files) => {
                 setPendingCover(files);
+                markDirty();
+              }}
+            />
+          </DetailSectionCard>
+
+          <DetailSectionCard
+            title="Event poster"
+            description="Square or portrait flyer for social sharing and the clear poster on the event page. Best at 1080×1350 or 1080×1080."
+          >
+            <AdminImageGalleryField
+              recordId={mode === "edit" ? initial?.id : null}
+              featuredImage={posterImage}
+              initialImages={posterImage ? [{ id: 1, url: posterImage }] : []}
+              endpoints={
+                mode === "edit" && initial
+                  ? singleImageEndpoints(initial.id, "poster")
+                  : undefined
+              }
+              single
+              label="Poster / flyer"
+              hint="Optional. If empty, the website banner is used. Ideal for WhatsApp and Facebook."
+              onFeaturedChange={(url) => {
+                setPosterImage(url);
+                markDirty();
+              }}
+              onPendingFilesChange={(files) => {
+                setPendingPoster(files);
                 markDirty();
               }}
             />

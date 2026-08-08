@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, Clock3, Users2 } from "lucide-react";
 import {
   CATEGORY_ICONS,
-  eventImage,
+  eventBannerImage,
   formatEventDayNumber,
   formatEventMonth,
   formatEventTimeRange,
@@ -41,7 +41,7 @@ export function EventCard({
       <Link href={href} className="event-card-media" aria-label={event.title}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={eventImage(event)}
+          src={eventBannerImage(event)}
           alt=""
           loading={variant === "featured" ? "eager" : "lazy"}
           onError={(e) => {

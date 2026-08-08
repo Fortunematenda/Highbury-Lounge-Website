@@ -208,11 +208,33 @@ export function eventMapsHref(address: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
-export function eventImage(
+/**
+ * Wide website image for cards and heroes.
+ * Prefer cover (banner); fall back to poster.
+ */
+export function eventBannerImage(
   event: Pick<PublicEvent, "coverImage" | "posterImage">,
   fallback = "/images/events.jpg",
 ): string {
   return event.coverImage || event.posterImage || fallback;
+}
+
+/**
+ * Flyer / social poster. Prefer poster; fall back to cover.
+ */
+export function eventPosterImage(
+  event: Pick<PublicEvent, "coverImage" | "posterImage">,
+  fallback = "/images/events.jpg",
+): string {
+  return event.posterImage || event.coverImage || fallback;
+}
+
+/** @deprecated Prefer eventBannerImage for cards/heroes. */
+export function eventImage(
+  event: Pick<PublicEvent, "coverImage" | "posterImage">,
+  fallback = "/images/events.jpg",
+): string {
+  return eventBannerImage(event, fallback);
 }
 
 export type CardAction =

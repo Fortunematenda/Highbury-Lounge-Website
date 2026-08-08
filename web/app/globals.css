@@ -1002,7 +1002,7 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
   display: block;
   position: relative;
   width: 100%;
-  aspect-ratio: 2.9 / 1;
+  aspect-ratio: 16 / 7;
   overflow: hidden;
   background: #e9e5e1;
 }

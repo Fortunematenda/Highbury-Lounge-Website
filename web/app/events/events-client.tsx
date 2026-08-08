@@ -15,7 +15,7 @@ import { EVENT_CATEGORIES } from "@/lib/event-constants";
 import { EventCard } from "./components/EventCard";
 import { EventReservationModal } from "./components/EventReservationModal";
 import { EventsSubscribe } from "./components/EventsSubscribe";
-import { eventImage, formatEventDate, resolveEventAction, type PublicEvent } from "./lib";
+import { eventBannerImage, formatEventDate, resolveEventAction, type PublicEvent } from "./lib";
 
 const RANGE_OPTIONS = [
   { value: "", label: "All Upcoming" },
@@ -193,7 +193,7 @@ export function EventsPageClient({
           <div className="event-featured-card">
             <Link href={`/events/${featured.slug}`} className="event-featured-media">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={eventImage(featured)} alt={featured.title} />
+              <img src={eventBannerImage(featured)} alt={featured.title} />
             </Link>
             <div className="event-featured-body">
               <span className="event-card-category">{featured.category}</span>

@@ -46,22 +46,30 @@ export async function POST(
     };
 
     if (kind === "cover") {
-      // Single event image is used as cover, poster and social.
-      for (const field of ["coverImage", "posterImage", "socialImage"] as const) {
-        const oldKey = storageKeyFromUploadUrl(existing[field]);
-        patch[field] = uploaded.imageUrl;
-        if (oldKey && oldKey !== storageKeyFromUploadUrl(uploaded.imageUrl)) {
-          await deleteStoredObject(oldKey);
-        }
+      // Website banner for cards/heroes — do not overwrite poster/social.
+      const oldKey = storageKeyFromUploadUrl(existing.coverImage);
+      patch.coverImage = uploaded.imageUrl;
+      if (oldKey && oldKey !== storageKeyFromUploadUrl(uploaded.imageUrl)) {
+        await deleteStoredObject(oldKey);
       }
+      // First-time create path often has empty poster/social — seed from banner.
+      if (!existing.posterImage) patch.posterImage = uploaded.imageUrl;
+      if (!existing.socialImage) patch.socialImage = uploaded.imageUrl;
     } else if (kind === "poster") {
       const oldKey = storageKeyFromUploadUrl(existing.posterImage);
       patch.posterImage = uploaded.imageUrl;
-      if (oldKey) await deleteStoredObject(oldKey);
+      if (oldKey && oldKey !== storageKeyFromUploadUrl(uploaded.imageUrl)) {
+        await deleteStoredObject(oldKey);
+      }
+      if (!existing.socialImage || existing.socialImage === existing.posterImage) {
+        patch.socialImage = uploaded.imageUrl;
+      }
     } else if (kind === "social") {
       const oldKey = storageKeyFromUploadUrl(existing.socialImage);
       patch.socialImage = uploaded.imageUrl;
-      if (oldKey) await deleteStoredObject(oldKey);
+      if (oldKey && oldKey !== storageKeyFromUploadUrl(uploaded.imageUrl)) {
+        await deleteStoredObject(oldKey);
+      }
     } else {
       let gallery: string[] = [];
       try {

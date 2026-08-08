@@ -205,7 +205,7 @@ export function toPublicEvent(
       event.startAt >= todayStartIso(),
     seoTitle: event.seoTitle,
     seoDescription: event.seoDescription,
-    socialImage: event.socialImage || event.coverImage || event.posterImage,
+    socialImage: event.socialImage || event.posterImage || event.coverImage,
   };
 }
 
