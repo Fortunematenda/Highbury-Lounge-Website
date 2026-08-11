@@ -34,6 +34,7 @@ import {
   type ContentTranslations,
 } from "@/lib/i18n/content";
 import type { AppLocale } from "@/lib/i18n/locales";
+import { formatVenueDateTime } from "@/lib/timezone";
 import { toast } from "sonner";
 
 type Room = {
@@ -282,8 +283,22 @@ export function EditRoomForm({
           </section>
           <DetailMetadataCard
             items={[
-              { label: "Created", value: summary.createdAt },
-              { label: "Last updated", value: summary.updatedAt },
+              {
+                label: "Created",
+                value: summary.createdAt
+                  ? formatVenueDateTime(summary.createdAt, {
+                      withSeconds: true,
+                    })
+                  : null,
+              },
+              {
+                label: "Last updated",
+                value: summary.updatedAt
+                  ? formatVenueDateTime(summary.updatedAt, {
+                      withSeconds: true,
+                    })
+                  : null,
+              },
               {
                 label: "Last changed by",
                 value: summary.lastChangedBy ? (
@@ -301,7 +316,9 @@ export function EditRoomForm({
                       <>
                         <br />
                         <span className="admin-muted">
-                          {summary.lastChangedAt}
+                          {formatVenueDateTime(summary.lastChangedAt, {
+                            withSeconds: true,
+                          })}
                         </span>
                       </>
                     ) : null}

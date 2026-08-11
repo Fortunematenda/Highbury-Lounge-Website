@@ -8,6 +8,7 @@ import {
 } from "@/lib/audit";
 import { getFoodOrderDetail } from "@/lib/food-orders";
 import { formatMoney } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 import {
   DetailMetadataCard,
   DetailPageShell,
@@ -103,8 +104,18 @@ export default async function AdminFoodOrderDetailPage({
           </section>
           <DetailMetadataCard
             items={[
-              { label: "Created", value: order.createdAt },
-              { label: "Last updated", value: order.updatedAt },
+              {
+                label: "Created",
+                value: formatVenueDateTime(order.createdAt, {
+                  withSeconds: true,
+                }),
+              },
+              {
+                label: "Last updated",
+                value: formatVenueDateTime(order.updatedAt, {
+                  withSeconds: true,
+                }),
+              },
               {
                 label: "Last changed by",
                 value: lastChange?.actor

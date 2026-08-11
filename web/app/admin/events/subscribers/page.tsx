@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { eventSubscribers } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { PmsPageHeader, PmsStatusPill } from "@/app/admin/components/pms";
-import { formatDate } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +96,7 @@ export default async function EventSubscribersPage({
                       />
                     </td>
                     <td>{s.source}</td>
-                    <td>{formatDate(s.subscribedAt.slice(0, 10))}</td>
+                    <td>{formatVenueDateTime(s.subscribedAt)}</td>
                   </tr>
                 ))
               )}

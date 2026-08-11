@@ -17,8 +17,13 @@ import {
   todayISODate,
 } from "@/lib/availability";
 import { jsonError } from "@/lib/format";
+import { toVenueWallClock } from "@/lib/timezone";
 
 type RangeKey = "today" | "7" | "30" | "month" | "year";
+
+function venueDay(iso: string | null | undefined) {
+  return toVenueWallClock(iso).slice(0, 10);
+}
 
 function addDaysISO(iso: string, days: number) {
   const d = new Date(`${iso}T12:00:00Z`);
@@ -258,7 +263,7 @@ export async function GET(request: Request) {
       emptyTrend(trendStart, today).map((p) => [p.date, 0]),
     );
     for (const row of periodBookings) {
-      const day = String(row.createdAt).slice(0, 10);
+      const day = venueDay(row.createdAt);
       if (bookingTrendMap.has(day)) {
         bookingTrendMap.set(day, (bookingTrendMap.get(day) ?? 0) + 1);
       }
@@ -366,7 +371,7 @@ export async function GET(request: Request) {
         .from(foodOrders)
         .where(gte(foodOrders.createdAt, since));
       for (const row of foodPeriod) {
-        const day = String(row.createdAt).slice(0, 10);
+        const day = venueDay(row.createdAt);
         if (preorderTrendMap.has(day)) {
           preorderTrendMap.set(day, (preorderTrendMap.get(day) ?? 0) + 1);
         }
@@ -431,7 +436,7 @@ export async function GET(request: Request) {
       emptyTrend(trendStart, today).map((p) => [p.date, 0]),
     );
     for (const row of conferencePeriod) {
-      const day = String(row.createdAt).slice(0, 10);
+      const day = venueDay(row.createdAt);
       if (conferenceTrendMap.has(day)) {
         conferenceTrendMap.set(day, (conferenceTrendMap.get(day) ?? 0) + 1);
       }

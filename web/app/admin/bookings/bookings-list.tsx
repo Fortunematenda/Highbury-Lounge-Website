@@ -9,6 +9,7 @@ import {
   AdminMobileMeta,
 } from "@/app/admin/components/AdminMobileCard";
 import { formatDate, formatMoney, statusColor } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 type BookingRow = {
   id: number;
@@ -79,7 +80,7 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
                       {b.status}
                     </span>
                   </td>
-                  <td>{formatDate(b.createdAt.slice(0, 10))}</td>
+                  <td>{formatVenueDateTime(b.createdAt)}</td>
                   <td>
                     <AdminRowActions
                       label={`Actions for ${b.reference}`}
@@ -128,7 +129,7 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
                   },
                   {
                     label: "Created",
-                    value: formatDate(b.createdAt.slice(0, 10)),
+                    value: formatVenueDateTime(b.createdAt),
                   },
                 ]}
               />

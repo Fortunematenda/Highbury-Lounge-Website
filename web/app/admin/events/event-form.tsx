@@ -44,7 +44,7 @@ import {
   EVENT_CATEGORIES,
   EVENT_STATUSES,
 } from "@/lib/event-constants";
-import { toVenueWallClock, fromVenueWallClock } from "@/lib/timezone";
+import { toVenueWallClock, fromVenueWallClock, formatVenueDateTime } from "@/lib/timezone";
 
 const BASE_TABS = [
   { id: "basic", label: "Basic", icon: Sparkles },
@@ -689,8 +689,18 @@ export function EventForm({
                 { label: "Reservations", value: reservationCount },
                 { label: "Guests reserved", value: reservedGuests },
                 { label: "Page address", value: initial.slug },
-                { label: "Created", value: initial.createdAt },
-                { label: "Last updated", value: initial.updatedAt },
+                {
+                  label: "Created",
+                  value: formatVenueDateTime(initial.createdAt, {
+                    withSeconds: true,
+                  }),
+                },
+                {
+                  label: "Last updated",
+                  value: formatVenueDateTime(initial.updatedAt, {
+                    withSeconds: true,
+                  }),
+                },
                 {
                   label: "Last changed by",
                   value: lastChange ? (
@@ -703,7 +713,11 @@ export function EventForm({
                         </>
                       ) : null}
                       <br />
-                      <span className="admin-muted">{lastChange.at}</span>
+                      <span className="admin-muted">
+                        {formatVenueDateTime(lastChange.at, {
+                          withSeconds: true,
+                        })}
+                      </span>
                     </>
                   ) : (
                     "No changes recorded yet"
@@ -1324,7 +1338,9 @@ export function EventForm({
                         <td>
                           <StatusBadge status={r.status} />
                         </td>
-                        <td>{r.createdAt.slice(0, 10)}</td>
+                        <td>
+                          {formatVenueDateTime(r.createdAt)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1355,7 +1371,13 @@ export function EventForm({
               </AdminFormField>
               {initial?.publishedAt ? (
                 <AdminFormField label="Published at">
-                  <AdminTextInput defaultValue={initial.publishedAt} disabled readOnly />
+                  <AdminTextInput
+                    defaultValue={formatVenueDateTime(initial.publishedAt, {
+                      withSeconds: true,
+                    })}
+                    disabled
+                    readOnly
+                  />
                 </AdminFormField>
               ) : null}
             </DetailFieldGrid>

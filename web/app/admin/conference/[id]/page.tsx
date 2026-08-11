@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { conferenceEnquiries, conferencePackages } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { formatDate } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 import {
   DetailMetadataCard,
   DetailPageShell,
@@ -91,8 +92,14 @@ export default async function ConferenceDetailPage({
           </section>
           <DetailMetadataCard
             items={[
-              { label: "Created", value: e.createdAt },
-              { label: "Last updated", value: e.updatedAt },
+              {
+                label: "Created",
+                value: formatVenueDateTime(e.createdAt, { withSeconds: true }),
+              },
+              {
+                label: "Last updated",
+                value: formatVenueDateTime(e.updatedAt, { withSeconds: true }),
+              },
             ]}
           />
         </>

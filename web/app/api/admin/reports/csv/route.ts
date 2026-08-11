@@ -3,6 +3,7 @@ import { AuthError, requireAdmin } from "@/lib/auth";
 import { getDb } from "@/db";
 import { bookingGuests, bookings, roomTypes } from "@/db/schema";
 import { jsonError } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 function csvEscape(value: unknown) {
   const s = value == null ? "" : String(value);
@@ -90,7 +91,7 @@ export async function GET(request: Request) {
             `${r.guestFirst ?? ""} ${r.guestLast ?? ""}`.trim(),
             r.guestEmail,
             r.guestPhone,
-            r.createdAt,
+            formatVenueDateTime(r.createdAt, { withSeconds: true }),
           ]
             .map(csvEscape)
             .join(","),

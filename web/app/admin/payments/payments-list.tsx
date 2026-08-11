@@ -10,6 +10,7 @@ import {
 } from "@/app/admin/components/AdminMobileCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatMoney } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 type PaymentRow = {
   id: number;
@@ -64,7 +65,7 @@ export function PaymentsList({ rows }: { rows: PaymentRow[] }) {
                   <td>
                     {p.paymentDate
                       ? formatDate(p.paymentDate)
-                      : formatDate(String(p.createdAt).slice(0, 10))}
+                      : formatVenueDateTime(String(p.createdAt))}
                   </td>
                   <td>
                     {p.reference}
@@ -115,7 +116,7 @@ export function PaymentsList({ rows }: { rows: PaymentRow[] }) {
                     label: "Date",
                     value: p.paymentDate
                       ? formatDate(p.paymentDate)
-                      : formatDate(String(p.createdAt).slice(0, 10)),
+                      : formatVenueDateTime(String(p.createdAt)),
                   },
                   {
                     label: "Reference",

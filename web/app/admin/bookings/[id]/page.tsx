@@ -24,6 +24,7 @@ import {
   getLatestEntityChange,
 } from "@/lib/audit";
 import { formatDate, formatMoney } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 import { getFoodOrderForBooking } from "@/lib/food-orders";
 import { LOCALE_NATIVE_NAMES, isAppLocale } from "@/lib/i18n/locales";
 import {
@@ -212,8 +213,14 @@ export default async function AdminBookingDetailPage({
           </section>
           <DetailMetadataCard
             items={[
-              { label: "Created", value: b.createdAt },
-              { label: "Last updated", value: b.updatedAt },
+              {
+                label: "Created",
+                value: formatVenueDateTime(b.createdAt, { withSeconds: true }),
+              },
+              {
+                label: "Last updated",
+                value: formatVenueDateTime(b.updatedAt, { withSeconds: true }),
+              },
               {
                 label: "Last changed by",
                 value: lastChange?.actor
@@ -398,7 +405,8 @@ export default async function AdminBookingDetailPage({
             {history.length === 0 ? <li>No status changes yet.</li> : null}
             {history.map((h) => (
               <li key={h.id}>
-                {h.createdAt}: {h.previousStatus || "—"} →{" "}
+                {formatVenueDateTime(h.createdAt, { withSeconds: true })}:{" "}
+                {h.previousStatus || "—"} →{" "}
                 <strong>{h.newStatus}</strong>
                 {h.note ? ` — ${h.note}` : ""}
                 {h.adminName ? (
@@ -420,7 +428,8 @@ export default async function AdminBookingDetailPage({
             <ul className="admin-list">
               {notificationHistory.map((n) => (
                 <li key={n.id}>
-                  {n.createdAt}: <strong>{n.title}</strong> — {n.message}
+                  {formatVenueDateTime(n.createdAt, { withSeconds: true })}:{" "}
+                  <strong>{n.title}</strong> — {n.message}
                   {n.isRead ? "" : " · unread"}
                 </li>
               ))}

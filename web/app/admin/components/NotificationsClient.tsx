@@ -258,7 +258,9 @@ export function NotificationsClient({
                   <td>{n.recipientEmail}</td>
                   <td>{n.subject}</td>
                   <td>{n.status}</td>
-                  <td>{n.createdAt}</td>
+                  <td>
+                    {formatVenueDateTime(n.createdAt, { withSeconds: true })}
+                  </td>
                 </tr>
               ))}
             </tbody>

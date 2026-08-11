@@ -5,7 +5,8 @@ import { CalendarClock, StickyNote, Ticket, UserRound } from "lucide-react";
 import { getDb } from "@/db";
 import { eventReservations, events } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
-import { formatDate } from "@/lib/format";
+import { formatEventDateTime } from "@/app/events/lib";
+import { formatVenueDateTime } from "@/lib/timezone";
 import {
   DetailMetadataCard,
   DetailPageShell,
@@ -60,8 +61,14 @@ export default async function ReservationDetailPage({
       sidebar={
         <DetailMetadataCard
           items={[
-            { label: "Created", value: r.createdAt },
-            { label: "Last updated", value: r.updatedAt },
+            {
+              label: "Created",
+              value: formatVenueDateTime(r.createdAt, { withSeconds: true }),
+            },
+            {
+              label: "Last updated",
+              value: formatVenueDateTime(r.updatedAt, { withSeconds: true }),
+            },
             {
               label: "Event",
               value: row.eventTitle ? (
@@ -118,7 +125,9 @@ export default async function ReservationDetailPage({
               <div>
                 <dt>Date</dt>
                 <dd>
-                  {row.eventStartAt ? formatDate(row.eventStartAt.slice(0, 10)) : "—"}
+                  {row.eventStartAt
+                    ? formatEventDateTime(row.eventStartAt)
+                    : "—"}
                 </dd>
               </div>
               <div>

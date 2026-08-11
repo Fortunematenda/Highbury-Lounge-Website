@@ -12,6 +12,7 @@ import {
 import { TicketOrderActions } from "./ticket-actions";
 import { EventTicketPass } from "@/app/events/components/EventTicketPass";
 import { formatEventDateTime } from "@/app/events/lib";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +49,14 @@ export default async function TicketOrderDetailPage({
       sidebar={
         <DetailMetadataCard
           items={[
-            { label: "Created", value: order.createdAt },
-            { label: "Last updated", value: order.updatedAt },
+            {
+              label: "Created",
+              value: formatVenueDateTime(order.createdAt, { withSeconds: true }),
+            },
+            {
+              label: "Last updated",
+              value: formatVenueDateTime(order.updatedAt, { withSeconds: true }),
+            },
             {
               label: "Public ticket",
               value: (

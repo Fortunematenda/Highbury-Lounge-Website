@@ -35,6 +35,7 @@ import {
   type ContentTranslations,
 } from "@/lib/i18n/content";
 import type { AppLocale } from "@/lib/i18n/locales";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 const schema = z.object({
   capacity: z.number().min(1, "Enter a capacity of at least 1"),
@@ -287,7 +288,11 @@ export function PackageForm({
                       </>
                     ) : null}
                     <br />
-                    <span className="admin-muted">{lastChange.at}</span>
+                    <span className="admin-muted">
+                      {formatVenueDateTime(lastChange.at, {
+                        withSeconds: true,
+                      })}
+                    </span>
                   </>
                 ) : (
                   "No changes recorded yet"

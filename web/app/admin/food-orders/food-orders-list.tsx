@@ -8,7 +8,8 @@ import {
   AdminMobileCard,
   AdminMobileMeta,
 } from "@/app/admin/components/AdminMobileCard";
-import { formatDate, formatMoney, statusColor } from "@/lib/format";
+import { formatMoney, statusColor } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 type FoodOrderRow = {
   id: number;
@@ -92,7 +93,7 @@ export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
                       "Standalone"
                     )}
                   </td>
-                  <td>{formatDate(row.createdAt.slice(0, 10))}</td>
+                  <td>{formatVenueDateTime(row.createdAt)}</td>
                   <td>
                     <AdminRowActions
                       label={`Actions for ${row.reference}`}

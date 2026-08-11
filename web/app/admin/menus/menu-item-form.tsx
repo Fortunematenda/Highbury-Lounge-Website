@@ -36,6 +36,7 @@ import {
   type ContentTranslations,
 } from "@/lib/i18n/content";
 import type { AppLocale } from "@/lib/i18n/locales";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 const schema = z.object({
   categoryId: z.number().min(1, "Select a category"),
@@ -294,7 +295,11 @@ export function MenuItemForm({
                       </>
                     ) : null}
                     <br />
-                    <span className="admin-muted">{lastChange.at}</span>
+                    <span className="admin-muted">
+                      {formatVenueDateTime(lastChange.at, {
+                        withSeconds: true,
+                      })}
+                    </span>
                   </>
                 ) : (
                   "No changes recorded yet"

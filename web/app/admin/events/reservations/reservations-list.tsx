@@ -8,8 +8,9 @@ import {
   AdminMobileCard,
   AdminMobileMeta,
 } from "@/app/admin/components/AdminMobileCard";
+import { formatEventDate } from "@/app/events/lib";
+import { formatVenueDateTime } from "@/lib/timezone";
 import { RESERVATION_STATUSES } from "@/lib/event-constants";
-import { formatDate } from "@/lib/format";
 
 export type ReservationRow = {
   id: number;
@@ -94,7 +95,9 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
                       <div>{row.eventTitle}</div>
                       {row.eventStartAt ? (
                         <div className="admin-muted">
-                          {formatDate(row.eventStartAt.slice(0, 10))}
+                          {formatEventDate(row.eventStartAt, {
+                            withYear: true,
+                          })}
                         </div>
                       ) : null}
                     </>
@@ -119,7 +122,7 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
                     ))}
                   </select>
                 </td>
-                <td>{formatDate(row.createdAt.slice(0, 10))}</td>
+                <td>{formatVenueDateTime(row.createdAt)}</td>
                 <td aria-label="Actions" />
               </AdminClickableRow>
             ))}
@@ -159,7 +162,7 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
                 { label: "Phone", value: row.phone },
                 {
                   label: "Submitted",
-                  value: formatDate(row.createdAt.slice(0, 10)),
+                  value: formatVenueDateTime(row.createdAt),
                 },
               ]}
             />

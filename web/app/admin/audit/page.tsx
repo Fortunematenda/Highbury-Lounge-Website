@@ -7,6 +7,7 @@ import {
   parseChangedByFromDetails,
   type AuditActor,
 } from "@/lib/audit";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,11 @@ export default async function AuditPage() {
                   const actor = resolveActor(r);
                   return (
                     <tr key={r.id}>
-                      <td className="admin-audit-when">{r.createdAt}</td>
+                      <td className="admin-audit-when">
+                        {formatVenueDateTime(r.createdAt, {
+                          withSeconds: true,
+                        })}
+                      </td>
                       <td>
                         {actor ? (
                           <div className="admin-audit-actor">
