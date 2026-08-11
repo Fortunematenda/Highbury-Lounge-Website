@@ -13,8 +13,12 @@ import {
   Wallet,
   CircleHelp,
   Ban,
+  Ticket,
+  CalendarDays,
+  UsersRound,
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 const DashboardCharts = lazy(() =>
   import("./dashboard-charts").then((m) => ({ default: m.DashboardCharts })),
@@ -57,6 +61,14 @@ type DashboardData = {
     occupiedRooms: number;
     maintenanceRooms: number;
     totalRooms: number;
+    upcomingEvents: number;
+    publishedEvents: number;
+    pendingTicketOrders: number;
+    paidTicketOrders: number;
+    ticketsSold: number;
+    ticketRevenue: number;
+    pendingEventReservations: number;
+    eventReservations: number;
   };
   comparisons: {
     bookings: Comparison;
@@ -70,10 +82,40 @@ type DashboardData = {
     occupancyTrend: TrendPoint[];
     conferenceTrend: TrendPoint[];
     preorderTrend: TrendPoint[];
+    ticketTrend?: TrendPoint[];
   };
   bookingStatusBreakdown: Array<{ status: string; count: number }>;
   revenueSources: Array<{ source: string; amount: number }>;
   availableRoomList: AvailableRoomRow[];
+  upcomingEvents?: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    status: string;
+    startAt: string;
+    startLabel: string;
+    category: string;
+  }>;
+  recentTicketOrders?: Array<{
+    id: number;
+    reference: string;
+    fullName: string;
+    paymentStatus: string;
+    quantity: number;
+    totalAmount: number;
+    currency: string;
+    eventTitle: string | null;
+    createdAt: string;
+  }>;
+  recentEventReservations?: Array<{
+    id: number;
+    reference: string;
+    fullName: string;
+    status: string;
+    guestCount: number;
+    eventTitle: string | null;
+    createdAt: string;
+  }>;
   recentBookings: Array<{
     id: number;
     reference: string;
@@ -474,6 +516,42 @@ export function AdminDashboardClient() {
               color="#4b6b58"
               tip={`Active inventory (${data.totals.totalRooms}) − occupied (${data.totals.occupiedRooms}) − maintenance (${data.totals.maintenanceRooms})`}
             />
+            <KpiCard
+              title="Upcoming events"
+              value={data.totals.upcomingEvents ?? 0}
+              icon={CalendarDays}
+              spark={data.trends.ticketTrend ?? []}
+              sparkType="line"
+              color="#70163f"
+              tip={`${data.totals.publishedEvents ?? 0} published events · upcoming from today`}
+            />
+            <KpiCard
+              title="Pending ticket payments"
+              value={data.totals.pendingTicketOrders ?? 0}
+              icon={Ticket}
+              spark={data.trends.ticketTrend ?? []}
+              sparkType="bar"
+              color="#b45309"
+              tip="Ticket orders awaiting bank-transfer verification"
+            />
+            <KpiCard
+              title="Tickets sold"
+              value={data.totals.ticketsSold ?? 0}
+              icon={Ticket}
+              spark={data.trends.ticketTrend ?? []}
+              sparkType="area"
+              color="#15803d"
+              tip={`${data.totals.paidTicketOrders ?? 0} paid orders · ${formatMoney(data.totals.ticketRevenue ?? 0)} ticket revenue`}
+            />
+            <KpiCard
+              title="Pending event reservations"
+              value={data.totals.pendingEventReservations ?? 0}
+              icon={UsersRound}
+              spark={data.trends.ticketTrend ?? []}
+              sparkType="line"
+              color="#c47a2c"
+              tip={`${data.totals.eventReservations ?? 0} total event reservations`}
+            />
           </div>
 
           <Suspense
@@ -494,6 +572,97 @@ export function AdminDashboardClient() {
               totalRooms={data.totals.totalRooms}
             />
           </Suspense>
+
+          <section className="admin-card admin-room-availability">
+            <div className="admin-card-head">
+              <div>
+                <h2>Upcoming events</h2>
+                <p className="page-sub" style={{ margin: "4px 0 0" }}>
+                  Published events from today onward
+                </p>
+              </div>
+              <Link href="/admin/events">Manage events</Link>
+            </div>
+            {(data.upcomingEvents ?? []).length === 0 ? (
+              <p className="admin-empty">No upcoming published events.</p>
+            ) : (
+              <ul className="admin-list">
+                {(data.upcomingEvents ?? []).map((event) => (
+                  <li key={event.id}>
+                    <Link href={`/admin/events/${event.id}`}>{event.title}</Link>
+                    {" · "}
+                    {event.startLabel}
+                    {" · "}
+                    {event.category}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <div className="admin-two-col">
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>Recent ticket orders</h2>
+                <Link href="/admin/events/tickets">View all</Link>
+              </div>
+              {(data.recentTicketOrders ?? []).length === 0 ? (
+                <p className="admin-empty">No ticket orders yet.</p>
+              ) : (
+                <ul className="admin-list">
+                  {(data.recentTicketOrders ?? []).map((order) => (
+                    <li key={order.id}>
+                      <Link href={`/admin/events/tickets/${order.id}`}>
+                        {order.reference}
+                      </Link>
+                      {" · "}
+                      {order.fullName}
+                      {" · "}
+                      {order.eventTitle || "Event"}
+                      {" · "}
+                      {order.quantity}× · {order.paymentStatus}
+                      {" · "}
+                      {formatMoney(order.totalAmount, order.currency)}
+                      <div className="admin-muted">
+                        {formatVenueDateTime(order.createdAt)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>Recent event reservations</h2>
+                <Link href="/admin/events/reservations">View all</Link>
+              </div>
+              {(data.recentEventReservations ?? []).length === 0 ? (
+                <p className="admin-empty">No event reservations yet.</p>
+              ) : (
+                <ul className="admin-list">
+                  {(data.recentEventReservations ?? []).map((row) => (
+                    <li key={row.id}>
+                      <Link href={`/admin/events/reservations/${row.id}`}>
+                        {row.reference}
+                      </Link>
+                      {" · "}
+                      {row.fullName}
+                      {" · "}
+                      {row.eventTitle || "Event"}
+                      {" · "}
+                      {row.guestCount} guest{row.guestCount === 1 ? "" : "s"}
+                      {" · "}
+                      {row.status}
+                      <div className="admin-muted">
+                        {formatVenueDateTime(row.createdAt)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
 
           <section className="admin-card admin-room-availability">
             <div className="admin-card-head">
@@ -668,6 +837,12 @@ export function AdminDashboardClient() {
             </Link>
             <Link className="admin-btn secondary" href="/admin/food-orders">
               Food orders
+            </Link>
+            <Link className="admin-btn secondary" href="/admin/events">
+              Events
+            </Link>
+            <Link className="admin-btn secondary" href="/admin/events/tickets">
+              Event tickets
             </Link>
             <Link className="admin-btn secondary" href="/admin/rooms/new">
               Add room

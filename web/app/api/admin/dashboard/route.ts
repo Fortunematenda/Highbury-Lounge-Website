@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { AuthError, requireAdmin } from "@/lib/auth";
 import { getDb } from "@/db";
 import {
@@ -6,6 +6,9 @@ import {
   bookingGuests,
   bookings,
   conferenceEnquiries,
+  eventReservations,
+  events,
+  eventTicketOrders,
   foodOrders,
   payments,
   roomBlocks,
@@ -17,6 +20,7 @@ import {
   todayISODate,
 } from "@/lib/availability";
 import { jsonError } from "@/lib/format";
+import { formatEventDateTime } from "@/app/events/lib";
 import { toVenueWallClock } from "@/lib/timezone";
 
 type RangeKey = "today" | "7" | "30" | "month" | "year";
@@ -457,6 +461,153 @@ export async function GET(request: Request) {
       value: occupancyRate,
     }));
 
+    let upcomingEventsCount = 0;
+    let publishedEventsCount = 0;
+    let pendingTicketOrders = 0;
+    let paidTicketOrders = 0;
+    let ticketsSold = 0;
+    let ticketRevenue = 0;
+    let pendingEventReservations = 0;
+    let eventReservationsCount = 0;
+    let upcomingEvents: Array<{
+      id: number;
+      title: string;
+      slug: string;
+      status: string;
+      startAt: string;
+      startLabel: string;
+      category: string;
+    }> = [];
+    let recentTicketOrders: Array<{
+      id: number;
+      reference: string;
+      fullName: string;
+      paymentStatus: string;
+      quantity: number;
+      totalAmount: number;
+      currency: string;
+      eventTitle: string | null;
+      createdAt: string;
+    }> = [];
+    let recentEventReservations: Array<{
+      id: number;
+      reference: string;
+      fullName: string;
+      status: string;
+      guestCount: number;
+      eventTitle: string | null;
+      createdAt: string;
+    }> = [];
+    const ticketTrendMap = new Map(
+      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+    );
+
+    try {
+      const publishedEvents = await db
+        .select({
+          id: events.id,
+          title: events.title,
+          slug: events.slug,
+          status: events.status,
+          startAt: events.startAt,
+          category: events.category,
+        })
+        .from(events)
+        .where(and(eq(events.status, "published"), isNull(events.deletedAt)))
+        .orderBy(asc(events.startAt));
+
+      publishedEventsCount = publishedEvents.length;
+      const upcoming = publishedEvents.filter(
+        (event) => toVenueWallClock(event.startAt).slice(0, 10) >= today,
+      );
+      upcomingEventsCount = upcoming.length;
+      upcomingEvents = upcoming.slice(0, 6).map((event) => ({
+        id: event.id,
+        title: event.title,
+        slug: event.slug,
+        status: event.status,
+        startAt: event.startAt,
+        startLabel: formatEventDateTime(event.startAt),
+        category: event.category,
+      }));
+
+      const [pendingTicketsRow] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(eventTicketOrders)
+        .where(eq(eventTicketOrders.paymentStatus, "pending"));
+      pendingTicketOrders = Number(pendingTicketsRow?.value ?? 0);
+
+      const paidTickets = await db
+        .select({
+          quantity: eventTicketOrders.quantity,
+          totalAmount: eventTicketOrders.totalAmount,
+        })
+        .from(eventTicketOrders)
+        .where(eq(eventTicketOrders.paymentStatus, "paid"));
+      paidTicketOrders = paidTickets.length;
+      ticketsSold = paidTickets.reduce((sum, row) => sum + (row.quantity || 0), 0);
+      ticketRevenue = paidTickets.reduce(
+        (sum, row) => sum + (row.totalAmount || 0),
+        0,
+      );
+
+      const [pendingReservationsRow] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(eventReservations)
+        .where(eq(eventReservations.status, "Pending"));
+      pendingEventReservations = Number(pendingReservationsRow?.value ?? 0);
+
+      const [reservationsTotalRow] = await db
+        .select({ value: sql<number>`count(*)` })
+        .from(eventReservations);
+      eventReservationsCount = Number(reservationsTotalRow?.value ?? 0);
+
+      const ticketPeriod = await db
+        .select({ createdAt: eventTicketOrders.createdAt })
+        .from(eventTicketOrders)
+        .where(gte(eventTicketOrders.createdAt, since));
+      for (const row of ticketPeriod) {
+        const day = venueDay(row.createdAt);
+        if (ticketTrendMap.has(day)) {
+          ticketTrendMap.set(day, (ticketTrendMap.get(day) ?? 0) + 1);
+        }
+      }
+
+      recentTicketOrders = await db
+        .select({
+          id: eventTicketOrders.id,
+          reference: eventTicketOrders.reference,
+          fullName: eventTicketOrders.fullName,
+          paymentStatus: eventTicketOrders.paymentStatus,
+          quantity: eventTicketOrders.quantity,
+          totalAmount: eventTicketOrders.totalAmount,
+          currency: eventTicketOrders.currency,
+          eventTitle: events.title,
+          createdAt: eventTicketOrders.createdAt,
+        })
+        .from(eventTicketOrders)
+        .leftJoin(events, eq(events.id, eventTicketOrders.eventId))
+        .orderBy(desc(eventTicketOrders.createdAt))
+        .limit(6);
+
+      recentEventReservations = await db
+        .select({
+          id: eventReservations.id,
+          reference: eventReservations.reference,
+          fullName: eventReservations.fullName,
+          status: eventReservations.status,
+          guestCount: eventReservations.guestCount,
+          eventTitle: events.title,
+          createdAt: eventReservations.createdAt,
+        })
+        .from(eventReservations)
+        .leftJoin(events, eq(events.id, eventReservations.eventId))
+        .orderBy(desc(eventReservations.createdAt))
+        .limit(6);
+    } catch (err) {
+      console.error("Dashboard event metrics skipped", err);
+    }
+
     return Response.json({
       greetingName: user.fullName.split(" ")[0] || user.fullName,
       range: rangeKey,
@@ -478,6 +629,14 @@ export async function GET(request: Request) {
         occupiedRooms: occupiedUnits,
         maintenanceRooms: maintenanceUnits,
         totalRooms: totalActiveRooms,
+        upcomingEvents: upcomingEventsCount,
+        publishedEvents: publishedEventsCount,
+        pendingTicketOrders,
+        paidTicketOrders,
+        ticketsSold,
+        ticketRevenue,
+        pendingEventReservations,
+        eventReservations: eventReservationsCount,
       },
       comparisons: {
         bookings: pctChange(periodCount, previousCount),
@@ -508,6 +667,10 @@ export async function GET(request: Request) {
           date,
           value,
         })),
+        ticketTrend: [...ticketTrendMap.entries()].map(([date, value]) => ({
+          date,
+          value,
+        })),
       },
       bookingStatusBreakdown: statusRows.map((r) => ({
         status: r.status,
@@ -515,9 +678,13 @@ export async function GET(request: Request) {
       })),
       revenueSources: [
         { source: "Room bookings", amount: revenue },
+        { source: "Event tickets", amount: ticketRevenue },
         { source: "Recorded payments", amount: paidAmount },
       ],
       availableRoomList,
+      upcomingEvents,
+      recentTicketOrders,
+      recentEventReservations,
       recentBookings: recent,
       recentFoodOrders,
       recentNotifications,
