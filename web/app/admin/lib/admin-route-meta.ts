@@ -164,6 +164,20 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
     };
   }
 
+  if (root === "events" && rest[1] === "tickets" && rest.length >= 3) {
+    return {
+      title: "Ticket order",
+      breadcrumbs: [
+        { label: "Event Tickets", href: "/admin/events/tickets" },
+        { label: "Ticket order" },
+      ],
+    };
+  }
+
+  if (root === "events" && rest[1] === "tickets") {
+    return { title: "Event Tickets" };
+  }
+
   if (root === "events" && rest[1] === "reservations" && rest.length >= 3) {
     return {
       title: "Reservation details",

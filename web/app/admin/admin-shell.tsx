@@ -72,6 +72,11 @@ const NAV_GROUPS: NavGroup[] = [
         label: "Event Reservations",
         icon: Ticket,
       },
+      {
+        href: "/admin/events/tickets",
+        label: "Event Tickets",
+        icon: Ticket,
+      },
     ],
   },
   {

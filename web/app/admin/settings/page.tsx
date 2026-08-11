@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { Building2, ClipboardList, ImageIcon, ScrollText, Settings2 } from "lucide-react";
+import { Building2, ClipboardList, ImageIcon, Landmark, ScrollText, Settings2 } from "lucide-react";
 import { requireAdminPage } from "@/lib/admin-page";
 import { writeAuditLog } from "@/lib/audit";
 import { isSmtpConfigured } from "@/lib/notifications";
@@ -30,6 +30,13 @@ async function saveSettings(formData: FormData) {
     "booking_terms",
     "cancellation_policy",
     "payment_instructions",
+    "bank_name",
+    "bank_branch",
+    "bank_account_name",
+    "bank_account_usd",
+    "bank_account_zw",
+    "reservations_email",
+    "ticket_payment_instructions",
     "maintenance_mode",
   ];
 
@@ -202,6 +209,69 @@ export default async function SettingsPage({
                 defaultChecked={settings.maintenance_mode === "true"}
               />
               <span>Maintenance mode</span>
+            </label>
+          </DetailFieldGrid>
+        </DetailSectionCard>
+
+        <DetailSectionCard title="Bank transfer (event tickets)" icon={Landmark}>
+          <DetailFieldGrid columns={2}>
+            <label className="admin-form-field">
+              <span>Bank name</span>
+              <input
+                className="admin-input"
+                name="bank_name"
+                defaultValue={settings.bank_name ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>Branch</span>
+              <input
+                className="admin-input"
+                name="bank_branch"
+                defaultValue={settings.bank_branch ?? ""}
+              />
+            </label>
+            <label className="admin-form-field" style={{ gridColumn: "1 / -1" }}>
+              <span>Account name</span>
+              <input
+                className="admin-input"
+                name="bank_account_name"
+                defaultValue={settings.bank_account_name ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>USD account number</span>
+              <input
+                className="admin-input"
+                name="bank_account_usd"
+                defaultValue={settings.bank_account_usd ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>ZW account number</span>
+              <input
+                className="admin-input"
+                name="bank_account_zw"
+                defaultValue={settings.bank_account_zw ?? ""}
+              />
+            </label>
+            <label className="admin-form-field">
+              <span>Reservations email</span>
+              <input
+                className="admin-input"
+                name="reservations_email"
+                type="email"
+                defaultValue={settings.reservations_email ?? ""}
+              />
+            </label>
+            <label className="admin-form-field" style={{ gridColumn: "1 / -1" }}>
+              <span>Ticket payment instructions</span>
+              <textarea
+                className="admin-textarea admin-textarea-fixed"
+                name="ticket_payment_instructions"
+                rows={4}
+                defaultValue={settings.ticket_payment_instructions ?? ""}
+              />
             </label>
           </DetailFieldGrid>
         </DetailSectionCard>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { EventReservationModal } from "@/app/events/components/EventReservationModal";
+import { EventTicketPurchaseModal } from "@/app/events/components/EventTicketPurchaseModal";
 import {
   eventBannerImage,
   formatEventDayNumber,
@@ -30,7 +31,7 @@ function EventActionButton({
   const action = resolveEventAction(event);
   const className = "button outline home-event-action";
 
-  if (action.kind === "reserve") {
+  if (action.kind === "reserve" || action.kind === "tickets") {
     return (
       <button
         type="button"
@@ -125,11 +126,18 @@ export function HomeUpcomingEvents() {
   const [events, setEvents] = useState<HomeEvent[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<HomeEvent | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
+  const [ticketsOpen, setTicketsOpen] = useState(false);
 
-  function openReservation(event: HomeEvent) {
+  function openAction(event: HomeEvent) {
     setSelectedEvent(event);
-    setModalOpen(true);
+    if (event.actionType === "book_tickets") {
+      setTicketsOpen(true);
+      setReserveOpen(false);
+    } else {
+      setReserveOpen(true);
+      setTicketsOpen(false);
+    }
   }
 
   useEffect(() => {
@@ -189,15 +197,20 @@ export function HomeUpcomingEvents() {
 
         <div className={gridClass}>
           {events.slice(0, 3).map((event) => (
-            <EventCard key={event.id} event={event} onReserve={openReservation} />
+            <EventCard key={event.id} event={event} onReserve={openAction} />
           ))}
         </div>
       </div>
 
       <EventReservationModal
         event={selectedEvent}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={reserveOpen}
+        onClose={() => setReserveOpen(false)}
+      />
+      <EventTicketPurchaseModal
+        event={selectedEvent}
+        open={ticketsOpen}
+        onClose={() => setTicketsOpen(false)}
       />
     </section>
   );

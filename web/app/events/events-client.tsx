@@ -14,6 +14,7 @@ import {
 import { EVENT_CATEGORIES } from "@/lib/event-constants";
 import { EventCard } from "./components/EventCard";
 import { EventReservationModal } from "./components/EventReservationModal";
+import { EventTicketPurchaseModal } from "./components/EventTicketPurchaseModal";
 import { EventsSubscribe } from "./components/EventsSubscribe";
 import { eventBannerImage, formatEventDate, resolveEventAction, type PublicEvent } from "./lib";
 
@@ -59,7 +60,8 @@ export function EventsPageClient({
   );
   const [loadingPast, setLoadingPast] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<PublicEvent | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
+  const [ticketsOpen, setTicketsOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -138,9 +140,15 @@ export function EventsPageClient({
     }
   }
 
-  function openReservation(event: PublicEvent) {
+  function openAction(event: PublicEvent) {
     setSelectedEvent(event);
-    setModalOpen(true);
+    if (event.actionType === "book_tickets") {
+      setTicketsOpen(true);
+      setReserveOpen(false);
+    } else {
+      setReserveOpen(true);
+      setTicketsOpen(false);
+    }
   }
 
   function scrollToUpcoming() {
@@ -216,11 +224,12 @@ export function EventsPageClient({
               </ul>
               <div className="event-featured-actions">
                 <span className="event-card-price">{featured.priceLabel}</span>
-                {featuredAction?.kind === "reserve" ? (
+                {featuredAction?.kind === "reserve" ||
+                featuredAction?.kind === "tickets" ? (
                   <button
                     type="button"
                     className="button primary"
-                    onClick={() => openReservation(featured)}
+                    onClick={() => openAction(featured)}
                   >
                     {featuredAction.label}
                   </button>
@@ -335,7 +344,7 @@ export function EventsPageClient({
               <EventCard
                 key={event.id}
                 event={event}
-                onReserve={openReservation}
+                onReserve={openAction}
                 whatsappNumber={whatsappNumber}
               />
             ))}
@@ -392,8 +401,13 @@ export function EventsPageClient({
 
       <EventReservationModal
         event={selectedEvent}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={reserveOpen}
+        onClose={() => setReserveOpen(false)}
+      />
+      <EventTicketPurchaseModal
+        event={selectedEvent}
+        open={ticketsOpen}
+        onClose={() => setTicketsOpen(false)}
       />
     </main>
   );

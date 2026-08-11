@@ -115,6 +115,16 @@ export type EventRecord = {
   reservationDeadline: string | null;
   requireApproval: boolean;
   programme: ProgrammeItem[];
+  ticketTypes?: Array<{
+    id?: number | null;
+    name: string;
+    description?: string | null;
+    currency?: string;
+    price: number;
+    capacity?: number | null;
+    sortOrder?: number;
+    isActive?: boolean;
+  }>;
   dressCode: string | null;
   ageNote: string | null;
   attendanceInfo: string | null;
@@ -268,6 +278,49 @@ export function EventForm({
   const [programme, setProgramme] = useState<ProgrammeItem[]>(
     initial?.programme ?? [],
   );
+  const [ticketTypes, setTicketTypes] = useState<
+    Array<{
+      id?: number | null;
+      name: string;
+      description: string;
+      currency: string;
+      price: string;
+      capacity: string;
+    }>
+  >(() => {
+    const existing = (initial?.ticketTypes ?? []).map((t) => ({
+      id: t.id ?? null,
+      name: t.name,
+      description: t.description ?? "",
+      currency: t.currency ?? "USD",
+      price: String(t.price),
+      capacity: t.capacity != null ? String(t.capacity) : "",
+    }));
+    if (
+      existing.length === 0 &&
+      (initial?.actionType ?? "reserve_table") === "book_tickets"
+    ) {
+      return [
+        {
+          id: null,
+          name: "VIP",
+          description: "",
+          currency: initial?.currency ?? "USD",
+          price: "30",
+          capacity: "",
+        },
+        {
+          id: null,
+          name: "Standard",
+          description: "",
+          currency: initial?.currency ?? "USD",
+          price: "10",
+          capacity: "",
+        },
+      ];
+    }
+    return existing;
+  });
   const [coverImage, setCoverImage] = useState<string | null>(
     initial?.coverImage ?? null,
   );
@@ -308,6 +361,62 @@ export function EventForm({
 
   function removeProgrammeItem(index: number) {
     setProgramme((prev) => prev.filter((_, i) => i !== index));
+    markDirty();
+  }
+
+  function ensureDefaultTicketTypes() {
+    setTicketTypes((prev) => {
+      if (prev.length > 0) return prev;
+      return [
+        {
+          id: null,
+          name: "VIP",
+          description: "",
+          currency: form.currency || "USD",
+          price: "30",
+          capacity: "",
+        },
+        {
+          id: null,
+          name: "Standard",
+          description: "",
+          currency: form.currency || "USD",
+          price: "10",
+          capacity: "",
+        },
+      ];
+    });
+    markDirty();
+  }
+
+  function addTicketType() {
+    setTicketTypes((prev) => [
+      ...prev,
+      {
+        id: null,
+        name: "",
+        description: "",
+        currency: form.currency || "USD",
+        price: "",
+        capacity: "",
+      },
+    ]);
+    markDirty();
+  }
+
+  function updateTicketType(
+    index: number,
+    field: "name" | "description" | "currency" | "price" | "capacity",
+    value: string,
+  ) {
+    setTicketTypes((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
+    markDirty();
+  }
+
+  function removeTicketType(index: number) {
+    setTicketTypes((prev) => prev.filter((_, i) => i !== index));
     markDirty();
   }
 
@@ -364,6 +473,23 @@ export function EventForm({
       posterImage: posterImage || coverImage,
       gallery: [],
       socialImage: posterImage || coverImage,
+      ...(form.actionType === "book_tickets"
+        ? {
+            ticketTypes: ticketTypes
+              .map((t, index) => ({
+                id: t.id ?? null,
+                name: t.name.trim(),
+                description: t.description.trim() || null,
+                currency: t.currency.trim() || "USD",
+                price: Number(t.price),
+                capacity:
+                  t.capacity.trim() === "" ? null : Number(t.capacity),
+                sortOrder: index,
+                isActive: true,
+              }))
+              .filter((t) => t.name && Number.isFinite(t.price)),
+          }
+        : {}),
     };
   }
 
@@ -977,7 +1103,11 @@ export function EventForm({
               <AdminFormField label="Action type" required>
                 <AdminSelect
                   value={form.actionType}
-                  onChange={(e) => update("actionType", e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    update("actionType", next);
+                    if (next === "book_tickets") ensureDefaultTicketTypes();
+                  }}
                 >
                   {ACTION_TYPES.map((a) => (
                     <option key={a} value={a}>
@@ -1008,6 +1138,85 @@ export function EventForm({
               ) : null}
             </DetailFieldGrid>
           </DetailSectionCard>
+
+          {form.actionType === "book_tickets" ? (
+            <DetailSectionCard
+              title="Ticket types"
+              description="Prices guests choose when buying tickets (bank transfer)."
+              icon={Ticket}
+            >
+              <div className="detail-form-stack">
+                {ticketTypes.map((row, index) => (
+                  <DetailFieldGrid key={row.id ?? `new-${index}`} columns={3}>
+                    <AdminFormField label="Name" required>
+                      <AdminTextInput
+                        value={row.name}
+                        onChange={(e) =>
+                          updateTicketType(index, "name", e.target.value)
+                        }
+                        placeholder="VIP"
+                      />
+                    </AdminFormField>
+                    <AdminFormField label="Price" required>
+                      <AdminTextInput
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={row.price}
+                        onChange={(e) =>
+                          updateTicketType(index, "price", e.target.value)
+                        }
+                      />
+                    </AdminFormField>
+                    <AdminFormField label="Currency">
+                      <AdminTextInput
+                        value={row.currency}
+                        onChange={(e) =>
+                          updateTicketType(index, "currency", e.target.value)
+                        }
+                      />
+                    </AdminFormField>
+                    <AdminFormField label="Capacity (optional)">
+                      <AdminTextInput
+                        type="number"
+                        min="0"
+                        value={row.capacity}
+                        onChange={(e) =>
+                          updateTicketType(index, "capacity", e.target.value)
+                        }
+                      />
+                    </AdminFormField>
+                    <DetailFieldSpan>
+                      <AdminFormField label="Description">
+                        <AdminTextInput
+                          value={row.description}
+                          onChange={(e) =>
+                            updateTicketType(index, "description", e.target.value)
+                          }
+                        />
+                      </AdminFormField>
+                    </DetailFieldSpan>
+                    <div>
+                      <button
+                        type="button"
+                        className="admin-btn secondary"
+                        onClick={() => removeTicketType(index)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </DetailFieldGrid>
+                ))}
+                <button
+                  type="button"
+                  className="admin-btn secondary"
+                  onClick={addTicketType}
+                >
+                  Add ticket type
+                </button>
+              </div>
+            </DetailSectionCard>
+          ) : null}
 
           <DetailSectionCard
             title="Online reservations"

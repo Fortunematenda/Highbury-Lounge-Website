@@ -101,7 +101,8 @@ export function EventCard({
             <Link href={href} className="text-link event-card-cta">
               View Recap
             </Link>
-          ) : action?.kind === "reserve" && onReserve ? (
+          ) : (action?.kind === "reserve" || action?.kind === "tickets") &&
+            onReserve ? (
             <button
               type="button"
               className="event-card-cta-button"

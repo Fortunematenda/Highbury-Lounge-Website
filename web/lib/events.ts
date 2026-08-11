@@ -135,6 +135,15 @@ export async function countReservedGuests(eventId: number) {
   return Number(row?.value ?? 0);
 }
 
+/** Mirrors ticket types returned with public events. */
+export type PublicTicketType = {
+  id: number;
+  name: string;
+  description: string | null;
+  currency: string;
+  price: number;
+};
+
 export function toPublicEvent(
   event: EventRow,
   reservedGuests = 0,
@@ -194,6 +203,12 @@ export function toPublicEvent(
     isFeatured: event.isFeatured,
     showAnnouncement: event.showAnnouncement,
     availability,
+    canBuyTickets:
+      event.status === "published" &&
+      availability !== "Sold Out" &&
+      availability !== "Cancelled" &&
+      event.actionType === "book_tickets" &&
+      event.startAt >= todayStartIso(),
     canReserve:
       event.status === "published" &&
       availability !== "Sold Out" &&
@@ -202,10 +217,33 @@ export function toPublicEvent(
       event.actionType !== "none" &&
       event.actionType !== "whatsapp" &&
       event.actionType !== "external" &&
+      event.actionType !== "book_tickets" &&
       event.startAt >= todayStartIso(),
+    ticketTypes: [] as PublicTicketType[],
     seoTitle: event.seoTitle,
     seoDescription: event.seoDescription,
     socialImage: event.socialImage || event.posterImage || event.coverImage,
+  };
+}
+
+async function withTicketTypes<T extends ReturnType<typeof toPublicEvent>>(
+  row: { id: number; actionType: string },
+  base: T,
+): Promise<T & { ticketTypes: PublicTicketType[] }> {
+  if (row.actionType !== "book_tickets") {
+    return { ...base, ticketTypes: [] };
+  }
+  const { listTicketTypesForEvent } = await import("@/lib/event-tickets");
+  const types = await listTicketTypesForEvent(row.id, true);
+  return {
+    ...base,
+    ticketTypes: types.map((t) => ({
+      id: t.id,
+      name: t.name,
+      description: t.description,
+      currency: t.currency,
+      price: t.price,
+    })),
   };
 }
 
@@ -259,7 +297,7 @@ export async function listPublishedUpcoming(params?: {
 
   return Promise.all(
     rows.map(async (row) =>
-      toPublicEvent(row, await countReservedGuests(row.id)),
+      withTicketTypes(row, toPublicEvent(row, await countReservedGuests(row.id))),
     ),
   );
 }
@@ -286,7 +324,7 @@ export async function listPublishedPast(params?: {
 
   return Promise.all(
     rows.map(async (row) =>
-      toPublicEvent(row, await countReservedGuests(row.id)),
+      withTicketTypes(row, toPublicEvent(row, await countReservedGuests(row.id))),
     ),
   );
 }
@@ -308,7 +346,10 @@ export async function getFeaturedUpcoming() {
     .orderBy(asc(events.startAt))
     .limit(1);
   if (!row) return null;
-  return toPublicEvent(row, await countReservedGuests(row.id));
+  return withTicketTypes(
+    row,
+    toPublicEvent(row, await countReservedGuests(row.id)),
+  );
 }
 
 export async function getAnnouncementEvent() {
@@ -328,7 +369,10 @@ export async function getAnnouncementEvent() {
     .orderBy(asc(events.startAt))
     .limit(1);
   if (!row) return null;
-  return toPublicEvent(row, await countReservedGuests(row.id));
+  return withTicketTypes(
+    row,
+    toPublicEvent(row, await countReservedGuests(row.id)),
+  );
 }
 
 export async function getPublishedEventBySlug(slug: string) {
@@ -350,7 +394,10 @@ export async function getPublishedEventBySlug(slug: string) {
     )
     .limit(1);
   if (!row) return null;
-  return toPublicEvent(row, await countReservedGuests(row.id));
+  return withTicketTypes(
+    row,
+    toPublicEvent(row, await countReservedGuests(row.id)),
+  );
 }
 
 export async function getRelatedEvents(eventId: number, category: string) {
@@ -374,7 +421,7 @@ export async function getRelatedEvents(eventId: number, category: string) {
   if (rows.length >= 3) {
     return Promise.all(
       rows.map(async (row) =>
-        toPublicEvent(row, await countReservedGuests(row.id)),
+        withTicketTypes(row, toPublicEvent(row, await countReservedGuests(row.id))),
       ),
     );
   }
@@ -402,7 +449,7 @@ export async function getRelatedEvents(eventId: number, category: string) {
   const combined = [...rows, ...extra];
   return Promise.all(
     combined.map(async (row) =>
-      toPublicEvent(row, await countReservedGuests(row.id)),
+      withTicketTypes(row, toPublicEvent(row, await countReservedGuests(row.id))),
     ),
   );
 }
@@ -449,6 +496,16 @@ export type EventInput = {
   seoTitle?: string | null;
   seoDescription?: string | null;
   socialImage?: string | null;
+  ticketTypes?: Array<{
+    id?: number | null;
+    name: string;
+    description?: string | null;
+    currency?: string;
+    price: number;
+    capacity?: number | null;
+    sortOrder?: number;
+    isActive?: boolean;
+  }> | null;
 };
 
 function normalizeInput(input: EventInput, existing?: EventRow) {
@@ -570,6 +627,12 @@ export async function createEvent(input: EventInput) {
     .insert(events)
     .values({ ...data, slug })
     .returning();
+
+  if (input.ticketTypes && input.ticketTypes.length > 0) {
+    const { replaceTicketTypes } = await import("@/lib/event-tickets");
+    await replaceTicketTypes(row.id, input.ticketTypes);
+  }
+
   return row;
 }
 
@@ -677,6 +740,12 @@ export async function updateEvent(id: number, input: Partial<EventInput>) {
     .set({ ...data, slug, updatedAt: nowIsoLocal() })
     .where(eq(events.id, id))
     .returning();
+
+  if (input.ticketTypes) {
+    const { replaceTicketTypes } = await import("@/lib/event-tickets");
+    await replaceTicketTypes(id, input.ticketTypes);
+  }
+
   return row;
 }
 

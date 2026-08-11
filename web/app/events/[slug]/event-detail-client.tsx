@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { EventCard } from "../components/EventCard";
 import { EventReservationModal } from "../components/EventReservationModal";
+import { EventTicketPurchaseModal } from "../components/EventTicketPurchaseModal";
 import {
   eventBannerImage,
   eventMapsHref,
@@ -31,11 +32,18 @@ type Props = {
 
 export function EventDetailClient({ event, related, whatsappNumber }: Props) {
   const [selectedEvent, setSelectedEvent] = useState<PublicEvent | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [reserveOpen, setReserveOpen] = useState(false);
+  const [ticketsOpen, setTicketsOpen] = useState(false);
 
-  function openReservation(target: PublicEvent) {
+  function openAction(target: PublicEvent) {
     setSelectedEvent(target);
-    setModalOpen(true);
+    if (target.actionType === "book_tickets") {
+      setTicketsOpen(true);
+      setReserveOpen(false);
+    } else {
+      setReserveOpen(true);
+      setTicketsOpen(false);
+    }
   }
 
   const action = resolveEventAction(event, whatsappNumber);
@@ -51,11 +59,11 @@ export function EventDetailClient({ event, related, whatsappNumber }: Props) {
   );
 
   const ctaButton =
-    action.kind === "reserve" ? (
+    action.kind === "reserve" || action.kind === "tickets" ? (
       <button
         type="button"
         className="button primary event-sticky-cta"
-        onClick={() => openReservation(event)}
+        onClick={() => openAction(event)}
       >
         {action.label}
       </button>
@@ -300,7 +308,7 @@ export function EventDetailClient({ event, related, whatsappNumber }: Props) {
               <EventCard
                 key={item.id}
                 event={item}
-                onReserve={openReservation}
+                onReserve={openAction}
                 whatsappNumber={whatsappNumber}
               />
             ))}
@@ -310,8 +318,13 @@ export function EventDetailClient({ event, related, whatsappNumber }: Props) {
 
       <EventReservationModal
         event={selectedEvent}
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={reserveOpen}
+        onClose={() => setReserveOpen(false)}
+      />
+      <EventTicketPurchaseModal
+        event={selectedEvent}
+        open={ticketsOpen}
+        onClose={() => setTicketsOpen(false)}
       />
     </main>
   );

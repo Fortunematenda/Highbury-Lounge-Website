@@ -1195,3 +1195,117 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Ticket purchase / ticket page ---------- */
+.event-ticket-total {
+  margin: 12px 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.event-ticket-pay-status {
+  display: inline-block;
+  margin: 12px 0 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f3e6c8;
+  color: #7a5b12;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.event-ticket-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+.event-ticket-pay-summary {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.event-ticket-pay-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 14px;
+}
+.event-ticket-bank {
+  margin-top: 8px;
+  padding: 14px 16px;
+  background: rgba(114, 47, 55, 0.05);
+  border: 1px solid rgba(114, 47, 55, 0.12);
+}
+.event-ticket-bank h2,
+.event-ticket-bank h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+.event-ticket-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+.event-ticket-card {
+  margin-top: 20px;
+  padding: 28px 24px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 40px rgba(40, 20, 24, 0.06);
+}
+.event-ticket-card h1 {
+  margin: 6px 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.15;
+}
+.event-ticket-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 22px 0;
+  padding: 0;
+}
+.event-ticket-facts dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a777e;
+}
+.event-ticket-facts dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+.event-ticket-status {
+  text-transform: capitalize;
+  font-weight: 700;
+}
+.event-ticket-status.is-pending {
+  color: #9a6b00;
+}
+.event-ticket-status.is-paid {
+  color: #1f6b3a;
+}
+.event-ticket-status.is-cancelled {
+  color: #8b1e2d;
+}
+.event-ticket-qr-block {
+  text-align: center;
+  padding: 18px 12px;
+  border: 1px dashed rgba(114, 47, 55, 0.25);
+}
+.event-ticket-qr-block img {
+  display: block;
+  margin: 0 auto 12px;
+  width: 220px;
+  height: 220px;
+  background: #fff;
+}
+@media (max-width: 640px) {
+  .event-ticket-facts {
+    grid-template-columns: 1fr;
+  }
+}

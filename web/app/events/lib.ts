@@ -59,6 +59,14 @@ export type PublicEvent = {
   showAnnouncement: boolean;
   availability: EventAvailability;
   canReserve: boolean;
+  canBuyTickets: boolean;
+  ticketTypes?: Array<{
+    id: number;
+    name: string;
+    description: string | null;
+    currency: string;
+    price: number;
+  }>;
   seoTitle: string | null;
   seoDescription: string | null;
   socialImage: string | null;
@@ -239,6 +247,7 @@ export function eventImage(
 
 export type CardAction =
   | { kind: "reserve"; label: string }
+  | { kind: "tickets"; label: string }
   | { kind: "whatsapp"; label: string; href: string }
   | { kind: "external"; label: string; href: string }
   | { kind: "details"; label: string };
@@ -248,6 +257,12 @@ export function resolveEventAction(
   event: PublicEvent,
   whatsappNumber?: string,
 ): CardAction {
+  if (event.canBuyTickets) {
+    return {
+      kind: "tickets",
+      label: actionLabel(event.actionType, event.customActionLabel),
+    };
+  }
   if (event.canReserve) {
     return {
       kind: "reserve",

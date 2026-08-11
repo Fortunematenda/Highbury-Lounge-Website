@@ -703,6 +703,64 @@ export const eventReservations = sqliteTable(
   ],
 );
 
+/** Paid ticket categories for an event (VIP, Standard, etc.). */
+export const eventTicketTypes = sqliteTable(
+  "event_ticket_types",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    currency: text("currency").notNull().default("USD"),
+    price: real("price").notNull(),
+    capacity: integer("capacity"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [index("event_ticket_types_event_idx").on(t.eventId)],
+);
+
+/**
+ * Ticket purchase orders paid by bank transfer.
+ * payment_status: pending | paid | cancelled
+ */
+export const eventTicketOrders = sqliteTable(
+  "event_ticket_orders",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    reference: text("reference").notNull().unique(),
+    eventId: integer("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    ticketTypeId: integer("ticket_type_id")
+      .notNull()
+      .references(() => eventTicketTypes.id, { onDelete: "restrict" }),
+    ticketTypeName: text("ticket_type_name").notNull(),
+    fullName: text("full_name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone").notNull(),
+    quantity: integer("quantity").notNull().default(1),
+    unitPrice: real("unit_price").notNull(),
+    totalAmount: real("total_amount").notNull(),
+    currency: text("currency").notNull().default("USD"),
+    paymentStatus: text("payment_status").notNull().default("pending"),
+    paymentMethod: text("payment_method").notNull().default("bank_transfer"),
+    ticketCode: text("ticket_code"),
+    adminNotes: text("admin_notes"),
+    verifiedAt: text("verified_at"),
+    verifiedBy: integer("verified_by"),
+    ...timestamps,
+  },
+  (t) => [
+    index("event_ticket_orders_event_idx").on(t.eventId),
+    index("event_ticket_orders_status_idx").on(t.paymentStatus),
+    index("event_ticket_orders_created_idx").on(t.createdAt),
+  ],
+);
+
 export const eventSubscribers = sqliteTable(
   "event_subscribers",
   {

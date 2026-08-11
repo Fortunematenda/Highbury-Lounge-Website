@@ -21,6 +21,14 @@ const DEFAULTS: Record<string, string> = {
   maintenance_mode: "false",
   payment_instructions:
     "Payment options will be shared once your reservation is confirmed. Online card payment will be available in a future update.",
+  bank_name: "CBZ Bank",
+  bank_branch: "Kadoma Branch",
+  bank_account_name: "Highbury Lounge Hotel and Conference Center",
+  bank_account_usd: "61762017990021",
+  bank_account_zw: "61762017990011",
+  reservations_email: "reservationshighburylounge@gmail.com",
+  ticket_payment_instructions:
+    "Use your order reference as the deposit reference. After paying, keep your proof of payment. Tickets are issued once payment is verified by Highbury Lounge.",
   hero_image: "/images/hero-venue.jpg",
   meet_image: "/images/conference.jpg",
   celebrate_image: "/images/events.jpg",

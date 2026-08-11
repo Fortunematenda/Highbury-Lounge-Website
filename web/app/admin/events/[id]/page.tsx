@@ -5,6 +5,7 @@ import { eventReservations, events } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { formatAuditActorLabel, getLatestEntityChange } from "@/lib/audit";
 import { countReservedGuests } from "@/lib/events";
+import { listTicketTypesForEvent } from "@/lib/event-tickets";
 import { EventForm, type EventRecord } from "../event-form";
 
 export const dynamic = "force-dynamic";
@@ -107,6 +108,10 @@ export default async function EditEventPage({
     notFound();
   }
 
+  const ticketTypes = await listTicketTypesForEvent(eventId, false).catch(
+    () => [],
+  );
+
   const record: EventRecord = {
     id: event.id,
     title: event.title,
@@ -140,6 +145,16 @@ export default async function EditEventPage({
     reservationDeadline: event.reservationDeadline,
     requireApproval: event.requireApproval,
     programme: parseProgramme(event.programmeJson),
+    ticketTypes: ticketTypes.map((t) => ({
+      id: t.id,
+      name: t.name,
+      description: t.description,
+      currency: t.currency,
+      price: t.price,
+      capacity: t.capacity,
+      sortOrder: t.sortOrder,
+      isActive: t.isActive,
+    })),
     dressCode: event.dressCode,
     ageNote: event.ageNote,
     attendanceInfo: event.attendanceInfo,
