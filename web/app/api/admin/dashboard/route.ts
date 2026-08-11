@@ -297,16 +297,10 @@ export async function GET(request: Request) {
 
     function pctChange(current: number, previous: number) {
       if (previous <= 0 && current <= 0) {
-        return {
-          change: null as number | null,
-          label: "Not enough comparison data",
-        };
+        return { change: 0, label: "0% vs prior period" };
       }
       if (previous <= 0) {
-        return {
-          change: null as number | null,
-          label: "Not enough comparison data",
-        };
+        return { change: 100, label: "New vs prior period" };
       }
       const change = Math.round(((current - previous) / previous) * 1000) / 10;
       return {

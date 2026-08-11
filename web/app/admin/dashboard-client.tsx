@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { formatVenueDateTime } from "@/lib/timezone";
+import CountUp from "react-countup";
 
 const DashboardCharts = lazy(() =>
   import("./dashboard-charts").then((m) => ({ default: m.DashboardCharts })),
@@ -170,6 +171,79 @@ function greetingForHour(date = new Date()) {
   return "Good evening";
 }
 
+function sparkDelta(spark: TrendPoint[]): Comparison | undefined {
+  if (spark.length < 2) return undefined;
+  const mid = Math.floor(spark.length / 2);
+  const earlier = spark.slice(0, mid);
+  const later = spark.slice(mid);
+  const avg = (rows: TrendPoint[]) =>
+    rows.reduce((sum, row) => sum + row.value, 0) / Math.max(rows.length, 1);
+  const previous = avg(earlier);
+  const current = avg(later);
+  if (previous <= 0 && current <= 0) {
+    return { change: 0, label: "0% in range" };
+  }
+  if (previous <= 0) {
+    return { change: 100, label: "Up in range" };
+  }
+  const change = Math.round(((current - previous) / previous) * 1000) / 10;
+  return {
+    change,
+    label: `${change > 0 ? "+" : ""}${change}% in range`,
+  };
+}
+
+function formatKpiValue(value: string | number) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return (
+      <CountUp
+        end={value}
+        duration={0.8}
+        separator=","
+        decimals={Number.isInteger(value) ? 0 : 1}
+        preserveValue
+      />
+    );
+  }
+  if (typeof value === "string") {
+    const money = value.match(/^([^0-9-]*)(-?[\d,]+(?:\.\d+)?)(.*)$/);
+    if (money) {
+      const amount = Number(money[2].replace(/,/g, ""));
+      if (Number.isFinite(amount)) {
+        const decimals = money[2].includes(".") ? 2 : 0;
+        return (
+          <>
+            {money[1]}
+            <CountUp
+              end={amount}
+              duration={0.8}
+              separator=","
+              decimals={decimals}
+              preserveValue
+            />
+            {money[3]}
+          </>
+        );
+      }
+    }
+    const pct = value.match(/^(-?\d+(?:\.\d+)?)%$/);
+    if (pct) {
+      return (
+        <>
+          <CountUp
+            end={Number(pct[1])}
+            duration={0.8}
+            decimals={Number.isInteger(Number(pct[1])) ? 0 : 1}
+            preserveValue
+          />
+          %
+        </>
+      );
+    }
+  }
+  return value;
+}
+
 function Sparkline({
   data,
   type,
@@ -197,10 +271,7 @@ function Sparkline({
     };
   }, []);
 
-  if (!data.length) {
-    return <div className="admin-kpi-spark empty" aria-hidden />;
-  }
-  if (!Chart) {
+  if (!data.length || !Chart) {
     return <div className="admin-kpi-spark empty" aria-hidden />;
   }
   return (
@@ -229,8 +300,17 @@ function KpiCard({
   color: string;
   tip: string;
 }) {
-  const up = comparison?.change != null && comparison.change > 0;
-  const down = comparison?.change != null && comparison.change < 0;
+  const resolved =
+    comparison?.change != null
+      ? comparison
+      : comparison?.label
+        ? comparison
+        : sparkDelta(spark);
+  const hasDelta = resolved?.change != null;
+  const up = hasDelta && (resolved?.change ?? 0) > 0;
+  const down = hasDelta && (resolved?.change ?? 0) < 0;
+  const flat = hasDelta && (resolved?.change ?? 0) === 0;
+
   return (
     <article className="admin-kpi-card" title={tip}>
       <div className="admin-kpi-head">
@@ -241,27 +321,28 @@ function KpiCard({
               <CircleHelp size={12} aria-hidden />
             </span>
           </p>
-          <strong className="admin-kpi-value">{value}</strong>
+          <strong className="admin-kpi-value">{formatKpiValue(value)}</strong>
         </div>
-        <span className="admin-kpi-icon" style={{ color }}>
+        <span className="admin-kpi-icon" style={{ color, background: `${color}14` }}>
           <Icon size={16} aria-hidden />
         </span>
       </div>
-      <div className="admin-kpi-meta">
-        {comparison?.change == null ? (
-          <span className="admin-kpi-compare muted">
-            {comparison?.label ?? "Not enough comparison data"}
-          </span>
-        ) : (
-          <span
-            className={`admin-kpi-compare${up ? " up" : ""}${down ? " down" : ""}`}
-          >
-            {up ? <TrendingUp size={13} aria-hidden /> : null}
-            {down ? <TrendingDown size={13} aria-hidden /> : null}
-            {comparison.label}
-          </span>
-        )}
-      </div>
+      {resolved ? (
+        <div className="admin-kpi-meta">
+          {hasDelta ? (
+            <span
+              className={`admin-kpi-delta${up ? " up" : ""}${down ? " down" : ""}${flat ? " flat" : ""}`}
+            >
+              {up ? <TrendingUp size={12} aria-hidden /> : null}
+              {down ? <TrendingDown size={12} aria-hidden /> : null}
+              {flat ? <span className="admin-kpi-delta-dot" aria-hidden /> : null}
+              {resolved.label}
+            </span>
+          ) : (
+            <span className="admin-kpi-note">{resolved.label}</span>
+          )}
+        </div>
+      ) : null}
       <Sparkline
         data={spark}
         type={sparkType}

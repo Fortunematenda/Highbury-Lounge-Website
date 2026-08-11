@@ -38,31 +38,41 @@ export function SparklineChart({
   type: "area" | "line" | "bar";
   color: string;
 }) {
+  const gradientId = `kpi-spark-${color.replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
-    <ResponsiveContainer width="100%" height={36}>
+    <ResponsiveContainer width="100%" height={40}>
       {type === "bar" ? (
-        <BarChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-          <Bar dataKey="value" fill={color} radius={[2, 2, 0, 0]} />
+        <BarChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <Bar dataKey="value" fill={color} radius={[3, 3, 0, 0]} />
         </BarChart>
       ) : type === "line" ? (
-        <LineChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
           <Line
             type="monotone"
             dataKey="value"
             stroke={color}
-            strokeWidth={2}
+            strokeWidth={2.25}
             dot={false}
+            isAnimationActive
+            animationDuration={600}
           />
         </LineChart>
       ) : (
-        <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
           <Area
             type="monotone"
             dataKey="value"
             stroke={color}
-            fill={color}
-            fillOpacity={0.18}
-            strokeWidth={2}
+            fill={`url(#${gradientId})`}
+            strokeWidth={2.25}
+            isAnimationActive
+            animationDuration={600}
           />
         </AreaChart>
       )}
