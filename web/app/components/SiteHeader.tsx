@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 import { SiteSearch } from "@/app/components/SiteSearch";
 import { SiteFooter } from "@/app/components/SiteFooter";
 import { EventAnnouncementBanner } from "@/app/components/EventAnnouncementBanner";
+import { AnalyticsBeacon } from "@/app/components/AnalyticsBeacon";
 import { I18nProvider, useTranslation } from "@/lib/i18n/I18nProvider";
 import type { AppLocale } from "@/lib/i18n/locales";
 
@@ -226,6 +227,7 @@ export function PublicChrome({
         {children}
       </div>
       <SiteFooter />
+      <AnalyticsBeacon />
       <Toaster position="top-center" richColors closeButton />
     </I18nProvider>
   );

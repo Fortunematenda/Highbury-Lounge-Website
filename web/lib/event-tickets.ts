@@ -88,6 +88,23 @@ export async function uniqueTicketReference(): Promise<string> {
   return `HL-${Date.now().toString(36).toUpperCase()}`;
 }
 
+/** Normalize pasted refs: spaces, fancy dashes, missing HL- prefix. */
+export function normalizeTicketReference(raw: string) {
+  let value = raw
+    .trim()
+    .toUpperCase()
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s+/g, "");
+  if (!value) return "";
+  if (value.startsWith("TKT-")) return value;
+  if (/^HL[A-Z0-9]/.test(value) && !value.startsWith("HL-")) {
+    value = `HL-${value.slice(2)}`;
+  } else if (!value.startsWith("HL-") && /^[A-Z0-9]{5,12}$/.test(value)) {
+    value = `HL-${value}`;
+  }
+  return value;
+}
+
 export async function listTicketTypesForEvent(eventId: number, activeOnly = true) {
   const db = getDb();
   const rows = await db
@@ -348,10 +365,11 @@ async function queueTicketOrderEmail(params: {
 
 export async function getTicketOrderByReference(reference: string) {
   const db = getDb();
+  const normalized = normalizeTicketReference(reference);
   const [order] = await db
     .select()
     .from(eventTicketOrders)
-    .where(eq(eventTicketOrders.reference, reference.trim().toUpperCase()))
+    .where(eq(eventTicketOrders.reference, normalized))
     .limit(1);
   if (!order) return null;
   const [event] = await db
@@ -456,13 +474,23 @@ export async function verifyTicketOrder(
   return order;
 }
 
+function phoneMatches(storedRaw: string, inputRaw: string) {
+  const stored = storedRaw.replace(/\D/g, "");
+  const digits = inputRaw.replace(/\D/g, "");
+  if (digits.length >= 7 && stored.includes(digits)) return true;
+  if (digits.length >= 7 && digits.includes(stored) && stored.length >= 7) {
+    return true;
+  }
+  return storedRaw.trim() === inputRaw.trim();
+}
+
 export async function lookupTicketOrders(input: {
   email: string;
   reference?: string;
   phone?: string;
 }) {
   const email = input.email.trim().toLowerCase();
-  const reference = input.reference?.trim().toUpperCase() || "";
+  const reference = normalizeTicketReference(input.reference || "");
   const phone = input.phone?.trim() || "";
 
   if (!email || !email.includes("@")) {
@@ -473,9 +501,35 @@ export async function lookupTicketOrders(input: {
   }
 
   const db = getDb();
-  const conditions = [eq(eventTicketOrders.email, email)];
+
+  // Reference is unique — prefer it and do not also require phone
+  // (autofilled/wrong phone was hiding valid matches).
   if (reference) {
-    conditions.push(eq(eventTicketOrders.reference, reference));
+    const [byRef] = await db
+      .select({
+        order: eventTicketOrders,
+        eventTitle: events.title,
+        eventStartAt: events.startAt,
+      })
+      .from(eventTicketOrders)
+      .leftJoin(events, eq(events.id, eventTicketOrders.eventId))
+      .where(
+        sql`upper(${eventTicketOrders.reference}) = ${reference}
+            OR upper(coalesce(${eventTicketOrders.ticketCode}, '')) = ${reference}`,
+      )
+      .limit(1);
+
+    if (!byRef) {
+      return [];
+    }
+
+    if (byRef.order.email.trim().toLowerCase() !== email) {
+      throw new TicketError(
+        "That reference exists, but the email does not match the order. Use the same email you entered when buying, or contact Highbury Lounge.",
+      );
+    }
+
+    return [byRef];
   }
 
   const rows = await db
@@ -486,22 +540,12 @@ export async function lookupTicketOrders(input: {
     })
     .from(eventTicketOrders)
     .leftJoin(events, eq(events.id, eventTicketOrders.eventId))
-    .where(and(...conditions))
+    .where(sql`lower(${eventTicketOrders.email}) = ${email}`)
     .orderBy(desc(eventTicketOrders.createdAt))
-    .limit(20);
+    .limit(40);
 
-  if (!phone) return rows.slice(0, 10);
-
-  const digits = phone.replace(/\D/g, "");
   return rows
-    .filter((row) => {
-      const stored = row.order.phone.replace(/\D/g, "");
-      if (digits.length >= 7 && stored.includes(digits)) return true;
-      if (digits.length >= 7 && digits.includes(stored) && stored.length >= 7) {
-        return true;
-      }
-      return row.order.phone.trim() === phone;
-    })
+    .filter((row) => phoneMatches(row.order.phone, phone))
     .slice(0, 10);
 }
 

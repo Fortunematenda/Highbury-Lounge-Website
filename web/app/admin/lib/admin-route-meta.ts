@@ -33,6 +33,7 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
     guests: "Guests",
     notifications: "Notifications",
     reports: "Reports",
+    analytics: "Analytics",
     users: "Users",
     audit: "Audit",
     settings: "Settings",

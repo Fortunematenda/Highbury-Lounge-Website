@@ -1235,31 +1235,72 @@
 }
 .event-ticket-bank {
   margin-top: 8px;
-  padding: 14px 16px;
+  padding: 16px;
   background: rgba(114, 47, 55, 0.05);
   border: 1px solid rgba(114, 47, 55, 0.12);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .event-ticket-bank h2,
 .event-ticket-bank h3 {
   margin: 0 0 8px;
   font-size: 1.05rem;
 }
+.event-ticket-bank p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.event-ticket-bank p:last-child {
+  margin-bottom: 0;
+}
 .event-ticket-page {
   max-width: 720px;
   margin: 0 auto;
-  padding: 24px 20px 64px;
+  padding: 24px 16px 88px;
+  overflow-x: clip;
 }
 .event-ticket-card {
   margin-top: 20px;
-  padding: 28px 24px;
+  padding: 22px 18px;
   background: #fff;
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 12px 40px rgba(40, 20, 24, 0.06);
+  overflow: hidden;
 }
 .event-ticket-card h1 {
   margin: 6px 0 8px;
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-size: clamp(1.45rem, 5vw, 2.1rem);
   line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.event-ticket-pending {
+  display: grid;
+  gap: 16px;
+  margin-top: 4px;
+}
+.event-ticket-actions {
+  display: grid;
+  gap: 12px;
+  padding-top: 4px;
+}
+.event-ticket-refresh-btn {
+  width: 100%;
+  min-height: 52px;
+  height: auto;
+  justify-content: center;
+  border: 0;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+  padding-block: 14px;
+  padding-inline: 16px;
+}
+.event-ticket-help {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .event-ticket-facts {
   display: grid;
@@ -1278,6 +1319,8 @@
 .event-ticket-facts dd {
   margin: 4px 0 0;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .event-ticket-status {
   text-transform: capitalize;
@@ -1307,6 +1350,12 @@
 @media (max-width: 640px) {
   .event-ticket-facts {
     grid-template-columns: 1fr;
+  }
+  .event-ticket-card {
+    padding: 18px 14px;
+  }
+  .event-ticket-bank {
+    padding: 14px 12px;
   }
 }
 

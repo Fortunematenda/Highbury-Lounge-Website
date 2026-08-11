@@ -10,15 +10,10 @@ export function TicketOrderClient({ reference }: { reference: string }) {
   async function refreshStatus() {
     setChecking(true);
     try {
-      const res = await fetch(`/api/events/tickets/${encodeURIComponent(reference)}`, {
+      await fetch(`/api/events/tickets/${encodeURIComponent(reference)}`, {
         cache: "no-store",
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.order?.paymentStatus === "paid") {
-        router.refresh();
-      } else {
-        router.refresh();
-      }
+      router.refresh();
     } finally {
       setChecking(false);
     }
@@ -27,7 +22,7 @@ export function TicketOrderClient({ reference }: { reference: string }) {
   return (
     <button
       type="button"
-      className="button ghost"
+      className="button primary event-ticket-refresh-btn"
       onClick={refreshStatus}
       disabled={checking}
     >

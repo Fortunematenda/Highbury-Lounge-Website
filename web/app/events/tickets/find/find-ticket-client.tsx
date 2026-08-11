@@ -35,9 +35,10 @@ export function FindTicketClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
+          // Prefer reference when both are filled — phone was over-filtering.
           reference: reference.trim() || undefined,
-          phone: phone.trim() || undefined,
+          phone: reference.trim() ? undefined : phone.trim() || undefined,
           resendEmail: true,
         }),
       });
@@ -66,8 +67,9 @@ export function FindTicketClient() {
       <p className="eyebrow">Ticket recovery</p>
       <h1>Find my ticket</h1>
       <p className="muted">
-        Enter the email used when you ordered, plus either your order reference
-        (for example HL-AB12CD) or the phone number from the order.
+        Use the same email from your order, plus your order reference (for
+        example HL-AB12CD). Phone is only needed if you don’t have the
+        reference.
       </p>
 
       <form className="event-find-ticket-form" onSubmit={onSubmit}>
@@ -88,6 +90,8 @@ export function FindTicketClient() {
             onChange={(e) => setReference(e.target.value.toUpperCase())}
             placeholder="HL-XXXXXX"
             autoComplete="off"
+            inputMode="text"
+            spellCheck={false}
           />
         </label>
         <label>
@@ -95,7 +99,7 @@ export function FindTicketClient() {
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="If you don’t have the reference"
+            placeholder="Only if you don’t have the reference"
             autoComplete="tel"
           />
         </label>

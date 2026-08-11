@@ -317,12 +317,43 @@ export default function Home() {
   const addressLine2 = addressLines.slice(1).join(", ");
 
   useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    function shouldStayAtTop() {
+      const hash = window.location.hash;
+      return !hash || hash === "#events" || hash === "#home";
+    }
+
+    function pinToTop() {
+      if (!shouldStayAtTop()) return;
+      if (window.location.hash === "#events" || window.location.hash === "#home") {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+
     const hash = window.location.hash;
-    if (!hash) return;
     if (hash === "#booking-search" && isMobileBookingViewport()) {
       window.setTimeout(() => setBookingModalOpen(true), 80);
       return;
     }
+
+    if (shouldStayAtTop()) {
+      pinToTop();
+      // Async home sections (upcoming events) can shift layout after first paint.
+      const t1 = window.setTimeout(pinToTop, 80);
+      const t2 = window.setTimeout(pinToTop, 350);
+      const onPageShow = () => pinToTop();
+      window.addEventListener("pageshow", onPageShow);
+      return () => {
+        window.clearTimeout(t1);
+        window.clearTimeout(t2);
+        window.removeEventListener("pageshow", onPageShow);
+      };
+    }
+
     window.setTimeout(() => {
       document.querySelector(hash)?.scrollIntoView({ behavior: "smooth" });
     }, 120);

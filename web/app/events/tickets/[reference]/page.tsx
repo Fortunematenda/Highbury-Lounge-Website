@@ -107,42 +107,50 @@ export default async function TicketOrderPage({
         ) : order.paymentStatus === "cancelled" ? (
           <p className="form-error">This order was cancelled.</p>
         ) : (
-          <div className="event-ticket-bank">
-            <h2>How to pay</h2>
-            <p>
-              Deposit{" "}
-              <strong>
-                {order.currency} {Number(order.totalAmount).toFixed(2)}
-              </strong>{" "}
-              using reference <strong className="event-ticket-ref">{order.reference}</strong>.
-            </p>
-            <p>
-              <strong>{bank.bankName}</strong>
-              <br />
-              {bank.accountName}
-              <br />
-              Branch: {bank.bankBranch}
-            </p>
-            <p>
-              USD account: <strong>{bank.accountUsd}</strong>
-              <br />
-              ZW account: <strong>{bank.accountZw}</strong>
-            </p>
-            <p className="muted">{bank.extraInstructions}</p>
-            {bank.reservationsEmail ? (
-              <p className="muted">
-                Send proof of payment to{" "}
-                <a href={`mailto:${bank.reservationsEmail}`}>
-                  {bank.reservationsEmail}
-                </a>
-                .
+          <div className="event-ticket-pending">
+            <div className="event-ticket-bank">
+              <h2>How to pay</h2>
+              <p>
+                Deposit{" "}
+                <strong>
+                  {order.currency} {Number(order.totalAmount).toFixed(2)}
+                </strong>{" "}
+                using reference{" "}
+                <strong className="event-ticket-ref">{order.reference}</strong>.
               </p>
-            ) : null}
-            <TicketOrderClient reference={order.reference} />
-            <p className="muted" style={{ marginTop: 16 }}>
-              Lost this page later?{" "}
-              <Link href="/events/tickets/find">Find my ticket</Link>
-            </p>
+              <p>
+                <strong>{bank.bankName}</strong>
+                <br />
+                {bank.accountName}
+                <br />
+                Branch: {bank.bankBranch}
+              </p>
+              <p>
+                USD account: <strong>{bank.accountUsd}</strong>
+                <br />
+                ZW account: <strong>{bank.accountZw}</strong>
+              </p>
+              {bank.extraInstructions ? (
+                <p className="muted">{bank.extraInstructions}</p>
+              ) : null}
+              {bank.reservationsEmail ? (
+                <p className="muted">
+                  Send proof of payment to{" "}
+                  <a href={`mailto:${bank.reservationsEmail}`}>
+                    {bank.reservationsEmail}
+                  </a>
+                  .
+                </p>
+              ) : null}
+            </div>
+
+            <div className="event-ticket-actions">
+              <TicketOrderClient reference={order.reference} />
+              <p className="muted event-ticket-help">
+                Lost this page later?{" "}
+                <Link href="/events/tickets/find">Find my ticket</Link>
+              </p>
+            </div>
           </div>
         )}
       </section>

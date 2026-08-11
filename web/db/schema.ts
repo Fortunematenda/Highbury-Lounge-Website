@@ -802,3 +802,25 @@ export const adminNotifications = sqliteTable(
     index("admin_notifications_user_idx").on(t.adminUserId),
   ],
 );
+
+/** First-party public site page views (anonymous visitor cookie). */
+export const sitePageViews = sqliteTable(
+  "site_page_views",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    visitorId: text("visitor_id").notNull(),
+    path: text("path").notNull(),
+    referrer: text("referrer"),
+    title: text("title"),
+    userAgent: text("user_agent"),
+    country: text("country"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("site_page_views_created_idx").on(t.createdAt),
+    index("site_page_views_path_idx").on(t.path),
+    index("site_page_views_visitor_idx").on(t.visitorId),
+  ],
+);

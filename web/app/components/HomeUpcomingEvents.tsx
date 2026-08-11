@@ -172,7 +172,7 @@ export function HomeUpcomingEvents() {
   return (
     <section
       className="home-events-section"
-      id="events"
+      id="upcoming-home-events"
       aria-labelledby="home-events-title"
     >
       <div className="home-container">
