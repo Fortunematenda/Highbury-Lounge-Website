@@ -5,9 +5,11 @@ import { toPng } from "html-to-image";
 import {
   formatEventDayNumber,
   formatEventMonth,
+  formatEventTime,
   formatEventWeekday,
   eventPosterImage,
 } from "@/app/events/lib";
+import { toVenueWallClock } from "@/lib/timezone";
 import "./event-ticket-pass.css";
 
 export type EventTicketPassData = {
@@ -47,6 +49,7 @@ export function EventTicketPass({ data, showDownload = true }: Props) {
   const [error, setError] = useState("");
 
   const vip = isVipType(data.ticketTypeName);
+  const typeLabel = data.ticketTypeName.trim().toUpperCase();
   const poster = eventPosterImage({
     coverImage: data.coverImage,
     posterImage: data.posterImage,
@@ -55,8 +58,9 @@ export function EventTicketPass({ data, showDownload = true }: Props) {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(qrPayload)}`;
   const weekday = formatEventWeekday(data.startAt, true).toUpperCase();
   const day = formatEventDayNumber(data.startAt);
-  const monthYear = `${formatEventMonth(data.startAt, true).toUpperCase()} ${data.startAt.slice(0, 4)}`;
-  const typeLabel = data.ticketTypeName.trim().toUpperCase();
+  const wall = toVenueWallClock(data.startAt);
+  const monthYear = `${formatEventMonth(data.startAt, true).toUpperCase()} ${wall.slice(0, 4)}`;
+  const eventTime = formatEventTime(data.startAt);
   const displayType = /\bticket\b/i.test(typeLabel)
     ? typeLabel
     : `${typeLabel} TICKET`;
@@ -112,6 +116,7 @@ export function EventTicketPass({ data, showDownload = true }: Props) {
             <span className="event-ticket-pass-weekday">{weekday}</span>
             <span className="event-ticket-pass-day">{day}</span>
             <span className="event-ticket-pass-month">{monthYear}</span>
+            <span className="event-ticket-pass-time">{eventTime}</span>
           </div>
           <p className="event-ticket-pass-venue">
             {(data.venueName || "Highbury Lounge Kadoma").toUpperCase()}

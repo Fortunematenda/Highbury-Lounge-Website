@@ -35,7 +35,7 @@ export function todayVenueDate(timeZone = VENUE_TIMEZONE): string {
   return formatWallClock(new Date(), timeZone).slice(0, 10);
 }
 
-/** Current venue-local timestamp YYYY-MM-DDTHH:mm:ss (for event schedule comparisons). */
+/** Current venue-local timestamp YYYY-MM-DDTHH:mm:ss. */
 export function nowVenueIso(timeZone = VENUE_TIMEZONE): string {
   return formatWallClock(new Date(), timeZone);
 }
@@ -51,18 +51,16 @@ export function todayVenueStartIso(timeZone = VENUE_TIMEZONE): string {
 }
 
 /**
- * Parse timestamps written by SQLite CURRENT_TIMESTAMP or toISOString().
- * Values without a timezone offset are treated as UTC (Docker/SQLite default),
- * then can be formatted in Africa/Harare for display.
+ * Parse DB / event timestamps.
+ * Values without a timezone offset are treated as UTC (legacy SQLite / mistaken
+ * floating UTC stores), so Africa/Harare display is +2 hours, not 2 behind.
  */
 export function parseDbTimestamp(iso: string | null | undefined): Date | null {
   const raw = (iso || "").trim();
   if (!raw) return null;
 
   let normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
-  // "2026-08-11T21:39:05.123456" → keep parseable
   if (!/([zZ]|[+-]\d{2}:?\d{2})$/.test(normalized)) {
-    // SQLite CURRENT_TIMESTAMP is UTC with no offset.
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(normalized)) {
       normalized = `${normalized}Z`;
     }
@@ -73,30 +71,43 @@ export function parseDbTimestamp(iso: string | null | undefined): Date | null {
 }
 
 /**
- * Normalize event schedule datetimes as venue wall-clock.
- * - Floating values (no Z/offset) are kept as entered (venue local).
- * - Absolute UTC/offset values are converted into Africa/Harare wall-clock.
+ * Convert any stored event instant to Africa/Harare wall-clock (no offset).
+ * Use for display and datetime-local inputs.
  */
 export function toVenueWallClock(
   iso: string | null | undefined,
   timeZone = VENUE_TIMEZONE,
 ): string {
-  const raw = (iso || "").trim();
+  const date = parseDbTimestamp(iso);
+  if (!date) return "";
+  return formatWallClock(date, timeZone);
+}
+
+/**
+ * Interpret a datetime-local value as Africa/Harare and store as UTC ISO.
+ * Example: 2026-09-05T20:00 → 2026-09-05T18:00:00.000Z
+ */
+export function fromVenueWallClock(wall: string | null | undefined): string {
+  const raw = (wall || "").trim();
   if (!raw) return "";
-
-  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
-  const hasOffset = /([zZ]|[+-]\d{2}:?\d{2})$/.test(normalized);
-
-  if (hasOffset) {
-    const date = new Date(normalized);
-    if (Number.isNaN(date.getTime())) return normalized.slice(0, 19);
-    return formatWallClock(date, timeZone);
+  let normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+  if (normalized.length === 16) normalized = `${normalized}:00`;
+  normalized = normalized.slice(0, 19);
+  if (/([zZ]|[+-]\d{2}:?\d{2})$/.test(normalized)) {
+    const absolute = new Date(normalized);
+    return Number.isNaN(absolute.getTime()) ? "" : absolute.toISOString();
   }
+  // CAT is UTC+2 year-round (no DST).
+  const withOffset = `${normalized}+02:00`;
+  const date = new Date(withOffset);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
 
-  const [datePart = "", timePart = "00:00:00"] = normalized.split("T");
-  const [hh = "00", mm = "00", ss = "00"] = timePart.split(":");
-  const seconds = pad(Number.parseInt(ss, 10) || 0);
-  return `${datePart}T${pad(Number.parseInt(hh, 10) || 0)}:${pad(Number.parseInt(mm, 10) || 0)}:${seconds}`;
+/** Ensure an event instant is stored as UTC ISO (with Z). */
+export function toUtcIso(iso: string | null | undefined): string {
+  const date = parseDbTimestamp(iso);
+  if (!date) return "";
+  return date.toISOString();
 }
 
 /** Friendly date+time in venue timezone for DB timestamps like createdAt. */

@@ -27,7 +27,7 @@ import {
 import { formatMoney } from "@/lib/format";
 import { queueNotification } from "@/lib/notifications";
 import { slugify } from "@/lib/slug";
-import { nowUtcIso, todayVenueStartIso, toVenueWallClock, nowVenueIso } from "@/lib/timezone";
+import { nowUtcIso, todayVenueStartIso, toVenueWallClock, nowVenueIso, toUtcIso } from "@/lib/timezone";
 
 export {
   ACTION_TYPES,
@@ -168,8 +168,8 @@ export function toPublicEvent(
     artistOrHost: event.artistOrHost,
     venueName: event.venueName,
     venueAddress: event.venueAddress,
-    startAt: toVenueWallClock(event.startAt),
-    endAt: event.endAt ? toVenueWallClock(event.endAt) : null,
+    startAt: toUtcIso(event.startAt) || event.startAt,
+    endAt: event.endAt ? toUtcIso(event.endAt) || event.endAt : null,
     timezone: event.timezone,
     coverImage: event.coverImage,
     posterImage: event.posterImage,
@@ -508,7 +508,7 @@ export type EventInput = {
 function normalizeInput(input: EventInput, existing?: EventRow) {
   const title = input.title?.trim();
   if (!title) throw new EventError("Event title is required.");
-  const startAt = toVenueWallClock(input.startAt?.trim());
+  const startAt = toUtcIso(input.startAt?.trim());
   if (!startAt) throw new EventError("Start date and time are required.");
 
   const category = input.category ?? existing?.category ?? "Other";
@@ -542,7 +542,7 @@ function normalizeInput(input: EventInput, existing?: EventRow) {
     venueName: input.venueName?.trim() || DEFAULT_VENUE_NAME,
     venueAddress: input.venueAddress?.trim() || DEFAULT_VENUE_ADDRESS,
     startAt,
-    endAt: input.endAt?.trim() ? toVenueWallClock(input.endAt.trim()) : null,
+    endAt: input.endAt?.trim() ? toUtcIso(input.endAt.trim()) : null,
     timezone: input.timezone?.trim() || DEFAULT_TIMEZONE,
     coverImage: input.coverImage ?? existing?.coverImage ?? null,
     posterImage: input.posterImage ?? existing?.posterImage ?? null,
@@ -584,7 +584,7 @@ function normalizeInput(input: EventInput, existing?: EventRow) {
       ),
     ),
     reservationDeadline: input.reservationDeadline?.trim()
-      ? toVenueWallClock(input.reservationDeadline.trim())
+      ? toUtcIso(input.reservationDeadline.trim())
       : null,
     requireApproval: Boolean(
       input.requireApproval ?? existing?.requireApproval ?? true,
@@ -871,7 +871,10 @@ export async function createEventReservation(params: {
   ) {
     throw new EventError("This event does not accept online reservations.");
   }
-  if (event.reservationDeadline && event.reservationDeadline < nowVenueIso()) {
+  if (
+    event.reservationDeadline &&
+    toVenueWallClock(event.reservationDeadline) < nowVenueIso()
+  ) {
     throw new EventError("The reservation deadline for this event has passed.");
   }
   if (guestCount < event.minGuests || guestCount > event.maxGuestsPerReservation) {

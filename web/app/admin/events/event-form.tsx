@@ -44,7 +44,7 @@ import {
   EVENT_CATEGORIES,
   EVENT_STATUSES,
 } from "@/lib/event-constants";
-import { toVenueWallClock } from "@/lib/timezone";
+import { toVenueWallClock, fromVenueWallClock } from "@/lib/timezone";
 
 const BASE_TABS = [
   { id: "basic", label: "Basic", icon: Sparkles },
@@ -180,15 +180,14 @@ type FormState = {
 
 function toDatetimeLocal(iso: string | null | undefined) {
   if (!iso) return "";
-  // Keep venue wall-clock; never shift via Date()/UTC.
   return toVenueWallClock(iso).slice(0, 16);
 }
 
 function fromDatetimeLocal(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  const withSeconds = trimmed.length === 16 ? `${trimmed}:00` : trimmed;
-  return toVenueWallClock(withSeconds);
+  // datetime-local is Harare wall-clock → store UTC ISO
+  return fromVenueWallClock(trimmed) || null;
 }
 
 function buildInitialState(initial?: EventRecord | null): FormState {

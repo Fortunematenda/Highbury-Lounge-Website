@@ -7,6 +7,7 @@ import {
   AdminMobileMeta,
 } from "@/app/admin/components/AdminMobileCard";
 import { StatusBadge } from "@/app/admin/components/detail-page";
+import { formatVenueDateTime } from "@/lib/timezone";
 
 export type TicketOrderRow = {
   id: number;
@@ -70,7 +71,7 @@ export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
                 <td>
                   <StatusBadge status={row.paymentStatus} />
                 </td>
-                <td>{row.createdAt?.slice(0, 16).replace("T", " ")}</td>
+                <td>{formatVenueDateTime(row.createdAt)}</td>
               </AdminClickableRow>
             ))}
           </tbody>

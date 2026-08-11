@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { CalendarClock, StickyNote, Ticket, UserRound } from "lucide-react";
 import { requireAdminPage } from "@/lib/admin-page";
 import { getTicketOrderById } from "@/lib/event-tickets";
-import { formatDate } from "@/lib/format";
 import {
   DetailMetadataCard,
   DetailPageShell,
@@ -12,6 +11,7 @@ import {
 } from "@/app/admin/components/detail-page";
 import { TicketOrderActions } from "./ticket-actions";
 import { EventTicketPass } from "@/app/events/components/EventTicketPass";
+import { formatEventDateTime } from "@/app/events/lib";
 
 export const dynamic = "force-dynamic";
 
@@ -114,9 +114,7 @@ export default async function TicketOrderDetailPage({
               <div>
                 <dt>Date</dt>
                 <dd>
-                  {event.startAt
-                    ? formatDate(event.startAt.slice(0, 10))
-                    : "—"}
+                  {event.startAt ? formatEventDateTime(event.startAt) : "—"}
                 </dd>
               </div>
             </dl>

@@ -124,9 +124,8 @@ const MONTHS_LONG = [
 ];
 
 /**
- * Event `startAt`/`endAt` values are stored as "floating" local wall-clock
- * strings (YYYY-MM-DDTHH:mm:ss) in Africa/Harare. Absolute UTC values (with Z)
- * are converted to Harare first so display is never 2 hours behind.
+ * Event times are absolute instants (UTC in DB / API). Display helpers convert
+ * to Africa/Harare wall-clock via `toVenueWallClock` before formatting.
  */
 function parseParts(iso: string | null | undefined) {
   const normalized = toVenueWallClock(iso);
@@ -189,7 +188,9 @@ export function formatEventTimeRange(
 ): string {
   const start = formatEventTime(startIso);
   if (!endIso) return start;
-  const sameDay = startIso.slice(0, 10) === endIso.slice(0, 10);
+  const sameDay =
+    toVenueWallClock(startIso).slice(0, 10) ===
+    toVenueWallClock(endIso).slice(0, 10);
   if (sameDay) return `${start} – ${formatEventTime(endIso)}`;
   return `${start} – ${formatEventDate(endIso, { withYear: true })}, ${formatEventTime(endIso)}`;
 }
