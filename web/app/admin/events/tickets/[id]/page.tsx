@@ -133,6 +133,7 @@ export default async function TicketOrderDetailPage({
         <DetailSectionCard title="Payment verification" icon={Ticket}>
           <TicketOrderActions
             orderId={order.id}
+            reference={order.reference}
             paymentStatus={order.paymentStatus}
             initialAdminNotes={order.adminNotes}
           />

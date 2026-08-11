@@ -2,6 +2,7 @@ import { AuthError, requireAdmin } from "@/lib/auth";
 import { writeAuditLog } from "@/lib/audit";
 import {
   cancelTicketOrder,
+  deleteTicketOrder,
   getTicketOrderById,
   TicketError,
   verifyTicketOrder,
@@ -74,5 +75,35 @@ export async function PATCH(
     if (error instanceof TicketError) return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("Unable to update order.", 500);
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const user = await requireAdmin([
+      "administrator",
+      "content_manager",
+      "booking_manager",
+    ]);
+    const id = Number((await params).id);
+    if (!Number.isFinite(id)) return jsonError("Invalid order id.", 400);
+
+    const order = await deleteTicketOrder(id);
+    await writeAuditLog({
+      adminUserId: user.id,
+      action: "event.ticket.delete",
+      entityType: "event_ticket_order",
+      entityId: id,
+      details: { reference: order.reference },
+    });
+    return Response.json({ ok: true, deleted: true, reference: order.reference });
+  } catch (error) {
+    if (error instanceof AuthError) return jsonError(error.message, error.status);
+    if (error instanceof TicketError) return jsonError(error.message, error.status);
+    console.error(error);
+    return jsonError("Unable to delete order.", 500);
   }
 }

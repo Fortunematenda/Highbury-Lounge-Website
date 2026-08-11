@@ -1005,6 +1005,23 @@ export async function updateReservationStatus(params: {
   return row;
 }
 
+export async function deleteEventReservation(id: number) {
+  const db = getDb();
+  const [existing] = await db
+    .select({
+      id: eventReservations.id,
+      reference: eventReservations.reference,
+      eventId: eventReservations.eventId,
+    })
+    .from(eventReservations)
+    .where(eq(eventReservations.id, id))
+    .limit(1);
+  if (!existing) throw new EventError("Reservation not found.", 404);
+
+  await db.delete(eventReservations).where(eq(eventReservations.id, id));
+  return existing;
+}
+
 export async function subscribeToEvents(emailRaw: string, source = "events_page") {
   const email = emailRaw.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

@@ -2,14 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function TicketOrderActions({
   orderId,
+  reference,
   paymentStatus,
   initialAdminNotes,
 }: {
   orderId: number;
+  reference: string;
   paymentStatus: string;
   initialAdminNotes: string | null;
 }) {
@@ -39,6 +42,31 @@ export function TicketOrderActions({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete() {
+    if (busy) return;
+    if (
+      !window.confirm(
+        `Delete ticket order ${reference}? This permanently removes the order and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/events/tickets/${orderId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      toast.success("Ticket order deleted");
+      router.push("/admin/events/tickets");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
       setBusy(false);
     }
   }
@@ -79,6 +107,15 @@ export function TicketOrderActions({
         ) : (
           <p className="page-sub">This order is cancelled.</p>
         )}
+        <button
+          type="button"
+          className="admin-btn danger"
+          disabled={busy}
+          onClick={() => void onDelete()}
+        >
+          <Trash2 size={16} aria-hidden />
+          {busy ? "Working…" : "Delete order"}
+        </button>
       </div>
     </div>
   );

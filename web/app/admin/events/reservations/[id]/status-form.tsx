@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   AdminFormField,
@@ -14,10 +14,12 @@ import { RESERVATION_STATUSES } from "@/lib/event-constants";
 
 export function ReservationStatusForm({
   reservationId,
+  reference,
   currentStatus,
   initialAdminNotes,
 }: {
   reservationId: number;
+  reference: string;
   currentStatus: string;
   initialAdminNotes?: string | null;
 }) {
@@ -50,6 +52,34 @@ export function ReservationStatusForm({
     }
   }
 
+  async function onDelete() {
+    if (busy) return;
+    if (
+      !window.confirm(
+        `Delete reservation ${reference}? This permanently removes it and cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/admin/events/reservations/${reservationId}`,
+        { method: "DELETE" },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete reservation");
+      toast.success("Reservation deleted");
+      router.push("/admin/events/reservations");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete reservation",
+      );
+      setBusy(false);
+    }
+  }
+
   return (
     <form className="detail-inline-form" onSubmit={onSubmit}>
       <DetailFieldGrid columns={2}>
@@ -75,6 +105,15 @@ export function ReservationStatusForm({
         <button className="admin-btn" type="submit" disabled={busy}>
           <Save size={16} aria-hidden />
           {busy ? "Saving…" : "Save changes"}
+        </button>
+        <button
+          type="button"
+          className="admin-btn danger"
+          disabled={busy}
+          onClick={() => void onDelete()}
+        >
+          <Trash2 size={16} aria-hidden />
+          Delete reservation
         </button>
       </div>
     </form>

@@ -143,6 +143,7 @@ export default async function ReservationDetailPage({
         <DetailSectionCard title="Reservation status" icon={Ticket}>
           <ReservationStatusForm
             reservationId={r.id}
+            reference={r.reference}
             currentStatus={r.status}
             initialAdminNotes={r.adminNotes}
           />

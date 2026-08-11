@@ -591,3 +591,19 @@ export async function cancelTicketOrder(id: number, notes?: string) {
   if (!order) throw new TicketError("Order not found.", 404);
   return order;
 }
+
+export async function deleteTicketOrder(id: number) {
+  const db = getDb();
+  const [existing] = await db
+    .select({
+      id: eventTicketOrders.id,
+      reference: eventTicketOrders.reference,
+    })
+    .from(eventTicketOrders)
+    .where(eq(eventTicketOrders.id, id))
+    .limit(1);
+  if (!existing) throw new TicketError("Order not found.", 404);
+
+  await db.delete(eventTicketOrders).where(eq(eventTicketOrders.id, id));
+  return existing;
+}

@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { AdminClickableRow } from "@/app/admin/components/AdminRowActions";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  AdminClickableRow,
+  AdminRowActions,
+} from "@/app/admin/components/AdminRowActions";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -27,6 +33,48 @@ export type TicketOrderRow = {
 };
 
 export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function onDelete(row: TicketOrderRow) {
+    if (
+      !window.confirm(
+        `Delete ticket order ${row.reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(row.id);
+    try {
+      const res = await fetch(`/api/admin/events/tickets/${row.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      toast.success("Ticket order deleted");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function actionsFor(row: TicketOrderRow) {
+    return [
+      {
+        label: "Open",
+        href: `/admin/events/tickets/${row.id}`,
+      },
+      {
+        label: "Delete",
+        danger: true,
+        disabled: busyId === row.id,
+        onClick: () => void onDelete(row),
+      },
+    ];
+  }
+
   if (rows.length === 0) {
     return <p className="admin-empty">No ticket orders yet.</p>;
   }
@@ -44,6 +92,7 @@ export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
               <th>Amount</th>
               <th>Status</th>
               <th>Created</th>
+              <th aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
@@ -72,6 +121,12 @@ export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
                   <StatusBadge status={row.paymentStatus} />
                 </td>
                 <td>{formatVenueDateTime(row.createdAt)}</td>
+                <td>
+                  <AdminRowActions
+                    label={`Actions for ${row.reference}`}
+                    actions={actionsFor(row)}
+                  />
+                </td>
               </AdminClickableRow>
             ))}
           </tbody>
@@ -85,6 +140,7 @@ export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
             title={row.reference}
             subtitle={row.fullName}
             href={`/admin/events/tickets/${row.id}`}
+            actions={actionsFor(row)}
           >
             <div style={{ marginBottom: 10 }}>
               <StatusBadge status={row.paymentStatus} />

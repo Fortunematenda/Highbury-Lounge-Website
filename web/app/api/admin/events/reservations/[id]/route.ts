@@ -3,7 +3,11 @@ import { AuthError, requireAdmin } from "@/lib/auth";
 import { getDb } from "@/db";
 import { eventReservations, events } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit";
-import { EventError, updateReservationStatus } from "@/lib/events";
+import {
+  deleteEventReservation,
+  EventError,
+  updateReservationStatus,
+} from "@/lib/events";
 import { jsonError } from "@/lib/format";
 
 export async function GET(
@@ -71,5 +75,42 @@ export async function PATCH(
     if (error instanceof EventError) return jsonError(error.message, error.status);
     console.error(error);
     return jsonError("Unable to update reservation.", 500);
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const user = await requireAdmin([
+      "administrator",
+      "content_manager",
+      "booking_manager",
+    ]);
+    const id = Number((await params).id);
+    if (!Number.isFinite(id)) return jsonError("Invalid reservation id.", 400);
+
+    const reservation = await deleteEventReservation(id);
+    await writeAuditLog({
+      adminUserId: user.id,
+      action: "event_reservation.delete",
+      entityType: "event_reservation",
+      entityId: id,
+      details: {
+        reference: reservation.reference,
+        eventId: reservation.eventId,
+      },
+    });
+    return Response.json({
+      ok: true,
+      deleted: true,
+      reference: reservation.reference,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) return jsonError(error.message, error.status);
+    if (error instanceof EventError) return jsonError(error.message, error.status);
+    console.error(error);
+    return jsonError("Unable to delete reservation.", 500);
   }
 }

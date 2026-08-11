@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AdminClickableRow } from "@/app/admin/components/AdminRowActions";
+import {
+  AdminClickableRow,
+  AdminRowActions,
+} from "@/app/admin/components/AdminRowActions";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -57,6 +60,47 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
     if (!RESERVATION_STATUSES.includes(value as (typeof RESERVATION_STATUSES)[number])) return;
     if (value === row.status) return;
     setStatus(row, value);
+  }
+
+  async function onDelete(row: ReservationRow) {
+    if (
+      !window.confirm(
+        `Delete reservation ${row.reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(row.id);
+    try {
+      const res = await fetch(`/api/admin/events/reservations/${row.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete reservation");
+      toast.success("Reservation deleted");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete reservation",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function actionsFor(row: ReservationRow) {
+    return [
+      {
+        label: "Open",
+        href: `/admin/events/reservations/${row.id}`,
+      },
+      {
+        label: "Delete",
+        danger: true,
+        disabled: busyId === row.id,
+        onClick: () => void onDelete(row),
+      },
+    ];
   }
 
   if (rows.length === 0) {
@@ -123,7 +167,12 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
                   </select>
                 </td>
                 <td>{formatVenueDateTime(row.createdAt)}</td>
-                <td aria-label="Actions" />
+                <td>
+                  <AdminRowActions
+                    label={`Actions for ${row.reference}`}
+                    actions={actionsFor(row)}
+                  />
+                </td>
               </AdminClickableRow>
             ))}
           </tbody>
@@ -137,6 +186,7 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
             title={row.reference}
             subtitle={row.fullName}
             href={`/admin/events/reservations/${row.id}`}
+            actions={actionsFor(row)}
           >
             <div style={{ marginBottom: 10 }}>
               <select
