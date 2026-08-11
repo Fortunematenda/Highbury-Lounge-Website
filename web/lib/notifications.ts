@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { getDb } from "@/db";
 import { notifications } from "@/db/schema";
 import { getSettingsMap } from "@/lib/settings";
@@ -17,6 +18,10 @@ export type NotificationContext = {
   total?: string;
   status?: string;
   preferredLanguage?: string;
+  ticketUrl?: string;
+  ticketCode?: string;
+  ticketType?: string;
+  paymentInstructions?: string;
 };
 
 type ContactBlock = { block: string };
@@ -82,6 +87,21 @@ const EN_TEMPLATES: Record<string, Template> = {
     body: (ctx, c) =>
       `Dear ${ctx.guestName},\n\nThank you for your interest in ${ctx.eventTitle ?? "our event"}.\n\nReservation: ${ctx.reference}\nEvent date: ${ctx.eventDate ?? ""}\nGuests: ${ctx.guestCount ?? ctx.guests ?? ""}\nStatus: ${ctx.status}\n\nOur team will confirm your place shortly.\n\n${c.block}`,
   },
+  ticket_order_received: {
+    subject: "Ticket order received — {{reference}}",
+    body: (ctx, c) =>
+      `Dear ${ctx.guestName},\n\nThank you for your ticket order for ${ctx.eventTitle ?? "our event"}.\n\nReference: ${ctx.reference}\nEvent date: ${ctx.eventDate ?? ""}\nTickets: ${ctx.guestCount ?? ""}× ${ctx.ticketType ?? "ticket"}\nAmount due: ${ctx.total ?? ""}\nStatus: Pending payment\n\nPay by bank transfer using this exact reference, then keep your proof of payment.\n\n${ctx.paymentInstructions ?? ""}\n\nView your order anytime:\n${ctx.ticketUrl ?? ""}\n\nIf you lose this email, open Find my ticket on our events page and enter your email with this reference.\n\n${c.block}`,
+  },
+  ticket_issued: {
+    subject: "Your ticket is ready — {{reference}}",
+    body: (ctx, c) =>
+      `Dear ${ctx.guestName},\n\nPayment for ${ctx.eventTitle ?? "your event"} has been verified. Your ticket is ready.\n\nReference: ${ctx.reference}\nTicket code: ${ctx.ticketCode ?? ""}\nEvent date: ${ctx.eventDate ?? ""}\nTickets: ${ctx.guestCount ?? ""}× ${ctx.ticketType ?? "ticket"}\n\nShow this ticket (or the QR code on the page) at the door:\n${ctx.ticketUrl ?? ""}\n\n${c.block}`,
+  },
+  ticket_order_reminder: {
+    subject: "Your Highbury Lounge ticket link — {{reference}}",
+    body: (ctx, c) =>
+      `Dear ${ctx.guestName},\n\nHere is the link to your ticket order ${ctx.reference} for ${ctx.eventTitle ?? "our event"}.\n\nStatus: ${ctx.status ?? ""}\n${ctx.ticketCode ? `Ticket code: ${ctx.ticketCode}\n` : ""}Tickets: ${ctx.guestCount ?? ""}× ${ctx.ticketType ?? "ticket"}\n\nOpen your order:\n${ctx.ticketUrl ?? ""}\n\n${c.block}`,
+  },
 };
 
 const ZH_TEMPLATES: Partial<Record<string, Template>> = {
@@ -110,6 +130,51 @@ function resolveTemplate(templateKey: string, locale?: string): Template {
   return en;
 }
 
+export function publicSiteUrl() {
+  return (
+    process.env.SITE_URL ||
+    process.env.PUBLIC_SITE_URL ||
+    "https://highbury-lounge.co.zw"
+  ).replace(/\/$/, "");
+}
+
+async function sendViaSmtp(params: {
+  to: string;
+  toName?: string | null;
+  subject: string;
+  text: string;
+}) {
+  const host = process.env.SMTP_HOST?.trim();
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS?.trim();
+  if (!host || !user || !pass) {
+    return { ok: false as const, reason: "unconfigured" as const };
+  }
+
+  const port = Number(process.env.SMTP_PORT || "587") || 587;
+  const from =
+    process.env.SMTP_FROM?.trim() ||
+    `"Highbury Lounge" <${user}>`;
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from,
+    to: params.toName
+      ? `"${params.toName.replace(/"/g, "")}" <${params.to}>`
+      : params.to,
+    subject: params.subject,
+    text: params.text,
+  });
+
+  return { ok: true as const };
+}
+
 export async function queueNotification(params: {
   templateKey: string;
   recipientEmail: string;
@@ -133,7 +198,6 @@ export async function queueNotification(params: {
   const subject = fillSubject(template.subject, params.context);
   let bodyText = template.body(params.context, contact);
 
-  // Admin-facing English note when guest used another language
   if (
     params.context.preferredLanguage &&
     params.context.preferredLanguage !== "en"
@@ -145,28 +209,29 @@ export async function queueNotification(params: {
     bodyText += `\n\n[Admin note — English]\nGuest preferred language: ${label} (${code})\nBooking reference: ${params.context.reference}\n`;
   }
 
-  const smtpConfigured = Boolean(
-    process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
-  );
-
   const db = getDb();
   let status: "queued" | "sent" | "failed" | "unconfigured" = "queued";
   let errorMessage: string | null = null;
-  const sentAt: string | null = null;
+  let sentAt: string | null = null;
 
-  if (!smtpConfigured) {
-    status = "unconfigured";
-    errorMessage =
-      "SMTP is not configured. Notification saved but not delivered.";
-  } else {
-    try {
-      status = "failed";
+  try {
+    const result = await sendViaSmtp({
+      to: params.recipientEmail,
+      toName: params.recipientName,
+      subject,
+      text: bodyText,
+    });
+    if (result.ok) {
+      status = "sent";
+      sentAt = new Date().toISOString();
+    } else {
+      status = "unconfigured";
       errorMessage =
-        "SMTP credentials present but no transport is wired yet. Notification saved.";
-    } catch (error) {
-      status = "failed";
-      errorMessage = error instanceof Error ? error.message : "Send failed";
+        "SMTP is not configured. Notification saved but not delivered.";
     }
+  } catch (error) {
+    status = "failed";
+    errorMessage = error instanceof Error ? error.message : "Send failed";
   }
 
   const [row] = await db

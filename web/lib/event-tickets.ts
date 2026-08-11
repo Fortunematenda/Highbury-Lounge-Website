@@ -7,6 +7,7 @@ import {
 } from "@/db/schema";
 import { getSettingsMap } from "@/lib/settings";
 import { createAdminNotification } from "@/lib/admin-notifications";
+import { publicSiteUrl, queueNotification } from "@/lib/notifications";
 
 export class TicketError extends Error {
   status: number;
@@ -277,7 +278,72 @@ export async function createTicketOrder(input: {
   }).catch(() => undefined);
 
   const bank = await getBankDetails();
+  await queueTicketOrderEmail({
+    order,
+    eventTitle: event.title,
+    eventStartAt: event.startAt,
+    bank,
+    templateKey: "ticket_order_received",
+  }).catch(() => undefined);
+
   return { order, event, ticketType, bank };
+}
+
+function formatBankInstructions(bank: BankDetails) {
+  return [
+    `Bank: ${bank.bankName}`,
+    `Account name: ${bank.accountName}`,
+    `Branch: ${bank.bankBranch}`,
+    `USD account: ${bank.accountUsd}`,
+    `ZW account: ${bank.accountZw}`,
+    bank.extraInstructions,
+    bank.reservationsEmail
+      ? `Proof of payment: ${bank.reservationsEmail}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function ticketOrderPublicPath(reference: string) {
+  return `/events/tickets/${reference}`;
+}
+
+export function ticketOrderPublicUrl(reference: string) {
+  return `${publicSiteUrl()}${ticketOrderPublicPath(reference)}`;
+}
+
+async function queueTicketOrderEmail(params: {
+  order: typeof eventTicketOrders.$inferSelect;
+  eventTitle: string;
+  eventStartAt: string;
+  bank?: BankDetails;
+  templateKey:
+    | "ticket_order_received"
+    | "ticket_issued"
+    | "ticket_order_reminder";
+}) {
+  const { order, eventTitle, eventStartAt, bank, templateKey } = params;
+  await queueNotification({
+    templateKey,
+    recipientEmail: order.email,
+    recipientName: order.fullName,
+    relatedType: "event_ticket_order",
+    relatedId: order.id,
+    context: {
+      guestName: order.fullName,
+      reference: order.reference,
+      eventTitle,
+      eventDate: eventStartAt.slice(0, 10),
+      guestCount: String(order.quantity),
+      ticketType: order.ticketTypeName,
+      total: `${order.currency} ${Number(order.totalAmount).toFixed(2)}`,
+      status: order.paymentStatus,
+      ticketCode: order.ticketCode || undefined,
+      ticketUrl: ticketOrderPublicUrl(order.reference),
+      paymentInstructions: bank ? formatBankInstructions(bank) : undefined,
+    },
+  });
 }
 
 export async function getTicketOrderByReference(reference: string) {
@@ -372,7 +438,99 @@ export async function verifyTicketOrder(
     .where(eq(eventTicketOrders.id, id))
     .returning();
 
+  const [event] = await db
+    .select({ title: events.title, startAt: events.startAt })
+    .from(events)
+    .where(eq(events.id, order.eventId))
+    .limit(1);
+
+  if (event) {
+    await queueTicketOrderEmail({
+      order,
+      eventTitle: event.title,
+      eventStartAt: event.startAt,
+      templateKey: "ticket_issued",
+    }).catch(() => undefined);
+  }
+
   return order;
+}
+
+export async function lookupTicketOrders(input: {
+  email: string;
+  reference?: string;
+  phone?: string;
+}) {
+  const email = input.email.trim().toLowerCase();
+  const reference = input.reference?.trim().toUpperCase() || "";
+  const phone = input.phone?.trim() || "";
+
+  if (!email || !email.includes("@")) {
+    throw new TicketError("Enter the email used for the order.");
+  }
+  if (!reference && !phone) {
+    throw new TicketError("Enter your order reference or phone number.");
+  }
+
+  const db = getDb();
+  const conditions = [eq(eventTicketOrders.email, email)];
+  if (reference) {
+    conditions.push(eq(eventTicketOrders.reference, reference));
+  }
+
+  const rows = await db
+    .select({
+      order: eventTicketOrders,
+      eventTitle: events.title,
+      eventStartAt: events.startAt,
+    })
+    .from(eventTicketOrders)
+    .leftJoin(events, eq(events.id, eventTicketOrders.eventId))
+    .where(and(...conditions))
+    .orderBy(desc(eventTicketOrders.createdAt))
+    .limit(20);
+
+  if (!phone) return rows.slice(0, 10);
+
+  const digits = phone.replace(/\D/g, "");
+  return rows
+    .filter((row) => {
+      const stored = row.order.phone.replace(/\D/g, "");
+      if (digits.length >= 7 && stored.includes(digits)) return true;
+      if (digits.length >= 7 && digits.includes(stored) && stored.length >= 7) {
+        return true;
+      }
+      return row.order.phone.trim() === phone;
+    })
+    .slice(0, 10);
+}
+
+export async function resendTicketOrderLink(orderId: number) {
+  const result = await getTicketOrderById(orderId);
+  if (!result?.order || !result.event) {
+    throw new TicketError("Order not found.", 404);
+  }
+  if (result.order.paymentStatus === "cancelled") {
+    throw new TicketError("This order was cancelled.");
+  }
+
+  const bank =
+    result.order.paymentStatus === "pending"
+      ? await getBankDetails()
+      : undefined;
+
+  await queueTicketOrderEmail({
+    order: result.order,
+    eventTitle: result.event.title,
+    eventStartAt: result.event.startAt,
+    bank,
+    templateKey:
+      result.order.paymentStatus === "paid"
+        ? "ticket_issued"
+        : "ticket_order_reminder",
+  });
+
+  return result.order;
 }
 
 export async function cancelTicketOrder(id: number, notes?: string) {

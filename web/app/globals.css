@@ -1852,6 +1852,128 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   .footer-credit { text-align: left; }
 }
 
+@media (max-width: 900px) {
+  /* Prefer the booking search modal on phones/tablets */
+  .booking-strip {
+    display: none !important;
+  }
+  .hero-block {
+    padding-bottom: 0;
+  }
+  .hero-block + .home-events-section,
+  .hero-block + .rooms-section {
+    padding-top: 28px;
+  }
+}
+
+.booking-search-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  align-items: end;
+  justify-items: stretch;
+  padding: 12px;
+  background: rgba(25, 15, 19, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.booking-search-modal {
+  width: min(520px, 100%);
+  margin: 0 auto;
+  max-height: min(92vh, 760px);
+  overflow: auto;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 70px rgba(20, 10, 14, 0.35);
+}
+.booking-search-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 8px;
+}
+.booking-search-modal-header h2 {
+  margin: 4px 0 0;
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+.booking-search-modal-close {
+  border: 0;
+  background: transparent;
+  color: #6b5a60;
+  padding: 6px;
+  cursor: pointer;
+}
+.booking-search-modal-form {
+  display: grid;
+}
+.booking-search-modal-field {
+  display: grid;
+  gap: 6px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.booking-search-modal-field span {
+  color: #8a777e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.booking-search-modal-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+}
+.booking-search-modal-value input,
+.booking-search-modal-value select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.25;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.booking-search-modal-value input[type="date"] {
+  min-height: 28px;
+}
+.booking-search-modal-value svg {
+  flex: 0 0 auto;
+  color: #9a8890;
+  pointer-events: none;
+}
+.booking-search-modal-form .form-error {
+  margin: 12px 20px 0;
+}
+.booking-search-modal-submit {
+  margin: 0;
+  border: 0;
+  width: 100%;
+  min-height: 56px;
+  background: var(--wine);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+@media (min-width: 901px) {
+  .booking-search-modal-backdrop {
+    display: none;
+  }
+}
+
 @media (max-width: 680px) {
   .site-header { height: 72px; padding: 0 16px; }
   .has-site-header { padding-top: 72px; }

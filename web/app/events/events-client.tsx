@@ -397,6 +397,10 @@ export function EventsPageClient({
 
       <section className="section events-subscribe-section">
         <EventsSubscribe />
+        <p className="muted" style={{ textAlign: "center", marginTop: 18 }}>
+          Already bought tickets?{" "}
+          <Link href="/events/tickets/find">Find my ticket</Link>
+        </p>
       </section>
 
       <EventReservationModal

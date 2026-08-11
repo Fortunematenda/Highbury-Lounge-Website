@@ -8,6 +8,11 @@ import {
   type PublicMenuItem,
 } from "@/app/components/PublicMenuSection";
 import { PreviewMediaGallery } from "@/app/components/PreviewMediaGallery";
+import {
+  BookingSearchModal,
+  OPEN_BOOKING_SEARCH_EVENT,
+  isMobileBookingViewport,
+} from "@/app/components/BookingSearchModal";
 import { HomeUpcomingEvents } from "@/app/components/HomeUpcomingEvents";
 import { formatMoney } from "@/lib/format";
 import { pickTranslated } from "@/lib/i18n/content";
@@ -192,6 +197,7 @@ export default function Home() {
   const [children, setChildren] = useState("0");
   const [roomsCount, setRoomsCount] = useState("1");
   const [searchError, setSearchError] = useState("");
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [menuOptions, setMenuOptions] = useState<PublicFoodItem[]>([]);
   const checkInRef = useRef<HTMLInputElement>(null);
 
@@ -313,15 +319,39 @@ export default function Home() {
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash) return;
+    if (hash === "#booking-search" && isMobileBookingViewport()) {
+      window.setTimeout(() => setBookingModalOpen(true), 80);
+      return;
+    }
     window.setTimeout(() => {
       document.querySelector(hash)?.scrollIntoView({ behavior: "smooth" });
     }, 120);
+  }, []);
+
+  useEffect(() => {
+    function onOpenBooking() {
+      if (isMobileBookingViewport()) {
+        setBookingModalOpen(true);
+        setSearchError("");
+        return;
+      }
+      document
+        .getElementById("booking-search")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    window.addEventListener(OPEN_BOOKING_SEARCH_EVENT, onOpenBooking);
+    return () =>
+      window.removeEventListener(OPEN_BOOKING_SEARCH_EVENT, onOpenBooking);
   }, []);
 
   const today = localIsoDate(new Date());
 
   const focusBookingStrip = (message?: string) => {
     if (message) setSearchError(message);
+    if (isMobileBookingViewport()) {
+      setBookingModalOpen(true);
+      return;
+    }
     const strip = document.getElementById("booking-search");
     strip?.scrollIntoView({ behavior: "smooth", block: "center" });
     window.setTimeout(() => checkInRef.current?.focus(), 350);
@@ -341,6 +371,7 @@ export default function Home() {
       return;
     }
     setSearchError("");
+    setBookingModalOpen(false);
     const qs = new URLSearchParams({
       checkIn,
       checkOut,
@@ -352,6 +383,11 @@ export default function Home() {
   };
 
   const openBooking = () => {
+    if (isMobileBookingViewport()) {
+      setSearchError("");
+      setBookingModalOpen(true);
+      return;
+    }
     // Prefer live search when dates are ready; otherwise take the guest to the strip.
     if (checkIn && checkOut && checkOut > checkIn) {
       searchRooms();
@@ -526,6 +562,30 @@ export default function Home() {
           ) : null}
         </div>
       </div>
+
+      <BookingSearchModal
+        open={bookingModalOpen}
+        onClose={() => setBookingModalOpen(false)}
+        today={today}
+        checkIn={checkIn}
+        checkOut={checkOut}
+        adults={adults}
+        children={children}
+        roomsCount={roomsCount}
+        error={searchError}
+        onCheckInChange={(value) => {
+          setCheckIn(value);
+          setSearchError("");
+        }}
+        onCheckOutChange={(value) => {
+          setCheckOut(value);
+          setSearchError("");
+        }}
+        onAdultsChange={setAdults}
+        onChildrenChange={setChildren}
+        onRoomsChange={setRoomsCount}
+        onSearch={searchRooms}
+      />
 
       <HomeUpcomingEvents />
 

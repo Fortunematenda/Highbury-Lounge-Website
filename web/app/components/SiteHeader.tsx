@@ -92,9 +92,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
   function openBooking() {
     setMenuOpen(false);
     if (pathname === "/") {
-      document
-        .getElementById("booking-search")
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.dispatchEvent(new CustomEvent("hl:open-booking-search"));
       return;
     }
     router.push("/#booking-search");

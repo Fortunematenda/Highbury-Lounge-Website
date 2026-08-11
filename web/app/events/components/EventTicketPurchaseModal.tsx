@@ -251,6 +251,10 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
                 Close
               </button>
             </div>
+            <p className="muted" style={{ marginTop: 12 }}>
+              We emailed these details to you. Lost the email later?{" "}
+              <Link href="/events/tickets/find">Find my ticket</Link>
+            </p>
           </div>
         ) : types.length === 0 ? (
           <p className="form-error">
