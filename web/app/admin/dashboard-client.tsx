@@ -116,7 +116,13 @@ const RANGES = [
 ] as const;
 
 function greetingForHour(date = new Date()) {
-  const hour = date.getHours();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Africa/Harare",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(date),
+  );
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";

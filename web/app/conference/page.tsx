@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
 import { pickTranslated } from "@/lib/i18n/content";
+import { todayISODate } from "@/lib/stay-dates";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 type Package = {
@@ -43,7 +44,7 @@ const REQUIREMENT_OPTIONS = [
 export default function ConferencePage() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISODate();
   const [packages, setPackages] = useState<Package[]>([]);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);

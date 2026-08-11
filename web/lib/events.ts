@@ -27,6 +27,7 @@ import {
 import { formatMoney } from "@/lib/format";
 import { queueNotification } from "@/lib/notifications";
 import { slugify } from "@/lib/slug";
+import { nowVenueIso, todayVenueStartIso, toVenueWallClock } from "@/lib/timezone";
 
 export {
   ACTION_TYPES,
@@ -54,15 +55,11 @@ export class EventError extends Error {
 }
 
 function nowIsoLocal() {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return nowVenueIso();
 }
 
 function todayStartIso() {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00:00`;
+  return todayVenueStartIso();
 }
 
 function parseGallery(json: string | null | undefined): string[] {
@@ -171,8 +168,8 @@ export function toPublicEvent(
     artistOrHost: event.artistOrHost,
     venueName: event.venueName,
     venueAddress: event.venueAddress,
-    startAt: event.startAt,
-    endAt: event.endAt,
+    startAt: toVenueWallClock(event.startAt),
+    endAt: event.endAt ? toVenueWallClock(event.endAt) : null,
     timezone: event.timezone,
     coverImage: event.coverImage,
     posterImage: event.posterImage,
@@ -511,7 +508,7 @@ export type EventInput = {
 function normalizeInput(input: EventInput, existing?: EventRow) {
   const title = input.title?.trim();
   if (!title) throw new EventError("Event title is required.");
-  const startAt = input.startAt?.trim();
+  const startAt = toVenueWallClock(input.startAt?.trim());
   if (!startAt) throw new EventError("Start date and time are required.");
 
   const category = input.category ?? existing?.category ?? "Other";
@@ -545,7 +542,7 @@ function normalizeInput(input: EventInput, existing?: EventRow) {
     venueName: input.venueName?.trim() || DEFAULT_VENUE_NAME,
     venueAddress: input.venueAddress?.trim() || DEFAULT_VENUE_ADDRESS,
     startAt,
-    endAt: input.endAt?.trim() || null,
+    endAt: input.endAt?.trim() ? toVenueWallClock(input.endAt.trim()) : null,
     timezone: input.timezone?.trim() || DEFAULT_TIMEZONE,
     coverImage: input.coverImage ?? existing?.coverImage ?? null,
     posterImage: input.posterImage ?? existing?.posterImage ?? null,
@@ -586,7 +583,9 @@ function normalizeInput(input: EventInput, existing?: EventRow) {
           10,
       ),
     ),
-    reservationDeadline: input.reservationDeadline?.trim() || null,
+    reservationDeadline: input.reservationDeadline?.trim()
+      ? toVenueWallClock(input.reservationDeadline.trim())
+      : null,
     requireApproval: Boolean(
       input.requireApproval ?? existing?.requireApproval ?? true,
     ),

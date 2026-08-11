@@ -16,6 +16,11 @@ import {
 import { PmsStatusPill } from "@/app/admin/components/pms";
 import { formatEntryPrice } from "@/lib/event-constants";
 import { formatMoney } from "@/lib/format";
+import {
+  formatEventDate,
+  formatEventTime,
+  formatEventTimeRange,
+} from "@/app/events/lib";
 
 export type EventRow = {
   id: number;
@@ -55,22 +60,9 @@ function statusLabel(status: string) {
 
 function formatEventWhen(startAt: string, endAt: string | null) {
   if (!startAt) return "—";
-  const dateFmt = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const timeFmt = new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const start = new Date(startAt.replace(" ", "T"));
-  let label = `${dateFmt.format(start)} · ${timeFmt.format(start)}`;
-  if (endAt) {
-    const end = new Date(endAt.replace(" ", "T"));
-    label += ` – ${timeFmt.format(end)}`;
-  }
-  return label;
+  const date = formatEventDate(startAt, { withYear: true });
+  if (!endAt) return `${date} · ${formatEventTime(startAt)}`;
+  return `${date} · ${formatEventTimeRange(startAt, endAt)}`;
 }
 
 export function EventsList({ rows }: { rows: EventRow[] }) {

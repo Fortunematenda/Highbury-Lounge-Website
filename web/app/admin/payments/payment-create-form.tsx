@@ -19,6 +19,7 @@ import {
   AdminTextInput,
   AdminTextarea,
 } from "@/app/admin/components/form-fields";
+import { todayISODate } from "@/lib/stay-dates";
 
 const schema = z.object({
   bookingId: z.number().min(1, "Select a booking"),
@@ -55,7 +56,7 @@ export function PaymentCreateForm({
       currency: "USD",
       method: "Cash",
       status: "Paid",
-      paymentDate: new Date().toISOString().slice(0, 10),
+      paymentDate: todayISODate(),
       transactionReference: "",
       adminNote: "",
     },
@@ -77,7 +78,7 @@ export function PaymentCreateForm({
         body: JSON.stringify({
           ...values,
           paymentDate:
-            values.paymentDate || new Date().toISOString().slice(0, 10),
+            values.paymentDate || todayISODate(),
           transactionReference: values.transactionReference || undefined,
           adminNote: values.adminNote || undefined,
         }),

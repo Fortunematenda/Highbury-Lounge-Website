@@ -7,6 +7,7 @@ import { BackLink } from "@/app/components/BackLink";
 import { CompactImageStrip } from "@/app/components/PreviewMediaGallery";
 import { formatMoney } from "@/lib/format";
 import { pickTranslated } from "@/lib/i18n/content";
+import { todayISODate } from "@/lib/stay-dates";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { AppLocale } from "@/lib/i18n/locales";
 
@@ -153,7 +154,7 @@ function SearchResultsInner() {
   const [error, setError] = useState("");
   const [results, setResults] = useState<AvailableRoom[]>([]);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayISODate();
 
   async function load(search: URLSearchParams) {
     setLoading(true);

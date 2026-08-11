@@ -5,23 +5,27 @@ import {
   listPublishedUpcoming,
 } from "@/lib/events";
 import { jsonError } from "@/lib/format";
+import { todayVenueDate } from "@/lib/timezone";
 
 function weekRange() {
-  const now = new Date();
-  const day = now.getDay();
+  const today = todayVenueDate();
+  const [y, m, d] = today.split("-").map(Number);
+  const utc = new Date(Date.UTC(y, m - 1, d));
+  const day = utc.getUTCDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
+  const monday = new Date(utc);
+  monday.setUTCDate(utc.getUTCDate() + mondayOffset);
   const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  const iso = (date: Date) => date.toISOString().slice(0, 10);
   return { from: iso(monday), to: iso(sunday) };
 }
 
 function monthRange() {
-  const now = new Date();
-  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const today = todayVenueDate();
+  const [y, m] = today.split("-").map(Number);
+  const from = `${y}-${String(m).padStart(2, "0")}-01`;
+  const last = new Date(Date.UTC(y, m, 0));
   const to = last.toISOString().slice(0, 10);
   return { from, to };
 }

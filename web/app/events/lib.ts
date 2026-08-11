@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { actionLabel } from "@/lib/event-constants";
+import { todayVenueStartIso, toVenueWallClock } from "@/lib/timezone";
 
 export type ProgrammeItem = { time: string; title: string; detail?: string };
 
@@ -124,12 +125,12 @@ const MONTHS_LONG = [
 
 /**
  * Event `startAt`/`endAt` values are stored as "floating" local wall-clock
- * strings (YYYY-MM-DDTHH:mm:ss) in the venue timezone. We parse the parts
- * directly and format via UTC so the displayed time never shifts based on
- * the visitor's browser timezone.
+ * strings (YYYY-MM-DDTHH:mm:ss) in Africa/Harare. Absolute UTC values (with Z)
+ * are converted to Harare first so display is never 2 hours behind.
  */
 function parseParts(iso: string | null | undefined) {
-  const [datePart = "", timePart = "00:00:00"] = (iso || "").split("T");
+  const normalized = toVenueWallClock(iso);
+  const [datePart = "", timePart = "00:00:00"] = normalized.split("T");
   const [y, m, d] = datePart.split("-").map((n) => Number(n) || 0);
   const [hh = 0, mm = 0] = timePart.split(":").map((n) => Number(n) || 0);
   return { y, m, d, hh, mm };
@@ -195,13 +196,11 @@ export function formatEventTimeRange(
 
 /** Current local date at midnight, in the same "floating" ISO shape used for event dates. */
 function nowLocalDateIso(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T00:00:00`;
+  return todayVenueStartIso();
 }
 
 export function isEventPast(startAt: string): boolean {
-  return startAt < nowLocalDateIso();
+  return toVenueWallClock(startAt) < nowLocalDateIso();
 }
 
 export function whatsappHref(

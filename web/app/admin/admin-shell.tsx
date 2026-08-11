@@ -18,8 +18,10 @@ import {
   BarChart3,
   BedDouble,
   Bell,
+  BookOpen,
   Building2,
   CalendarDays,
+  CalendarOff,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
@@ -28,6 +30,7 @@ import {
   LayoutDashboard,
   LineChart,
   LogOut,
+  Mail,
   Menu,
   Package,
   Settings,
@@ -55,57 +58,65 @@ type NavGroup = {
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Overview",
-    items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }],
-  },
-  {
-    label: "Operations",
     items: [
-      { href: "/admin/bookings", label: "Bookings", icon: ClipboardList },
-      { href: "/admin/food-orders", label: "Food Orders", icon: UtensilsCrossed },
-      { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
-      { href: "/admin/rooms", label: "Rooms", icon: BedDouble },
-      { href: "/admin/blocks", label: "Blocks", icon: Building2 },
-      { href: "/admin/conference", label: "Conference Requests", icon: Building2 },
-      { href: "/admin/packages", label: "Packages", icon: Package },
-      { href: "/admin/payments", label: "Payments", icon: Wallet },
-      {
-        href: "/admin/events/reservations",
-        label: "Event Reservations",
-        icon: Ticket,
-      },
-      {
-        href: "/admin/events/tickets",
-        label: "Event Tickets",
-        icon: Ticket,
-      },
-    ],
-  },
-  {
-    label: "Content",
-    items: [
-      { href: "/admin/menus", label: "Menus", icon: UtensilsCrossed },
-      { href: "/admin/gallery", label: "Gallery", icon: GalleryHorizontal },
-      { href: "/admin/events", label: "Events", icon: Sparkles },
-      {
-        href: "/admin/events/subscribers",
-        label: "Event Subscribers",
-        icon: Bell,
-      },
-    ],
-  },
-  {
-    label: "Customers",
-    items: [{ href: "/admin/guests", label: "Guests", icon: Users }],
-  },
-  {
-    label: "Management",
-    items: [
+      { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
       {
         href: "/admin/notifications",
         label: "Notifications",
         icon: Bell,
         badgeKey: "notifications",
       },
+    ],
+  },
+  {
+    label: "Stay",
+    items: [
+      { href: "/admin/bookings", label: "Bookings", icon: ClipboardList },
+      { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
+      { href: "/admin/rooms", label: "Rooms", icon: BedDouble },
+      { href: "/admin/blocks", label: "Blocks", icon: CalendarOff },
+      { href: "/admin/payments", label: "Payments", icon: Wallet },
+      { href: "/admin/guests", label: "Guests", icon: Users },
+    ],
+  },
+  {
+    label: "Dining",
+    items: [
+      { href: "/admin/food-orders", label: "Food Orders", icon: UtensilsCrossed },
+      { href: "/admin/menus", label: "Menus", icon: BookOpen },
+    ],
+  },
+  {
+    label: "Events",
+    items: [
+      { href: "/admin/events", label: "Events", icon: Sparkles },
+      { href: "/admin/events/tickets", label: "Tickets", icon: Ticket },
+      {
+        href: "/admin/events/reservations",
+        label: "Reservations",
+        icon: ClipboardList,
+      },
+      {
+        href: "/admin/events/subscribers",
+        label: "Subscribers",
+        icon: Mail,
+      },
+    ],
+  },
+  {
+    label: "Conference",
+    items: [
+      { href: "/admin/conference", label: "Requests", icon: Building2 },
+      { href: "/admin/packages", label: "Packages", icon: Package },
+    ],
+  },
+  {
+    label: "Website",
+    items: [{ href: "/admin/gallery", label: "Gallery", icon: GalleryHorizontal }],
+  },
+  {
+    label: "Management",
+    items: [
       { href: "/admin/reports", label: "Reports", icon: BarChart3 },
       { href: "/admin/analytics", label: "Analytics", icon: LineChart },
       { href: "/admin/users", label: "Users", icon: Users },
@@ -114,6 +125,10 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+const ALL_NAV_HREFS = NAV_GROUPS.flatMap((group) =>
+  group.items.map((item) => item.href),
+);
 
 function initials(name: string) {
   return name
@@ -233,7 +248,16 @@ export function AdminShell({
 
   function isActive(href: string) {
     if (href === "/admin") return pathname === "/admin";
-    return pathname === href || pathname.startsWith(`${href}/`);
+    // Prefer the longest matching nav href so /admin/events/tickets
+    // does not also light up the parent Events item.
+    const matches = ALL_NAV_HREFS.filter(
+      (candidate) =>
+        candidate !== "/admin" &&
+        (pathname === candidate || pathname.startsWith(`${candidate}/`)),
+    );
+    if (matches.length === 0) return false;
+    const best = matches.reduce((a, b) => (a.length >= b.length ? a : b));
+    return best === href;
   }
 
   function toggleCollapsed() {
