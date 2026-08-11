@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  formatVenueDateTime,
+  formatVenueDistanceToNow,
+} from "@/lib/timezone";
 import { CheckCheck, Loader2, Trash2 } from "lucide-react";
 
 type AdminNotification = {
@@ -159,10 +163,8 @@ export function NotificationsClient({
                 <strong>{item.title}</strong>
                 <p>{item.message}</p>
                 <small>
-                  {new Date(item.createdAt).toLocaleString()} ·{" "}
-                  {formatDistanceToNow(new Date(item.createdAt), {
-                    addSuffix: true,
-                  })}{" "}
+                  {formatVenueDateTime(item.createdAt, { withSeconds: true })} ·{" "}
+                  {formatVenueDistanceToNow(item.createdAt, formatDistanceToNow)}{" "}
                   · {item.type.replaceAll("_", " ")}
                 </small>
               </div>

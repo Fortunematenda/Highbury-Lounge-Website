@@ -27,7 +27,7 @@ import {
 import { formatMoney } from "@/lib/format";
 import { queueNotification } from "@/lib/notifications";
 import { slugify } from "@/lib/slug";
-import { nowVenueIso, todayVenueStartIso, toVenueWallClock } from "@/lib/timezone";
+import { nowUtcIso, todayVenueStartIso, toVenueWallClock, nowVenueIso } from "@/lib/timezone";
 
 export {
   ACTION_TYPES,
@@ -54,8 +54,8 @@ export class EventError extends Error {
   }
 }
 
-function nowIsoLocal() {
-  return nowVenueIso();
+function nowIsoUtc() {
+  return nowUtcIso();
 }
 
 function todayStartIso() {
@@ -602,7 +602,7 @@ function normalizeInput(input: EventInput, existing?: EventRow) {
     ),
     publishedAt:
       status === "published"
-        ? input.publishedAt || existing?.publishedAt || nowIsoLocal()
+        ? input.publishedAt || existing?.publishedAt || nowIsoUtc()
         : existing?.publishedAt ?? null,
     seoTitle: input.seoTitle?.trim() || null,
     seoDescription: input.seoDescription?.trim() || null,
@@ -618,7 +618,7 @@ export async function createEvent(input: EventInput) {
   if (data.isFeatured) {
     await db
       .update(events)
-      .set({ isFeatured: false, updatedAt: nowIsoLocal() })
+      .set({ isFeatured: false, updatedAt: nowIsoUtc() })
       .where(eq(events.isFeatured, true));
   }
 
@@ -730,13 +730,13 @@ export async function updateEvent(id: number, input: Partial<EventInput>) {
   if (data.isFeatured && !existing.isFeatured) {
     await db
       .update(events)
-      .set({ isFeatured: false, updatedAt: nowIsoLocal() })
+      .set({ isFeatured: false, updatedAt: nowIsoUtc() })
       .where(and(eq(events.isFeatured, true), sql`${events.id} != ${id}`));
   }
 
   const [row] = await db
     .update(events)
-    .set({ ...data, slug, updatedAt: nowIsoLocal() })
+    .set({ ...data, slug, updatedAt: nowIsoUtc() })
     .where(eq(events.id, id))
     .returning();
 
@@ -753,11 +753,11 @@ export async function softDeleteEvent(id: number) {
   const [row] = await db
     .update(events)
     .set({
-      deletedAt: nowIsoLocal(),
+      deletedAt: nowIsoUtc(),
       status: "cancelled",
       isFeatured: false,
       showAnnouncement: false,
-      updatedAt: nowIsoLocal(),
+      updatedAt: nowIsoUtc(),
     })
     .where(and(eq(events.id, id), isNull(events.deletedAt)))
     .returning();
@@ -871,7 +871,7 @@ export async function createEventReservation(params: {
   ) {
     throw new EventError("This event does not accept online reservations.");
   }
-  if (event.reservationDeadline && event.reservationDeadline < nowIsoLocal()) {
+  if (event.reservationDeadline && event.reservationDeadline < nowVenueIso()) {
     throw new EventError("The reservation deadline for this event has passed.");
   }
   if (guestCount < event.minGuests || guestCount > event.maxGuestsPerReservation) {
@@ -995,7 +995,7 @@ export async function updateReservationStatus(params: {
         params.adminNotes !== undefined
           ? params.adminNotes
           : existing.adminNotes,
-      updatedAt: nowIsoLocal(),
+      updatedAt: nowIsoUtc(),
     })
     .where(eq(eventReservations.id, params.id))
     .returning();
@@ -1024,8 +1024,8 @@ export async function subscribeToEvents(emailRaw: string, source = "events_page"
         status: "active",
         unsubscribedAt: null,
         source,
-        subscribedAt: nowIsoLocal(),
-        updatedAt: nowIsoLocal(),
+        subscribedAt: nowIsoUtc(),
+        updatedAt: nowIsoUtc(),
       })
       .where(eq(eventSubscribers.id, existing.id))
       .returning();

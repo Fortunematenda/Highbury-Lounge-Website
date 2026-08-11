@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { formatVenueDistanceToNow } from "@/lib/timezone";
 
 type AdminNotification = {
   id: number;
@@ -135,9 +136,10 @@ export function AdminNotificationsBell() {
                   <strong>{item.title}</strong>
                   <p>{item.message}</p>
                   <small>
-                    {formatDistanceToNow(new Date(item.createdAt), {
-                      addSuffix: true,
-                    })}
+                    {formatVenueDistanceToNow(
+                      item.createdAt,
+                      formatDistanceToNow,
+                    )}
                     {" · "}
                     {item.type.replaceAll("_", " ")}
                   </small>

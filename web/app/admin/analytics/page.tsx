@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/admin-page";
 import { getAnalyticsSummary } from "@/lib/analytics";
+import { formatVenueDateTime } from "@/lib/timezone";
 import { AnalyticsChart } from "./analytics-chart";
 
 export const dynamic = "force-dynamic";
 
 function formatWhen(iso: string | null | undefined) {
   if (!iso) return "—";
-  return iso.slice(0, 16).replace("T", " ");
+  return formatVenueDateTime(iso, { withSeconds: true });
 }
 
 export default async function AdminAnalyticsPage({
