@@ -19,7 +19,14 @@ import {
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { formatVenueDateTime } from "@/lib/timezone";
-import CountUp from "react-countup";
+import CountUpImport from "react-countup";
+
+const CountUp =
+  (
+    CountUpImport as unknown as {
+      default?: typeof CountUpImport;
+    }
+  ).default ?? CountUpImport;
 
 const DashboardCharts = lazy(() =>
   import("./dashboard-charts").then((m) => ({ default: m.DashboardCharts })),
