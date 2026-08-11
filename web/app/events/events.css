@@ -974,6 +974,7 @@
   .section.events-list-section,
   .section.events-featured-section,
   .section.events-past-section,
+  .section.events-find-ticket-section,
   .section.events-subscribe-section,
   .section.event-related-section {
     padding: 56px 20px;
@@ -1402,4 +1403,41 @@
 }
 .event-find-ticket-results p {
   margin: 4px 0 0;
+}
+
+/* ---------- Find ticket (events page) ---------- */
+.events-find-ticket-section {
+  background: #f7f1ef;
+}
+.events-find-ticket {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.events-find-ticket h2 {
+  margin: 6px 0 10px;
+}
+.events-find-ticket-lead {
+  margin: 0 0 4px;
+  color: #6b5a60;
+  line-height: 1.55;
+  max-width: 46ch;
+}
+.events-find-ticket .event-find-ticket-form {
+  margin-top: 18px;
+  padding: 18px 16px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.events-find-ticket .event-find-ticket-form .button.primary {
+  width: 100%;
+  justify-content: center;
+}
+.events-find-ticket .event-find-ticket-results {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+@media (max-width: 640px) {
+  .events-find-ticket .event-find-ticket-form {
+    padding: 16px 12px;
+  }
 }

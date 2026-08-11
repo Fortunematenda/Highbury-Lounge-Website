@@ -22,6 +22,10 @@ export default function FindTicketPage() {
         <span aria-current="page">Find my ticket</span>
       </nav>
       <FindTicketClient />
+      <p className="muted" style={{ marginTop: 18, textAlign: "center" }}>
+        Or find this on the{" "}
+        <Link href="/events#find-ticket">events page</Link>.
+      </p>
     </main>
   );
 }

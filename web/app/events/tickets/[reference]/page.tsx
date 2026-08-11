@@ -101,7 +101,7 @@ export default async function TicketOrderPage({
             <p className="muted">Show this code at the door.</p>
             <p className="muted" style={{ marginTop: 12 }}>
               Need this again later?{" "}
-              <Link href="/events/tickets/find">Find my ticket</Link>
+              <Link href="/events#find-ticket">Find my ticket</Link>
             </p>
           </div>
         ) : order.paymentStatus === "cancelled" ? (
@@ -148,7 +148,7 @@ export default async function TicketOrderPage({
               <TicketOrderClient reference={order.reference} />
               <p className="muted event-ticket-help">
                 Lost this page later?{" "}
-                <Link href="/events/tickets/find">Find my ticket</Link>
+                <Link href="/events#find-ticket">Find my ticket</Link>
               </p>
             </div>
           </div>

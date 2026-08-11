@@ -16,6 +16,7 @@ import { EventCard } from "./components/EventCard";
 import { EventReservationModal } from "./components/EventReservationModal";
 import { EventTicketPurchaseModal } from "./components/EventTicketPurchaseModal";
 import { EventsSubscribe } from "./components/EventsSubscribe";
+import { FindTicketClient } from "./tickets/find/find-ticket-client";
 import { eventBannerImage, formatEventDate, resolveEventAction, type PublicEvent } from "./lib";
 
 const RANGE_OPTIONS = [
@@ -395,12 +396,16 @@ export function EventsPageClient({
         )}
       </section>
 
+      <section
+        className="section events-find-ticket-section"
+        id="find-ticket"
+        aria-labelledby="find-ticket-title"
+      >
+        <FindTicketClient embedded />
+      </section>
+
       <section className="section events-subscribe-section">
         <EventsSubscribe />
-        <p className="muted" style={{ textAlign: "center", marginTop: 18 }}>
-          Already bought tickets?{" "}
-          <Link href="/events/tickets/find">Find my ticket</Link>
-        </p>
       </section>
 
       <EventReservationModal

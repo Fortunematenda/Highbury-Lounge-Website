@@ -14,7 +14,12 @@ type FoundOrder = {
   ticketCode: string | null;
 };
 
-export function FindTicketClient() {
+type Props = {
+  /** Compact section layout for the public events page. */
+  embedded?: boolean;
+};
+
+export function FindTicketClient({ embedded = false }: Props) {
   const [email, setEmail] = useState("");
   const [reference, setReference] = useState("");
   const [phone, setPhone] = useState("");
@@ -62,11 +67,17 @@ export function FindTicketClient() {
     }
   }
 
-  return (
-    <div className="event-ticket-card">
-      <p className="eyebrow">Ticket recovery</p>
-      <h1>Find my ticket</h1>
-      <p className="muted">
+  const heading = embedded ? (
+    <h2 id="find-ticket-title">Find my ticket</h2>
+  ) : (
+    <h1>Find my ticket</h1>
+  );
+
+  const body = (
+    <>
+      <p className="eyebrow">{embedded ? "TICKET RECOVERY" : "Ticket recovery"}</p>
+      {heading}
+      <p className={embedded ? "events-find-ticket-lead" : "muted"}>
         Use the same email from your order, plus your order reference (for
         example HL-AB12CD). Phone is only needed if you don’t have the
         reference.
@@ -136,6 +147,16 @@ export function FindTicketClient() {
           ))}
         </ul>
       ) : null}
-    </div>
+    </>
   );
+
+  if (embedded) {
+    return (
+      <div className="events-find-ticket" aria-labelledby="find-ticket-title">
+        {body}
+      </div>
+    );
+  }
+
+  return <div className="event-ticket-card">{body}</div>;
 }
