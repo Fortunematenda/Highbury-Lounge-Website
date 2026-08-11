@@ -11,6 +11,7 @@ import {
   StatusBadge,
 } from "@/app/admin/components/detail-page";
 import { TicketOrderActions } from "./ticket-actions";
+import { EventTicketPass } from "@/app/events/components/EventTicketPass";
 
 export const dynamic = "force-dynamic";
 
@@ -131,6 +132,27 @@ export default async function TicketOrderDetailPage({
             initialAdminNotes={order.adminNotes}
           />
         </DetailSectionCard>
+
+        {order.paymentStatus === "paid" && order.ticketCode && event ? (
+          <DetailSectionCard title="Issued ticket" icon={Ticket}>
+            <EventTicketPass
+              data={{
+                eventTitle: event.title,
+                startAt: event.startAt,
+                venueName: event.venueName,
+                coverImage: event.coverImage,
+                posterImage: event.posterImage,
+                ticketTypeName: order.ticketTypeName,
+                currency: order.currency,
+                unitPrice: Number(order.unitPrice),
+                quantity: order.quantity,
+                guestName: order.fullName,
+                reference: order.reference,
+                ticketCode: order.ticketCode,
+              }}
+            />
+          </DetailSectionCard>
+        ) : null}
 
         {order.adminNotes ? (
           <DetailSectionCard title="Admin notes" icon={StickyNote}>

@@ -49,6 +49,9 @@ function SuccessInner() {
           <Link className="button primary" href="/">
             {t("actions.returnHome")}
           </Link>
+          <Link className="button outline" href="/book/find">
+            Find my booking
+          </Link>
           <a
             className="button ghost"
             href={whatsappHref(
@@ -61,6 +64,11 @@ function SuccessInner() {
             {t("actions.whatsapp")}
           </a>
         </div>
+        <p className="muted" style={{ marginTop: 16 }}>
+          Lost this page? Search later with reference{" "}
+          <strong>{reference}</strong> at{" "}
+          <Link href="/book/find">Find my booking</Link>.
+        </p>
       </section>
     </main>
   );

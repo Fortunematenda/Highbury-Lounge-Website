@@ -1869,23 +1869,28 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
 .booking-search-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 120;
   display: grid;
   align-items: end;
   justify-items: stretch;
-  padding: 12px;
+  padding: 0;
   background: rgba(25, 15, 19, 0.72);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
+  overscroll-behavior: contain;
 }
 .booking-search-modal {
-  width: min(520px, 100%);
-  margin: 0 auto;
-  max-height: min(92vh, 760px);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  max-height: min(92dvh, 760px);
   overflow: auto;
   background: #fff;
   color: var(--ink);
-  box-shadow: 0 24px 70px rgba(20, 10, 14, 0.35);
+  box-shadow: 0 -12px 48px rgba(20, 10, 14, 0.28);
+  border-radius: 18px 18px 0 0;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
 }
 .booking-search-modal-header {
   display: flex;
@@ -1933,6 +1938,7 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
 .booking-search-modal-value select {
   flex: 1;
   min-width: 0;
+  width: 100%;
   border: 0;
   outline: 0;
   background: transparent;
@@ -1970,7 +1976,8 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
 
 @media (min-width: 901px) {
   .booking-search-modal-backdrop {
-    display: none;
+    display: none !important;
+    pointer-events: none;
   }
 }
 
@@ -2193,6 +2200,7 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   margin: 8px 0 0;
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 .booking-food-fieldset legend {
   padding: 0 6px;
@@ -2200,6 +2208,64 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-size: 12px;
+}
+.booking-food-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+}
+.booking-food-option {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  overflow: hidden;
+  min-width: 0;
+}
+.booking-food-option.is-selected {
+  border-color: var(--wine);
+  box-shadow: 0 0 0 1px var(--wine);
+}
+.booking-food-option img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #eee;
+  display: block;
+}
+.booking-food-option-meta {
+  display: grid;
+  gap: 2px;
+  padding: 0 10px 10px;
+  min-width: 0;
+}
+.booking-food-option-meta strong {
+  font-size: 13px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.booking-food-option-meta span {
+  font-size: 12px;
+  color: #6b5a60;
+  font-weight: 600;
+}
+.booking-food-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+.booking-food-add-row label {
+  flex: 0 0 96px;
+}
+.booking-food-add-row .button {
+  flex: 1 1 auto;
+  min-width: 140px;
 }
 .booking-food-cart {
   list-style: none;
@@ -2214,6 +2280,23 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   gap: 12px;
   align-items: center;
   font-weight: 600;
+  min-width: 0;
+}
+.booking-food-cart-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.booking-food-cart-item img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: #eee;
+}
+.booking-food-cart-item span {
+  overflow-wrap: anywhere;
 }
 .form-error {
   background: #fff1f1;
@@ -2269,13 +2352,35 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
     grid-template-columns: 1fr;
     padding: 14px;
   }
+  .booking-flow {
+    overflow-x: clip;
+  }
   .booking-flow-panel {
-    margin: 16px auto 48px;
-    padding: 22px 16px 26px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 18px 14px 88px;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
   }
   .booking-flow-top {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .booking-summary-card {
+    grid-template-columns: 1fr;
+  }
+  .booking-food-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .guest-form .form-row,
+  .booking-food-fieldset .form-row {
+    grid-template-columns: 1fr;
+  }
+  .guest-form .button.primary,
+  .confirm-panel .button.primary {
+    width: 100%;
   }
 }
 .booking-summary-card {

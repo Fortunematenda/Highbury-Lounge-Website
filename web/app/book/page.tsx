@@ -23,6 +23,7 @@ type MenuOption = {
   promotionalPrice: number | null;
   currency: string;
   allowPreOrder: boolean;
+  imageUrl: string | null;
 };
 
 type FoodCartLine = {
@@ -31,7 +32,19 @@ type FoodCartLine = {
   quantity: number;
   unitPrice: number;
   currency: string;
+  imageUrl: string | null;
 };
+
+const MENU_FALLBACK = "/images/food.jpg";
+
+function resolveMenuImage(item: {
+  imageUrl?: string | null;
+  images?: Array<{ imageUrl?: string | null; isFeatured?: boolean }>;
+}) {
+  const featured = item.images?.find((img) => img.isFeatured)?.imageUrl;
+  const first = item.images?.[0]?.imageUrl;
+  return featured || first || item.imageUrl || MENU_FALLBACK;
+}
 
 function BookInner() {
   const { t, i18n } = useTranslation();
@@ -102,6 +115,7 @@ function BookInner() {
               promotionalPrice: item.promotionalPrice,
               currency: item.currency || "USD",
               allowPreOrder: true,
+              imageUrl: resolveMenuImage(item),
             });
           }
         }
@@ -160,6 +174,7 @@ function BookInner() {
           quantity,
           unitPrice,
           currency: menu.currency,
+          imageUrl: menu.imageUrl,
         },
       ];
     });
@@ -340,25 +355,35 @@ function BookInner() {
               <fieldset className="booking-food-fieldset">
                 <legend>{t("menu.orderAhead")}</legend>
                 <p className="muted">{t("menu.planningBody")}</p>
-                <div className="form-row">
-                  <label>
-                    {t("menu.menuItem")}
-                    <select
-                      value={selectedMenuId}
-                      onChange={(e) => setSelectedMenuId(e.target.value)}
-                    >
-                      {menuOptions.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name} —{" "}
-                          {formatMoney(
-                            item.promotionalPrice ?? item.price,
-                            item.currency,
-                            i18n.language,
-                          )}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                <div className="booking-food-picker" role="listbox" aria-label={t("menu.menuItem")}>
+                  {menuOptions.map((item) => {
+                    const selected = String(item.id) === selectedMenuId;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        className={`booking-food-option${selected ? " is-selected" : ""}`}
+                        onClick={() => setSelectedMenuId(String(item.id))}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.imageUrl || MENU_FALLBACK} alt="" />
+                        <span className="booking-food-option-meta">
+                          <strong>{item.name}</strong>
+                          <span>
+                            {formatMoney(
+                              item.promotionalPrice ?? item.price,
+                              item.currency,
+                              i18n.language,
+                            )}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="booking-food-add-row">
                   <label>
                     {t("menu.quantity")}
                     <input
@@ -369,26 +394,33 @@ function BookInner() {
                       onChange={(e) => setFoodQty(e.target.value)}
                     />
                   </label>
+                  <button
+                    type="button"
+                    className="button primary"
+                    onClick={addFoodLine}
+                  >
+                    Add to order
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="button ghost"
-                  onClick={addFoodLine}
-                >
-                  Add to order
-                </button>
                 {foodCart.length > 0 ? (
                   <ul className="booking-food-cart">
                     {foodCart.map((line) => (
                       <li key={line.menuItemId}>
-                        <span>
-                          {line.name} ×{line.quantity} —{" "}
-                          {formatMoney(
-                            line.unitPrice * line.quantity,
-                            line.currency,
-                            i18n.language,
-                          )}
-                        </span>
+                        <div className="booking-food-cart-item">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={line.imageUrl || MENU_FALLBACK}
+                            alt=""
+                          />
+                          <span>
+                            {line.name} ×{line.quantity} —{" "}
+                            {formatMoney(
+                              line.unitPrice * line.quantity,
+                              line.currency,
+                              i18n.language,
+                            )}
+                          </span>
+                        </div>
                         <button
                           type="button"
                           className="text-link"

@@ -6,6 +6,7 @@ import {
   formatEventTimeRange,
 } from "@/app/events/lib";
 import { TicketOrderClient } from "./ticket-order-client";
+import { EventTicketPass } from "@/app/events/components/EventTicketPass";
 import "../../events.css";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +34,6 @@ export default async function TicketOrderPage({
 
   const { order, event, bank } = result;
   const paid = order.paymentStatus === "paid";
-  const qrPayload = order.ticketCode || order.reference;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload)}`;
 
   return (
     <main className="event-ticket-page">
@@ -92,16 +91,26 @@ export default async function TicketOrderPage({
         </dl>
 
         {paid && order.ticketCode ? (
-          <div className="event-ticket-qr-block">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrUrl} alt={`QR code for ${order.ticketCode}`} width={220} height={220} />
-            <p>
-              Ticket code: <strong>{order.ticketCode}</strong>
-            </p>
-            <p className="muted">Show this code at the door.</p>
+          <div className="event-ticket-issued">
+            <EventTicketPass
+              data={{
+                eventTitle: event.title,
+                startAt: event.startAt,
+                venueName: event.venueName,
+                coverImage: event.coverImage,
+                posterImage: event.posterImage,
+                ticketTypeName: order.ticketTypeName,
+                currency: order.currency,
+                unitPrice: Number(order.unitPrice),
+                quantity: order.quantity,
+                guestName: order.fullName,
+                reference: order.reference,
+                ticketCode: order.ticketCode,
+              }}
+            />
             <p className="muted" style={{ marginTop: 12 }}>
-              Need this again later?{" "}
-              <Link href="/events#find-ticket">Find my ticket</Link>
+              Show this ticket (or the downloaded image) at the door. Need it
+              later? <Link href="/events#find-ticket">Find my ticket</Link>
             </p>
           </div>
         ) : order.paymentStatus === "cancelled" ? (

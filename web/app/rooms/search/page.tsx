@@ -207,6 +207,10 @@ function SearchResultsInner() {
         </div>
         <p className="eyebrow">{t("booking.findStay")}</p>
         <h1>{t("booking.availableRooms")}</h1>
+        <p className="muted" style={{ marginTop: -8 }}>
+          Already booked?{" "}
+          <Link href="/book/find">Find my booking</Link> with your reference.
+        </p>
 
         <form className="search-form" onSubmit={onSearch}>
           <label>

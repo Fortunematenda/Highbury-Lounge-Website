@@ -61,11 +61,18 @@ export function BookingSearchModal({
         onClose();
       }
     }
+    function onViewportChange(event: MediaQueryListEvent) {
+      // CSS hides the sheet above 900px — clear lock and close so it can't block the page.
+      if (!event.matches) onClose();
+    }
+    const mq = window.matchMedia("(max-width: 900px)");
+    mq.addEventListener("change", onViewportChange);
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.clearTimeout(timer);
       window.removeEventListener("keydown", onKeyDown);
+      mq.removeEventListener("change", onViewportChange);
     };
   }, [open, onClose]);
 

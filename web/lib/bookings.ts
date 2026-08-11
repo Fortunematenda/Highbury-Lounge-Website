@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   bookingGuests,
@@ -391,6 +391,36 @@ export async function updateBookingStatus(params: {
   }
 
   return { ...booking, status: params.newStatus };
+}
+
+export async function getBookingByReference(reference: string) {
+  const normalized = reference.trim().toUpperCase();
+  if (!normalized) return null;
+
+  const db = getDb();
+  const [row] = await db
+    .select({
+      booking: bookings,
+      roomName: roomTypes.name,
+      roomSlug: roomTypes.slug,
+      guestFirstName: bookingGuests.firstName,
+      guestLastName: bookingGuests.lastName,
+      guestEmail: bookingGuests.email,
+      guestPhone: bookingGuests.phone,
+    })
+    .from(bookings)
+    .leftJoin(roomTypes, eq(roomTypes.id, bookings.roomTypeId))
+    .leftJoin(
+      bookingGuests,
+      and(
+        eq(bookingGuests.bookingId, bookings.id),
+        eq(bookingGuests.isPrimary, true),
+      ),
+    )
+    .where(eq(bookings.reference, normalized))
+    .limit(1);
+
+  return row ?? null;
 }
 
 export class BookingError extends Error {
