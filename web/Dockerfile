@@ -7,7 +7,7 @@ RUN apt-get update \
 
 COPY package.json package-lock.json ./
 COPY scripts ./scripts
-RUN chmod +x scripts/*.sh && npm ci
+RUN chmod +x scripts/*.sh && npm install --no-audit --no-fund
 
 COPY . .
 ENV SKIP_ARTIFACT_VALIDATE=1
