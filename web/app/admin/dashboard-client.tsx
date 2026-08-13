@@ -324,7 +324,7 @@ function KpiCard({
     <>
       <span className="admin-kpi-accent" style={{ background: color }} aria-hidden />
       <div className="admin-kpi-head">
-        <div>
+        <div className="admin-kpi-copy">
           <p className="admin-kpi-title">
             {title}
             <span className="admin-kpi-tip" title={tip} aria-label={tip}>

@@ -1,19 +1,32 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --admin-font: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --admin-sidebar: #2a1220;
+  --admin-sidebar-text: #f8e8ef;
+  --admin-muted: #6b5a62;
+  --admin-surface: #ffffff;
+  --admin-page: #f4f2f3;
+  --admin-radius: 14px;
+  --admin-shadow: 0 1px 2px rgba(42, 18, 32, 0.04), 0 8px 24px rgba(42, 18, 32, 0.05);
+}
 
 .admin-shell {
   --admin-sidebar: #2a1220;
   --admin-sidebar-text: #f8e8ef;
   --admin-muted: #6b5a62;
   --admin-surface: #ffffff;
-  --admin-page: #f6f4f5;
-  --admin-radius: 12px;
-  --admin-shadow: 0 1px 2px rgba(42, 18, 32, 0.04), 0 8px 24px rgba(42, 18, 32, 0.04);
-  font-family: Inter, "Segoe UI", sans-serif;
+  --admin-page: #f4f2f3;
+  --admin-radius: 14px;
+  --admin-shadow: 0 1px 2px rgba(42, 18, 32, 0.04), 0 8px 24px rgba(42, 18, 32, 0.05);
+  font-family: var(--admin-font);
   min-height: 100vh;
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr);
   background: var(--admin-page);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .admin-shell.is-collapsed {
@@ -282,7 +295,7 @@
 
 .admin-brand-fallback {
   display: inline-block;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   font-size: 15px;
   font-weight: 700;
   color: var(--wine, #70163f);
@@ -445,34 +458,44 @@
 .admin-main {
   padding: 24px 28px 48px;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .admin-main h1 {
-  font-family: Inter, "Segoe UI", sans-serif;
-  font-size: 24px;
+  font-family: var(--admin-font);
+  font-size: clamp(1.35rem, 2.5vw, 1.65rem);
   font-weight: 700;
+  letter-spacing: -0.02em;
   margin: 0 0 6px;
   color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-main .page-sub {
   margin: 0 0 24px;
   color: var(--admin-muted);
   font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
   gap: 12px;
   margin-bottom: 28px;
+  width: 100%;
 }
 
 .admin-stat {
   background: white;
   border: 1px solid var(--line);
   padding: 16px 14px;
-  border-radius: 8px;
+  border-radius: var(--admin-radius, 14px);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .admin-stat .label {
@@ -483,13 +506,21 @@
   letter-spacing: 0.08em;
   color: var(--admin-muted);
   margin-bottom: 6px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 .admin-stat .value {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 26px;
+  font-family: var(--admin-font);
+  font-size: clamp(1.15rem, 4.2vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--wine);
-  line-height: 1;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
 }
 
 .admin-panel {
@@ -501,7 +532,7 @@
 }
 
 .admin-panel h2 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   font-size: 18px;
   margin: 0 0 14px;
   color: var(--ink);
@@ -893,7 +924,7 @@ textarea.admin-textarea-fixed {
 
 .admin-login-title,
 .admin-login-card h1 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   font-size: 24px;
   margin: 0 0 4px;
   color: var(--wine);
@@ -1066,26 +1097,37 @@ textarea.admin-textarea-fixed {
 .admin-card {
   background: var(--admin-surface, white);
   border: 1px solid rgba(42, 18, 32, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(42, 18, 32, 0.04), 0 8px 24px rgba(42, 18, 32, 0.04);
+  border-radius: var(--admin-radius, 14px);
+  box-shadow: var(--admin-shadow, 0 1px 2px rgba(42, 18, 32, 0.04), 0 8px 24px rgba(42, 18, 32, 0.04));
   padding: 18px;
   margin-bottom: 18px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-card h2 {
-  font-family: Inter, "Segoe UI", sans-serif;
-  font-size: 18px;
+  font-family: var(--admin-font);
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
   font-weight: 700;
+  letter-spacing: -0.015em;
   margin: 0 0 14px;
   color: var(--ink);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-card-head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .admin-card-head h2 {
@@ -1094,18 +1136,21 @@ textarea.admin-textarea-fixed {
 
 .admin-stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
   gap: 12px;
+  width: 100%;
 }
 
 .admin-stat-card {
   background: white;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--admin-radius, 14px);
   padding: 16px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .admin-stat-card span {
@@ -1114,14 +1159,21 @@ textarea.admin-textarea-fixed {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--admin-muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 .admin-stat-card strong {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 24px;
-  font-weight: 400;
+  font-family: var(--admin-font);
+  font-size: clamp(1.15rem, 4.2vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--wine);
-  line-height: 1.1;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
 }
 
 .admin-two-col {
@@ -1177,7 +1229,7 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-modal h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   margin: 0 0 8px;
   color: var(--wine);
 }
@@ -1207,7 +1259,7 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-alert-title {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   margin: 0 0 8px;
   font-size: 1.2rem;
   line-height: 1.25;
@@ -1700,8 +1752,12 @@ textarea.admin-textarea-fixed {
 .admin-mobile-card {
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-shadow: var(--admin-shadow);
 }
 
 .admin-mobile-card.is-clickable {
@@ -1717,6 +1773,7 @@ textarea.admin-textarea-fixed {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 
 .admin-mobile-card-heading {
@@ -1727,23 +1784,29 @@ textarea.admin-textarea-fixed {
 .admin-mobile-card-heading strong {
   display: block;
   font-size: 15px;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-mobile-card-sub {
   margin-top: 4px;
   font-size: 13px;
   color: var(--admin-muted);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-mobile-card-body {
   margin-top: 12px;
+  min-width: 0;
 }
 
 .admin-mobile-meta {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 12px;
   margin: 0;
 }
@@ -1755,6 +1818,8 @@ textarea.admin-textarea-fixed {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--admin-muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-mobile-meta dd {
@@ -1762,6 +1827,8 @@ textarea.admin-textarea-fixed {
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
   word-break: break-word;
 }
 
@@ -2095,7 +2162,7 @@ textarea.admin-textarea-fixed {
 }
 
 .menu-fieldset legend {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   color: var(--wine);
   padding: 0 6px;
 }
@@ -2108,7 +2175,7 @@ textarea.admin-textarea-fixed {
 
 .menu-images-section h4 {
   margin: 0 0 12px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
   color: var(--wine);
 }
 
@@ -2646,6 +2713,11 @@ textarea.admin-textarea-fixed {
   box-shadow: var(--admin-shadow);
   padding: 18px;
   margin-bottom: 18px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-card-head {
@@ -2655,12 +2727,19 @@ textarea.admin-textarea-fixed {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .admin-card-head h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
   font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .admin-dash-greeting {
@@ -2758,6 +2837,7 @@ textarea.admin-textarea-fixed {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+  width: 100%;
 }
 
 .admin-kpi-card {
@@ -2772,7 +2852,9 @@ textarea.admin-textarea-fixed {
   padding: 14px 14px 12px;
   display: grid;
   gap: 8px;
+  width: 100%;
   min-width: 0;
+  max-width: 100%;
   text-decoration: none;
   color: inherit;
   transition:
@@ -2822,8 +2904,15 @@ textarea.admin-textarea-fixed {
 .admin-kpi-head {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 8px;
   padding-left: 4px;
+  min-width: 0;
+}
+
+.admin-kpi-copy {
+  min-width: 0;
+  flex: 1;
 }
 
 .admin-kpi-title {
@@ -2832,23 +2921,35 @@ textarea.admin-textarea-fixed {
   font-weight: 600;
   color: var(--admin-muted);
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 4px;
+  line-height: 1.35;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .admin-kpi-tip {
   color: #a08a94;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .admin-kpi-value {
   display: block;
   margin-top: 6px;
-  font-size: 1.65rem;
+  font-size: clamp(1.2rem, 3.8vw, 1.65rem);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--ink);
   letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .admin-kpi-icon {
@@ -2865,20 +2966,27 @@ textarea.admin-textarea-fixed {
 .admin-kpi-meta {
   min-height: 22px;
   padding-left: 4px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .admin-kpi-delta {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   max-width: 100%;
   padding: 3px 8px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.35;
   background: rgba(42, 18, 32, 0.05);
   color: var(--admin-muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-kpi-delta.up {
@@ -2902,6 +3010,8 @@ textarea.admin-textarea-fixed {
   border-radius: 999px;
   background: currentColor;
   opacity: 0.7;
+  flex-shrink: 0;
+  margin-top: 4px;
 }
 
 .admin-kpi-note {
@@ -2910,16 +3020,22 @@ textarea.admin-textarea-fixed {
   font-weight: 500;
   color: var(--admin-muted);
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-kpi-compare {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
   color: var(--admin-muted);
   min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-kpi-compare.muted {
@@ -2950,20 +3066,26 @@ textarea.admin-textarea-fixed {
 .analytics-stat-grid {
   display: grid;
   gap: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
   margin-bottom: 18px;
+  width: 100%;
 }
 
 .analytics-stat-card {
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 
 .analytics-stat-value {
   display: block;
-  font-size: 1.75rem;
+  font-size: clamp(1.2rem, 4vw, 1.75rem);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .analytics-mono {
@@ -3148,7 +3270,7 @@ textarea.admin-textarea-fixed {
   }
 
   .admin-main {
-    padding: 14px 12px 40px;
+    padding: 14px 12px max(48px, env(safe-area-inset-bottom));
     overflow-x: clip;
   }
 
@@ -3192,15 +3314,56 @@ textarea.admin-textarea-fixed {
   .admin-detail-grid {
     grid-template-columns: 1fr;
   }
+
+  .admin-kpi-card.is-link:hover,
+  .admin-kpi-card.is-link:focus-visible,
+  .admin-kpi-card:hover {
+    transform: none;
+  }
+
+  .admin-card-head {
+    align-items: flex-start;
+  }
+
+  .admin-card-head .admin-btn,
+  .admin-card-head .admin-quick-actions {
+    width: 100%;
+  }
 }
 
 @media (max-width: 560px) {
   .admin-kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .admin-kpi-card {
+    padding: 12px 12px 10px;
   }
 
   .admin-kpi-value {
-    font-size: 22px;
+    font-size: clamp(1.05rem, 5.2vw, 1.35rem);
+  }
+
+  .admin-kpi-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .admin-kpi-title {
+    font-size: 11px;
+  }
+
+  .admin-stats,
+  .admin-stat-grid,
+  .analytics-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .admin-mobile-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-bell-panel {
@@ -3214,6 +3377,16 @@ textarea.admin-textarea-fixed {
   }
 
   .admin-quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .admin-kpi-grid,
+  .admin-stats,
+  .admin-stat-grid,
+  .analytics-stat-grid,
+  .admin-mobile-meta {
     grid-template-columns: 1fr;
   }
 }
@@ -3678,12 +3851,17 @@ textarea.admin-textarea-fixed {
   margin: 0 0 4px;
   font-size: 17px;
   font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .detail-section-head p {
   margin: 0;
   font-size: 13px;
   color: var(--admin-muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .detail-field-grid {
@@ -3720,17 +3898,24 @@ textarea.admin-textarea-fixed {
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .detail-meta-list dt {
   color: var(--admin-muted);
   font-weight: 600;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .detail-meta-list dd {
   margin: 0;
   text-align: right;
   font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .detail-status-badge {
@@ -4192,7 +4377,7 @@ textarea.admin-textarea-fixed {
 
 .pms-page-header h1 {
   margin: 0;
-  font-family: Inter, "Segoe UI", sans-serif;
+  font-family: var(--admin-font);
   font-size: clamp(26px, 5vw, 34px);
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -4240,7 +4425,7 @@ textarea.admin-textarea-fixed {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  font-family: Inter, sans-serif;
+  font-family: var(--admin-font);
 }
 
 .pms-empty p {
@@ -4464,7 +4649,7 @@ textarea.admin-textarea-fixed {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
-  font-family: Inter, sans-serif;
+  font-family: var(--admin-font);
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
@@ -4513,7 +4698,7 @@ textarea.admin-textarea-fixed {
 .pms-room-stats strong {
   font-size: 14px;
   color: #1f1218;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .pms-room-stats small {
@@ -4894,7 +5079,7 @@ textarea.admin-textarea-fixed {
   font-size: 28px;
   color: #70163f;
   line-height: 1.15;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
 }
 
 .reports-pdf-sub {
@@ -4977,7 +5162,7 @@ textarea.admin-textarea-fixed {
   margin: 0 0 8px;
   font-size: 15px;
   color: #70163f;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--admin-font);
 }
 
 .reports-pdf-chart {
