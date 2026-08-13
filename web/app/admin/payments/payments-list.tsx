@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   AdminClickableRow,
   AdminRowActions,
@@ -26,11 +29,46 @@ type PaymentRow = {
 };
 
 export function PaymentsList({ rows }: { rows: PaymentRow[] }) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function onDelete(p: PaymentRow) {
+    if (
+      !window.confirm(
+        `Delete payment of ${p.currency} ${Number(p.amount).toFixed(2)} for ${p.reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(p.id);
+    try {
+      const res = await fetch(`/api/admin/payments/${p.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete payment");
+      toast.success("Payment deleted");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete payment",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function actionsFor(p: PaymentRow) {
     return [
       {
-        label: "Open booking",
+        label: "Edit booking",
         href: `/admin/bookings/${p.bookingId}`,
+      },
+      {
+        label: "Delete",
+        danger: true,
+        disabled: busyId === p.id,
+        onClick: () => void onDelete(p),
       },
     ];
   }

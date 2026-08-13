@@ -119,3 +119,50 @@ export async function PATCH(
     return jsonError("Could not update enquiry.", 500);
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const user = await requireAdmin(["administrator", "booking_manager"]);
+    if (!canManageBookings(user.roleKey)) return jsonError("Forbidden", 403);
+
+    const { id } = await context.params;
+    const enquiryId = Number(id);
+    if (!Number.isFinite(enquiryId)) return jsonError("Invalid id.", 400);
+
+    const db = getDb();
+    const [existing] = await db
+      .select({
+        id: conferenceEnquiries.id,
+        reference: conferenceEnquiries.reference,
+      })
+      .from(conferenceEnquiries)
+      .where(eq(conferenceEnquiries.id, enquiryId))
+      .limit(1);
+    if (!existing) return jsonError("Enquiry not found.", 404);
+
+    await db
+      .delete(conferenceEnquiries)
+      .where(eq(conferenceEnquiries.id, enquiryId));
+
+    await writeAuditLog({
+      adminUserId: user.id,
+      action: "conference.delete",
+      entityType: "conference_enquiry",
+      entityId: enquiryId,
+      details: { reference: existing.reference },
+    });
+
+    return Response.json({
+      ok: true,
+      deleted: true,
+      reference: existing.reference,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) return jsonError(error.message, error.status);
+    console.error(error);
+    return jsonError("Could not delete enquiry.", 500);
+  }
+}

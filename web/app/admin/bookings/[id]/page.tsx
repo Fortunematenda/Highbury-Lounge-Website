@@ -393,7 +393,11 @@ export default async function AdminBookingDetailPage({
         />
 
         <DetailSectionCard title="Status actions" icon={ClipboardList}>
-          <BookingStatusActions bookingId={b.id} currentStatus={b.status} />
+          <BookingStatusActions
+            bookingId={b.id}
+            reference={b.reference}
+            currentStatus={b.status}
+          />
         </DetailSectionCard>
 
         <DetailSectionCard title="Internal notes" icon={StickyNote}>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   AdminClickableRow,
   AdminRowActions,
@@ -28,10 +31,44 @@ type BookingRow = {
 };
 
 export function BookingsList({ rows }: { rows: BookingRow[] }) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function onDelete(b: BookingRow) {
+    if (
+      !window.confirm(
+        `Delete booking ${b.reference}? This permanently removes the booking, guest, payments, and linked food orders. This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(b.id);
+    try {
+      const res = await fetch(`/api/admin/bookings/${b.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete booking");
+      toast.success("Booking deleted");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete booking",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function actionsFor(b: BookingRow) {
     return [
-      { label: "Open", href: `/admin/bookings/${b.id}` },
       { label: "Edit", href: `/admin/bookings/${b.id}` },
+      {
+        label: "Delete",
+        danger: true,
+        disabled: busyId === b.id,
+        onClick: () => void onDelete(b),
+      },
     ];
   }
 

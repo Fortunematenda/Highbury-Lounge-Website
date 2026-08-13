@@ -19,9 +19,11 @@ const ACTIONS = [
 
 export function BookingStatusActions({
   bookingId,
+  reference,
   currentStatus,
 }: {
   bookingId: number;
+  reference: string;
   currentStatus: string;
 }) {
   const router = useRouter();
@@ -30,6 +32,7 @@ export function BookingStatusActions({
   const [success, setSuccess] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [confirmStatus, setConfirmStatus] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function applyStatus(status: string) {
     setPending(status);
@@ -52,6 +55,31 @@ export function BookingStatusActions({
       setError(err instanceof Error ? err.message : "Update failed");
     } finally {
       setPending(null);
+    }
+  }
+
+  async function onDelete() {
+    if (deleting || pending) return;
+    if (
+      !window.confirm(
+        `Delete booking ${reference}? This permanently removes the booking, guest, payments, and linked food orders. This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeleting(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/bookings/${bookingId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete booking");
+      router.push("/admin/bookings");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete booking");
+      setDeleting(false);
     }
   }
 
@@ -87,12 +115,22 @@ export function BookingStatusActions({
             <button
               className="admin-btn secondary"
               type="submit"
-              disabled={!!pending}
+              disabled={!!pending || deleting}
             >
               Mark as {status}
             </button>
           </form>
         ))}
+      </div>
+      <div className="detail-inline-actions">
+        <button
+          type="button"
+          className="admin-btn danger"
+          disabled={!!pending || deleting}
+          onClick={() => void onDelete()}
+        >
+          {deleting ? "Deleting…" : "Delete booking"}
+        </button>
       </div>
 
       {confirmStatus ? (

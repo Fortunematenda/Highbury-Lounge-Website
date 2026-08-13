@@ -6,9 +6,11 @@ import { FOOD_ORDER_STATUSES } from "@/lib/food-order-status";
 
 export function FoodOrderStatusForm({
   foodOrderId,
+  reference,
   currentStatus,
 }: {
   foodOrderId: number;
+  reference: string;
   currentStatus: string;
 }) {
   const router = useRouter();
@@ -38,6 +40,33 @@ export function FoodOrderStatusForm({
     }
   }
 
+  async function onDelete() {
+    if (saving) return;
+    if (
+      !window.confirm(
+        `Delete food order ${reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/food-orders/${foodOrderId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete food order");
+      router.push("/admin/food-orders");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not delete food order",
+      );
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="admin-inline-form">
       <label className="admin-form-field">
@@ -54,14 +83,24 @@ export function FoodOrderStatusForm({
           ))}
         </select>
       </label>
-      <button
-        type="button"
-        className="admin-btn"
-        disabled={saving || status === currentStatus}
-        onClick={() => void save()}
-      >
-        {saving ? "Saving…" : "Update status"}
-      </button>
+      <div className="detail-inline-actions">
+        <button
+          type="button"
+          className="admin-btn"
+          disabled={saving || status === currentStatus}
+          onClick={() => void save()}
+        >
+          {saving ? "Saving…" : "Update status"}
+        </button>
+        <button
+          type="button"
+          className="admin-btn danger"
+          disabled={saving}
+          onClick={() => void onDelete()}
+        >
+          Delete order
+        </button>
+      </div>
       {error ? (
         <p className="admin-field-error" role="alert">
           {error}

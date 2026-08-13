@@ -1,4 +1,7 @@
+import { eq } from "drizzle-orm";
 import { AuthError, canManageBookings, requireAdmin } from "@/lib/auth";
+import { getDb } from "@/db";
+import { foodOrders } from "@/db/schema";
 import { writeAuditLog } from "@/lib/audit";
 import {
   FoodOrderError,
@@ -75,5 +78,54 @@ export async function PATCH(
     }
     console.error(error);
     return jsonError("Unable to update food order.", 500);
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const user = await requireAdmin(["administrator", "booking_manager"]);
+    if (!canManageBookings(user.roleKey)) {
+      return jsonError("Forbidden", 403);
+    }
+
+    const { id } = await context.params;
+    const foodOrderId = Number(id);
+    if (!Number.isFinite(foodOrderId)) {
+      return jsonError("Invalid food order id.", 400);
+    }
+
+    const db = getDb();
+    const [existing] = await db
+      .select({
+        id: foodOrders.id,
+        reference: foodOrders.reference,
+      })
+      .from(foodOrders)
+      .where(eq(foodOrders.id, foodOrderId))
+      .limit(1);
+    if (!existing) return jsonError("Food order not found.", 404);
+
+    await db.delete(foodOrders).where(eq(foodOrders.id, foodOrderId));
+
+    await writeAuditLog({
+      actor: user,
+      action: "food_order.delete",
+      entityType: "food_order",
+      entityId: foodOrderId,
+      details: { reference: existing.reference },
+    });
+
+    return Response.json({
+      ok: true,
+      deleted: true,
+      reference: existing.reference,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) return jsonError(error.message, error.status);
+    console.error(error);
+    return jsonError("Unable to delete food order.", 500);
   }
 }

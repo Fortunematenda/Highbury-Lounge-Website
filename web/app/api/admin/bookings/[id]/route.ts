@@ -170,3 +170,50 @@ export async function PATCH(
     return jsonError("Could not update booking.", 500);
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const user = await requireAdmin(["administrator", "booking_manager"]);
+    if (!canManageBookings(user.roleKey)) {
+      return jsonError("Forbidden", 403);
+    }
+
+    const { id } = await context.params;
+    const bookingId = Number(id);
+    if (!Number.isFinite(bookingId)) return jsonError("Invalid booking id.", 400);
+
+    const db = getDb();
+    const [booking] = await db
+      .select({
+        id: bookings.id,
+        reference: bookings.reference,
+      })
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+    if (!booking) return jsonError("Booking not found.", 404);
+
+    await db.delete(bookings).where(eq(bookings.id, bookingId));
+
+    await writeAuditLog({
+      adminUserId: user.id,
+      action: "booking.delete",
+      entityType: "booking",
+      entityId: bookingId,
+      details: { reference: booking.reference },
+    });
+
+    return Response.json({
+      ok: true,
+      deleted: true,
+      reference: booking.reference,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) return jsonError(error.message, error.status);
+    console.error(error);
+    return jsonError("Could not delete booking.", 500);
+  }
+}

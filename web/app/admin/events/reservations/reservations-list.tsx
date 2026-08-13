@@ -91,7 +91,7 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
   function actionsFor(row: ReservationRow) {
     return [
       {
-        label: "Open",
+        label: "Edit",
         href: `/admin/events/reservations/${row.id}`,
       },
       {

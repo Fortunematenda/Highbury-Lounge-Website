@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   AdminClickableRow,
   AdminRowActions,
@@ -27,12 +30,47 @@ type FoodOrderRow = {
 };
 
 export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function onDelete(row: FoodOrderRow) {
+    if (
+      !window.confirm(
+        `Delete food order ${row.reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(row.id);
+    try {
+      const res = await fetch(`/api/admin/food-orders/${row.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete food order");
+      toast.success("Food order deleted");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete food order",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function actionsFor(row: FoodOrderRow) {
     const actions = [
-      { label: "Open", href: `/admin/food-orders/${row.id}` },
+      { label: "Edit", href: `/admin/food-orders/${row.id}` },
+      {
+        label: "Delete",
+        danger: true as const,
+        disabled: busyId === row.id,
+        onClick: () => void onDelete(row),
+      },
     ];
     if (row.bookingId) {
-      actions.push({
+      actions.splice(1, 0, {
         label: "View booking",
         href: `/admin/bookings/${row.bookingId}`,
       });

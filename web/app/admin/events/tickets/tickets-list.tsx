@@ -63,7 +63,7 @@ export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
   function actionsFor(row: TicketOrderRow) {
     return [
       {
-        label: "Open",
+        label: "Edit",
         href: `/admin/events/tickets/${row.id}`,
       },
       {

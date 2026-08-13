@@ -182,6 +182,7 @@ export default async function AdminFoodOrderDetailPage({
         <DetailSectionCard title="Order status" icon={ClipboardList}>
           <FoodOrderStatusForm
             foodOrderId={order.id}
+            reference={order.reference}
             currentStatus={order.status}
           />
         </DetailSectionCard>

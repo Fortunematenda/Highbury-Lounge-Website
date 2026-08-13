@@ -24,12 +24,14 @@ const STATUSES = [
 
 export function ConferenceStatusForm({
   enquiryId,
+  reference,
   currentStatus,
   initialQuotationAmount,
   initialQuotationNotes,
   initialAdminNotes,
 }: {
   enquiryId: number;
+  reference: string;
   currentStatus: string;
   initialQuotationAmount?: number | null;
   initialQuotationNotes?: string | null;
@@ -68,6 +70,31 @@ export function ConferenceStatusForm({
       window.setTimeout(() => setSuccess(""), 3500);
       router.refresh();
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete() {
+    if (busy) return;
+    if (
+      !window.confirm(
+        `Delete conference enquiry ${reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/conference/${enquiryId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete enquiry");
+      router.push("/admin/conference");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete enquiry");
       setBusy(false);
     }
   }
@@ -124,6 +151,14 @@ export function ConferenceStatusForm({
       <div className="detail-inline-actions">
         <button className="admin-btn" type="submit" disabled={busy}>
           {busy ? "Saving…" : "Save changes"}
+        </button>
+        <button
+          type="button"
+          className="admin-btn danger"
+          disabled={busy}
+          onClick={() => void onDelete()}
+        >
+          Delete enquiry
         </button>
       </div>
     </form>

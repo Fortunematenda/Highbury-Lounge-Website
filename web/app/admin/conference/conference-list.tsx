@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 import {
   AdminClickableRow,
   AdminRowActions,
@@ -21,10 +24,44 @@ type EnquiryRow = {
 };
 
 export function ConferenceList({ rows }: { rows: EnquiryRow[] }) {
+  const router = useRouter();
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function onDelete(r: EnquiryRow) {
+    if (
+      !window.confirm(
+        `Delete conference enquiry ${r.reference}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(r.id);
+    try {
+      const res = await fetch(`/api/admin/conference/${r.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Could not delete enquiry");
+      toast.success("Enquiry deleted");
+      router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete enquiry",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   function actionsFor(r: EnquiryRow) {
     return [
-      { label: "Open", href: `/admin/conference/${r.id}` },
       { label: "Edit", href: `/admin/conference/${r.id}` },
+      {
+        label: "Delete",
+        danger: true,
+        disabled: busyId === r.id,
+        onClick: () => void onDelete(r),
+      },
     ];
   }
 
@@ -49,12 +86,14 @@ export function ConferenceList({ rows }: { rows: EnquiryRow[] }) {
               </tr>
             ) : (
               rows.map((r) => (
-                <AdminClickableRow key={r.id} href={`/admin/conference/${r.id}`}>
+                <AdminClickableRow
+                  key={r.id}
+                  href={`/admin/conference/${r.id}`}
+                >
                   <td>{r.reference}</td>
                   <td>
-                    {r.contactName}
-                    <br />
-                    <small>{r.email}</small>
+                    <div>{r.contactName}</div>
+                    <div className="admin-muted">{r.email}</div>
                   </td>
                   <td>{formatDate(r.preferredDate)}</td>
                   <td>{r.attendees}</td>
@@ -101,9 +140,9 @@ export function ConferenceList({ rows }: { rows: EnquiryRow[] }) {
               </div>
               <AdminMobileMeta
                 items={[
-                  { label: "Email", value: r.email },
                   { label: "Date", value: formatDate(r.preferredDate) },
                   { label: "Attendees", value: r.attendees },
+                  { label: "Email", value: r.email },
                 ]}
               />
             </AdminMobileCard>
