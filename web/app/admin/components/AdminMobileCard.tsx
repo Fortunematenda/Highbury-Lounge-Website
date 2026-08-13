@@ -10,6 +10,7 @@ import {
 export function AdminMobileCard({
   title,
   subtitle,
+  image,
   href,
   onOpen,
   actions,
@@ -17,6 +18,7 @@ export function AdminMobileCard({
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
+  image?: string | null;
   href?: string;
   onOpen?: () => void;
   actions?: AdminRowAction[];
@@ -44,7 +46,7 @@ export function AdminMobileCard({
 
   return (
     <article
-      className={`admin-mobile-card${clickable ? " is-clickable" : ""}`}
+      className={`admin-mobile-card${clickable ? " is-clickable" : ""}${image ? " has-image" : ""}`}
       onClick={activate}
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
@@ -56,18 +58,32 @@ export function AdminMobileCard({
         }
       }}
     >
-      <div className="admin-mobile-card-top">
-        <div className="admin-mobile-card-heading">
-          <strong>{title}</strong>
-          {subtitle ? (
-            <div className="admin-mobile-card-sub">{subtitle}</div>
+      {image ? (
+        <div className="admin-mobile-card-image">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image}
+            alt=""
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
+      ) : null}
+      <div className="admin-mobile-card-main">
+        <div className="admin-mobile-card-top">
+          <div className="admin-mobile-card-heading">
+            <strong>{title}</strong>
+            {subtitle ? (
+              <div className="admin-mobile-card-sub">{subtitle}</div>
+            ) : null}
+          </div>
+          {actions?.length ? (
+            <AdminRowActions actions={actions} label={`Actions for ${String(title)}`} />
           ) : null}
         </div>
-        {actions?.length ? (
-          <AdminRowActions actions={actions} label={`Actions for ${String(title)}`} />
-        ) : null}
+        {children ? <div className="admin-mobile-card-body">{children}</div> : null}
       </div>
-      {children ? <div className="admin-mobile-card-body">{children}</div> : null}
     </article>
   );
 }

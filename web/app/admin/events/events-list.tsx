@@ -296,6 +296,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
             key={row.id}
             title={row.title}
             subtitle={row.category}
+            image={row.coverImage || row.posterImage}
             href={`/admin/events/${row.id}`}
             actions={actionsFor(row)}
           >

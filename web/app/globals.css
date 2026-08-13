@@ -1127,15 +1127,24 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
     padding-block: clamp(28px, 6vw, 40px);
     padding-bottom: max(clamp(28px, 6vw, 40px), 72px);
   }
-  .home-event-image-wrap {
-    aspect-ratio: 16 / 10;
-    min-height: 180px;
-  }
   .home-events-grid.is-three,
   .home-events-grid.is-two,
   .home-events-grid.is-one {
     grid-template-columns: 1fr;
     max-width: none;
+  }
+  .home-event-card {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 128px;
+  }
+  .home-event-image-wrap {
+    flex: 0 0 36%;
+    width: 36%;
+    max-width: 160px;
+    aspect-ratio: auto;
+    min-height: 128px;
+    align-self: stretch;
   }
   .home-events-all { width: 100%; text-align: center; }
   .celebrate-actions { width: 100%; }
