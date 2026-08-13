@@ -81,7 +81,20 @@ export function normalizeIp(raw: string | null | undefined): string | null {
   } else if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(ip)) {
     ip = ip.split(":")[0];
   }
-  return ip.slice(0, 64);
+  ip = ip.slice(0, 64);
+  // Never persist Docker / LAN hops
+  if (
+    ip === "::1" ||
+    ip === "127.0.0.1" ||
+    ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("127.") ||
+    ip.startsWith("169.254.") ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)
+  ) {
+    return null;
+  }
+  return ip;
 }
 
 /**

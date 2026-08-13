@@ -117,9 +117,7 @@ async function resolveClientGeo(): Promise<ClientGeo> {
     }
   }
 
-  const empty = {};
-  persistGeo(empty);
-  return empty;
+  return {};
 }
 
 export function AnalyticsBeacon() {

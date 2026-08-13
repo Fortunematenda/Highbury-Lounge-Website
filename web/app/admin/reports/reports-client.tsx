@@ -8,6 +8,7 @@ import {
   Loader2,
   FileSpreadsheet,
 } from "lucide-react";
+import { ReportsPdfButton, type ReportsPdfData } from "./reports-pdf";
 
 const DashboardCharts = lazy(() =>
   import("../dashboard-charts").then((m) => ({ default: m.DashboardCharts })),
@@ -217,6 +218,41 @@ export function ReportsClient() {
   const exportFrom = from || "";
   const exportTo = to || "";
 
+  const pdfData: ReportsPdfData | null = data
+    ? {
+        rangeLabel: data.rangeLabel,
+        today: data.today,
+        periodBookings: periodBookingCount,
+        periodRevenue,
+        occupancyRate: data.totals.occupancyRate,
+        occupiedRooms: data.totals.occupiedRooms,
+        availableRooms: data.totals.availableRooms,
+        maintenanceRooms: data.totals.maintenanceRooms,
+        totalRooms: data.totals.totalRooms,
+        confirmedBookings: data.totals.confirmedBookings,
+        pendingBookings: data.totals.pendingBookings,
+        cancelledBookings: data.totals.cancelledBookings,
+        foodPreorders: data.totals.foodPreorders,
+        ticketsSold: data.totals.ticketsSold,
+        ticketRevenue: data.totals.ticketRevenue,
+        conferenceRequests: data.totals.conferenceRequests,
+        bookingTrend: data.trends.bookingTrend,
+        revenueTrend: data.trends.revenueTrend,
+        bookingStatusBreakdown: data.bookingStatusBreakdown,
+        revenueSources: data.revenueSources,
+        recentBookings: data.recentBookings.map((b) => ({
+          reference: b.reference,
+          status: b.status,
+          checkIn: b.checkIn,
+          checkOut: b.checkOut,
+          totalAmount: b.totalAmount,
+          currency: b.currency,
+          roomName: b.roomName,
+          guestName: [b.firstName, b.lastName].filter(Boolean).join(" "),
+        })),
+      }
+    : null;
+
   return (
     <div className="admin-page pms-page reports-page">
       <header className="pms-page-header">
@@ -227,6 +263,9 @@ export function ReportsClient() {
             Booking, revenue, occupancy, and exportable admin reports
             {data?.rangeLabel ? ` · ${data.rangeLabel}` : ""}
           </p>
+        </div>
+        <div className="reports-header-actions">
+          <ReportsPdfButton data={pdfData} disabled={loading} />
         </div>
       </header>
 
@@ -357,10 +396,11 @@ export function ReportsClient() {
               <h2>
                 <FileSpreadsheet size={18} aria-hidden /> Pull reports
               </h2>
+              <ReportsPdfButton data={pdfData} disabled={loading} />
             </div>
             <p className="page-sub" style={{ marginBottom: 14 }}>
-              Download CSV files for accounting and operations. Optional From/To
-              dates above filter bookings, payments, and visitor exports.
+              Download a visual PDF with graphs, or CSV files for accounting.
+              Optional From/To dates above filter CSV exports.
             </p>
             <div className="reports-export-grid">
               {EXPORTS.map((item) => (

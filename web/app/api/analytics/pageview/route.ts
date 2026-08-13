@@ -51,11 +51,23 @@ function normalizeCountry(raw: string | null | undefined): string | null {
 
 function isPrivateOrLocal(ip: string | null): boolean {
   if (!ip) return true;
-  if (ip === "unknown" || ip === "::1" || ip === "127.0.0.1") return true;
-  if (ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("127.")) {
+  const value = ip.trim().toLowerCase();
+  if (value === "unknown" || value === "::1" || value === "127.0.0.1") {
     return true;
   }
-  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return true;
+  if (
+    value.startsWith("10.") ||
+    value.startsWith("192.168.") ||
+    value.startsWith("127.") ||
+    value.startsWith("169.254.") ||
+    value.startsWith("fc") ||
+    value.startsWith("fd") ||
+    value.startsWith("fe80:")
+  ) {
+    return true;
+  }
+  // Docker / private 172.16.0.0 – 172.31.255.255
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(value)) return true;
   return false;
 }
 
@@ -89,13 +101,13 @@ export async function POST(request: Request) {
 
     const fromHeaders = headerIp(request);
     const fromClient = normalizeIp(body.ip);
-    // Prefer real public client IP (browser geo) when proxy only sees Docker/private hop
+    // Prefer public browser-reported IP; never persist Docker/private hops like 172.20.0.1
     const ip =
+      (!isPrivateOrLocal(fromClient) ? fromClient : null) ||
       (!isPrivateOrLocal(fromHeaders) ? fromHeaders : null) ||
-      fromClient ||
-      fromHeaders;
+      null;
 
-    const rateKey = `${ip || "unknown"}:${visitorId}`;
+    const rateKey = `${ip || fromClient || fromHeaders || "unknown"}:${visitorId}`;
     const now = Date.now();
     const last = recentHits.get(rateKey) ?? 0;
     if (now - last < 800) {
