@@ -4850,22 +4850,23 @@ textarea.admin-textarea-fixed {
 
 .reports-pdf-offscreen {
   position: fixed;
-  left: 0;
+  left: -12000px;
   top: 0;
   width: 900px;
-  transform: translate(-120vw, 0);
   pointer-events: none;
   opacity: 1;
+  visibility: visible;
   z-index: -1;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .reports-pdf-sheet {
   width: 900px;
-  background: #fff;
+  box-sizing: border-box;
+  background: #ffffff;
   color: #1f1218;
   padding: 28px 28px 20px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .reports-pdf-header {
@@ -4873,7 +4874,7 @@ textarea.admin-textarea-fixed {
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-  border-bottom: 2px solid #70163f;
+  border-bottom: 3px solid #70163f;
   padding-bottom: 14px;
   margin-bottom: 16px;
 }
@@ -4884,7 +4885,6 @@ textarea.admin-textarea-fixed {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #70163f;
-  font-family: system-ui, sans-serif;
   font-weight: 700;
 }
 
@@ -4893,20 +4893,19 @@ textarea.admin-textarea-fixed {
   font-size: 28px;
   color: #70163f;
   line-height: 1.15;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .reports-pdf-sub {
   margin: 6px 0 0;
   font-size: 13px;
-  color: #6b5a62;
-  font-family: system-ui, sans-serif;
+  color: #4a3b42;
 }
 
 .reports-pdf-brand {
-  font-family: system-ui, sans-serif;
   font-size: 12px;
   font-weight: 700;
-  color: #fff;
+  color: #ffffff;
   background: #70163f;
   border-radius: 999px;
   padding: 8px 12px;
@@ -4921,18 +4920,17 @@ textarea.admin-textarea-fixed {
 }
 
 .reports-pdf-kpis > div {
-  border: 1px solid #eee4ea;
+  border: 1px solid #dccfd6;
   border-radius: 12px;
   padding: 12px;
-  background: linear-gradient(180deg, #fff, #fcf8fa);
+  background: #fff8fb;
 }
 
 .reports-pdf-kpis span {
   display: block;
-  font-family: system-ui, sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: #6b5a62;
+  color: #5c4a52;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -4940,15 +4938,15 @@ textarea.admin-textarea-fixed {
 .reports-pdf-kpis strong {
   display: block;
   margin-top: 6px;
-  font-size: 22px;
+  font-size: 24px;
   letter-spacing: -0.03em;
+  color: #1f1218;
 }
 
 .reports-pdf-meta {
   margin-bottom: 14px;
-  font-family: system-ui, sans-serif;
   font-size: 12px;
-  color: #5c4f55;
+  color: #3f3036;
   line-height: 1.45;
 }
 
@@ -4964,10 +4962,10 @@ textarea.admin-textarea-fixed {
 }
 
 .reports-pdf-card {
-  border: 1px solid #eee4ea;
+  border: 1px solid #dccfd6;
   border-radius: 12px;
   padding: 12px;
-  background: #fff;
+  background: #ffffff;
 }
 
 .reports-pdf-card-wide {
@@ -4978,11 +4976,13 @@ textarea.admin-textarea-fixed {
   margin: 0 0 8px;
   font-size: 15px;
   color: #70163f;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .reports-pdf-chart {
   width: 100%;
   min-height: 200px;
+  background: #ffffff;
 }
 
 .reports-pdf-pie-wrap {
@@ -4996,9 +4996,8 @@ textarea.admin-textarea-fixed {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-family: system-ui, sans-serif;
   font-size: 11px;
-  color: #3f3036;
+  color: #1f1218;
 }
 
 .reports-pdf-legend li {
@@ -5017,27 +5016,26 @@ textarea.admin-textarea-fixed {
 
 .reports-pdf-empty {
   margin: 24px 0;
-  font-family: system-ui, sans-serif;
   font-size: 13px;
-  color: #6b5a62;
+  color: #5c4a52;
 }
 
 .reports-pdf-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: system-ui, sans-serif;
   font-size: 11px;
+  color: #1f1218;
 }
 
 .reports-pdf-table th,
 .reports-pdf-table td {
-  border-bottom: 1px solid #eee4ea;
+  border-bottom: 1px solid #e7dbe2;
   text-align: left;
   padding: 7px 6px;
 }
 
 .reports-pdf-table th {
-  color: #6b5a62;
+  color: #5c4a52;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -5047,8 +5045,7 @@ textarea.admin-textarea-fixed {
 .reports-pdf-footer {
   margin-top: 16px;
   padding-top: 10px;
-  border-top: 1px solid #eee4ea;
-  font-family: system-ui, sans-serif;
+  border-top: 1px solid #dccfd6;
   font-size: 11px;
-  color: #8a7881;
+  color: #5c4a52;
 }
