@@ -297,6 +297,7 @@ function KpiCard({
   sparkType,
   color,
   tip,
+  href,
 }: {
   title: string;
   value: string | number;
@@ -306,6 +307,7 @@ function KpiCard({
   sparkType: "area" | "line" | "bar";
   color: string;
   tip: string;
+  href?: string;
 }) {
   const resolved =
     comparison?.change != null
@@ -318,8 +320,9 @@ function KpiCard({
   const down = hasDelta && (resolved?.change ?? 0) < 0;
   const flat = hasDelta && (resolved?.change ?? 0) === 0;
 
-  return (
-    <article className="admin-kpi-card" title={tip}>
+  const body = (
+    <>
+      <span className="admin-kpi-accent" style={{ background: color }} aria-hidden />
       <div className="admin-kpi-head">
         <div>
           <p className="admin-kpi-title">
@@ -349,13 +352,36 @@ function KpiCard({
             <span className="admin-kpi-note">{resolved.label}</span>
           )}
         </div>
-      ) : null}
+      ) : (
+        <div className="admin-kpi-meta">
+          <span className="admin-kpi-note">{href ? "Open details" : tip}</span>
+        </div>
+      )}
       <Sparkline
         data={spark}
         type={sparkType}
         color={color}
         label={`${title} trend`}
       />
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="admin-kpi-card is-link"
+        title={tip}
+        aria-label={`${title}. ${tip}`}
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <article className="admin-kpi-card" title={tip}>
+      {body}
     </article>
   );
 }
@@ -502,6 +528,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#70163f"
               tip="All room bookings in the system"
+              href="/admin/bookings"
             />
             <KpiCard
               title="Confirmed bookings"
@@ -511,6 +538,7 @@ export function AdminDashboardClient() {
               sparkType="area"
               color="#15803d"
               tip="Bookings currently marked Confirmed"
+              href="/admin/bookings?status=Confirmed"
             />
             <KpiCard
               title="Pending bookings"
@@ -520,6 +548,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#b45309"
               tip="Bookings awaiting confirmation"
+              href="/admin/bookings?status=Pending"
             />
             <KpiCard
               title="Cancelled bookings"
@@ -529,6 +558,7 @@ export function AdminDashboardClient() {
               sparkType="bar"
               color="#9f1239"
               tip="Cancelled and declined bookings"
+              href="/admin/bookings?status=Cancelled"
             />
             <KpiCard
               title="Occupancy rate"
@@ -539,6 +569,7 @@ export function AdminDashboardClient() {
               sparkType="bar"
               color="#1d4ed8"
               tip="Occupied units versus active inventory for tonight"
+              href="/admin/calendar"
             />
             <KpiCard
               title="Total revenue"
@@ -549,6 +580,7 @@ export function AdminDashboardClient() {
               sparkType="area"
               color="#a91f62"
               tip="Sum of confirmed, checked-in, and checked-out booking totals"
+              href="/admin/payments"
             />
             <KpiCard
               title="Today's bookings"
@@ -558,6 +590,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#70163f"
               tip="Bookings created today"
+              href="/admin/bookings"
             />
             <KpiCard
               title="Pending food orders"
@@ -567,6 +600,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#b45309"
               tip="Food orders awaiting kitchen start"
+              href="/admin/food-orders?status=Pending"
             />
             <KpiCard
               title="Orders preparing"
@@ -576,6 +610,7 @@ export function AdminDashboardClient() {
               sparkType="bar"
               color="#c47a2c"
               tip="Food orders currently being prepared"
+              href="/admin/food-orders?status=Preparing"
             />
             <KpiCard
               title="Ready for delivery"
@@ -585,6 +620,7 @@ export function AdminDashboardClient() {
               sparkType="area"
               color="#15803d"
               tip="Food orders ready to deliver"
+              href="/admin/food-orders?status=Ready"
             />
             <KpiCard
               title="Food pre-orders"
@@ -594,6 +630,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#c47a2c"
               tip="All food orders in the database"
+              href="/admin/food-orders"
             />
             <KpiCard
               title="Available rooms"
@@ -603,6 +640,7 @@ export function AdminDashboardClient() {
               sparkType="bar"
               color="#4b6b58"
               tip={`Active inventory (${data.totals.totalRooms}) − occupied (${data.totals.occupiedRooms}) − maintenance (${data.totals.maintenanceRooms})`}
+              href="/admin/rooms"
             />
             <KpiCard
               title="Upcoming events"
@@ -612,6 +650,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#70163f"
               tip={`${data.totals.publishedEvents ?? 0} published events · upcoming from today`}
+              href="/admin/events"
             />
             <KpiCard
               title="Pending ticket payments"
@@ -621,6 +660,7 @@ export function AdminDashboardClient() {
               sparkType="bar"
               color="#b45309"
               tip="Ticket orders awaiting bank-transfer verification"
+              href="/admin/events/tickets?status=pending"
             />
             <KpiCard
               title="Tickets sold"
@@ -630,6 +670,7 @@ export function AdminDashboardClient() {
               sparkType="area"
               color="#15803d"
               tip={`${data.totals.paidTicketOrders ?? 0} paid orders · ${formatMoney(data.totals.ticketRevenue ?? 0)} ticket revenue`}
+              href="/admin/events/tickets"
             />
             <KpiCard
               title="Pending event reservations"
@@ -639,6 +680,7 @@ export function AdminDashboardClient() {
               sparkType="line"
               color="#c47a2c"
               tip={`${data.totals.eventReservations ?? 0} total event reservations`}
+              href="/admin/events/reservations"
             />
           </div>
 

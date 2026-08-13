@@ -814,6 +814,8 @@ export const sitePageViews = sqliteTable(
     title: text("title"),
     userAgent: text("user_agent"),
     country: text("country"),
+    ip: text("ip"),
+    device: text("device"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

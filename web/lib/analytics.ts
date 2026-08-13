@@ -1,6 +1,7 @@
 import { and, desc, gte, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { sitePageViews } from "@/db/schema";
+import { nowUtcIso, todayVenueDate } from "@/lib/timezone";
 
 const BOT_RE =
   /bot|crawl|spider|slurp|facebookexternalhit|preview|wget|curl|python-requests|headless/i;
@@ -36,6 +37,73 @@ export function shouldTrackPath(path: string) {
   return true;
 }
 
+/** Friendly device label from User-Agent (no extra deps). */
+export function detectDevice(ua: string | null | undefined): string | null {
+  if (!ua) return null;
+  const s = ua.slice(0, 400);
+  const isBot = BOT_RE.test(s);
+  if (isBot) return "Bot";
+
+  let form = "Desktop";
+  if (/iPad|Tablet|PlayBook|Silk|(Android(?!.*Mobile))/i.test(s)) form = "Tablet";
+  else if (/Mobi|iPhone|iPod|Android.*Mobile|Windows Phone|Opera Mini/i.test(s)) {
+    form = "Mobile";
+  }
+
+  let browser = "Browser";
+  if (/Edg\//i.test(s)) browser = "Edge";
+  else if (/OPR\/|Opera/i.test(s)) browser = "Opera";
+  else if (/Chrome\//i.test(s) && !/Edg\//i.test(s)) browser = "Chrome";
+  else if (/Firefox\//i.test(s)) browser = "Firefox";
+  else if (/Safari\//i.test(s) && !/Chrome\//i.test(s)) browser = "Safari";
+
+  let os = "";
+  if (/Windows NT/i.test(s)) os = "Windows";
+  else if (/Android/i.test(s)) os = "Android";
+  else if (/iPhone|iPad|iPod/i.test(s)) os = "iOS";
+  else if (/Mac OS X/i.test(s)) os = "macOS";
+  else if (/Linux/i.test(s)) os = "Linux";
+
+  return [form, os, browser].filter(Boolean).join(" · ").slice(0, 80);
+}
+
+/**
+ * Normalize client IP for storage (strip ports / brackets; cap length).
+ */
+export function normalizeIp(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let ip = raw.trim();
+  if (!ip || ip === "unknown" || ip === "::1" || ip === "127.0.0.1") return ip || null;
+  // "[::1]:1234" or "1.2.3.4:5678"
+  if (ip.startsWith("[")) {
+    const end = ip.indexOf("]");
+    if (end > 0) ip = ip.slice(1, end);
+  } else if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(ip)) {
+    ip = ip.split(":")[0];
+  }
+  return ip.slice(0, 64);
+}
+
+/**
+ * Venue calendar date YYYY-MM-DD, shifted by `days` (negative = past).
+ * Works for SQLite CURRENT_TIMESTAMP and ISO created_at via substr(...,1,10).
+ */
+function venueDateOffset(days: number): string {
+  const today = todayVenueDate();
+  const [y, m, d] = today.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+/** Compare calendar date portion only — avoids ISO `T` vs SQLite space mismatch. */
+function createdOnOrAfter(dateYmd: string) {
+  return sql`substr(${sitePageViews.createdAt}, 1, 10) >= ${dateYmd}`;
+}
+
 export async function recordPageView(input: {
   visitorId: string;
   path: string;
@@ -43,6 +111,8 @@ export async function recordPageView(input: {
   title?: string | null;
   userAgent?: string | null;
   country?: string | null;
+  ip?: string | null;
+  device?: string | null;
 }) {
   const path = normalizeTrackedPath(input.path);
   if (!shouldTrackPath(path)) return null;
@@ -53,6 +123,10 @@ export async function recordPageView(input: {
     .slice(0, 64);
   if (!visitorId) return null;
 
+  const ua = input.userAgent?.trim().slice(0, 300) || null;
+  const device =
+    input.device?.trim().slice(0, 80) || detectDevice(ua) || null;
+
   const db = getDb();
   const [row] = await db
     .insert(sitePageViews)
@@ -61,25 +135,21 @@ export async function recordPageView(input: {
       path,
       referrer: input.referrer?.trim().slice(0, 500) || null,
       title: input.title?.trim().slice(0, 200) || null,
-      userAgent: input.userAgent?.trim().slice(0, 300) || null,
-      country: input.country?.trim().slice(0, 8) || null,
+      userAgent: ua,
+      country: input.country?.trim().toUpperCase().slice(0, 8) || null,
+      ip: normalizeIp(input.ip),
+      device,
+      createdAt: nowUtcIso(),
     })
     .returning({ id: sitePageViews.id });
   return row;
 }
 
-function daysAgoIso(days: number) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-
 export async function getAnalyticsSummary(days = 30) {
   const db = getDb();
-  const since = daysAgoIso(Math.max(0, days - 1));
-  const todayStart = daysAgoIso(0);
-  const weekStart = daysAgoIso(6);
+  const since = venueDateOffset(-(Math.max(1, days) - 1));
+  const todayStart = venueDateOffset(0);
+  const weekStart = venueDateOffset(-6);
 
   const [totals] = await db
     .select({
@@ -89,7 +159,7 @@ export async function getAnalyticsSummary(days = 30) {
       ),
     })
     .from(sitePageViews)
-    .where(gte(sitePageViews.createdAt, since));
+    .where(createdOnOrAfter(since));
 
   const [today] = await db
     .select({
@@ -99,7 +169,7 @@ export async function getAnalyticsSummary(days = 30) {
       ),
     })
     .from(sitePageViews)
-    .where(gte(sitePageViews.createdAt, todayStart));
+    .where(createdOnOrAfter(todayStart));
 
   const [week] = await db
     .select({
@@ -109,7 +179,7 @@ export async function getAnalyticsSummary(days = 30) {
       ),
     })
     .from(sitePageViews)
-    .where(gte(sitePageViews.createdAt, weekStart));
+    .where(createdOnOrAfter(weekStart));
 
   const byDay = await db
     .select({
@@ -120,7 +190,7 @@ export async function getAnalyticsSummary(days = 30) {
       ),
     })
     .from(sitePageViews)
-    .where(gte(sitePageViews.createdAt, since))
+    .where(createdOnOrAfter(since))
     .groupBy(sql`substr(${sitePageViews.createdAt}, 1, 10)`)
     .orderBy(sql`substr(${sitePageViews.createdAt}, 1, 10)`);
 
@@ -133,7 +203,7 @@ export async function getAnalyticsSummary(days = 30) {
       ),
     })
     .from(sitePageViews)
-    .where(gte(sitePageViews.createdAt, since))
+    .where(createdOnOrAfter(since))
     .groupBy(sitePageViews.path)
     .orderBy(desc(sql`count(*)`))
     .limit(15);
@@ -146,7 +216,7 @@ export async function getAnalyticsSummary(days = 30) {
     .from(sitePageViews)
     .where(
       and(
-        gte(sitePageViews.createdAt, since),
+        createdOnOrAfter(since),
         sql`${sitePageViews.referrer} is not null and ${sitePageViews.referrer} != ''`,
       ),
     )
@@ -161,11 +231,14 @@ export async function getAnalyticsSummary(days = 30) {
       title: sitePageViews.title,
       referrer: sitePageViews.referrer,
       country: sitePageViews.country,
+      ip: sitePageViews.ip,
+      device: sitePageViews.device,
+      userAgent: sitePageViews.userAgent,
       createdAt: sitePageViews.createdAt,
     })
     .from(sitePageViews)
     .orderBy(desc(sitePageViews.createdAt))
-    .limit(25);
+    .limit(40);
 
   return {
     rangeDays: days,
@@ -187,6 +260,9 @@ export async function getAnalyticsSummary(days = 30) {
       referrer: r.referrer || "(direct)",
       pageViews: r.pageViews,
     })),
-    recent,
+    recent: recent.map((row) => ({
+      ...row,
+      device: row.device || detectDevice(row.userAgent),
+    })),
   };
 }

@@ -61,20 +61,20 @@ export default async function AdminAnalyticsPage({
         </div>
       </header>
 
-      <div className="admin-stat-grid" style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", marginBottom: 18 }}>
-        <section className="admin-card">
+      <div className="admin-stat-grid analytics-stat-grid">
+        <section className="admin-card analytics-stat-card">
           <p className="page-sub">Visitors today</p>
-          <strong style={{ fontSize: 28 }}>{summary.today.visitors}</strong>
+          <strong className="analytics-stat-value">{summary.today.visitors}</strong>
           <p className="page-sub">{summary.today.pageViews} page views</p>
         </section>
-        <section className="admin-card">
+        <section className="admin-card analytics-stat-card">
           <p className="page-sub">Visitors (7 days)</p>
-          <strong style={{ fontSize: 28 }}>{summary.week.visitors}</strong>
+          <strong className="analytics-stat-value">{summary.week.visitors}</strong>
           <p className="page-sub">{summary.week.pageViews} page views</p>
         </section>
-        <section className="admin-card">
+        <section className="admin-card analytics-stat-card">
           <p className="page-sub">Visitors ({days} days)</p>
-          <strong style={{ fontSize: 28 }}>{summary.period.visitors}</strong>
+          <strong className="analytics-stat-value">{summary.period.visitors}</strong>
           <p className="page-sub">{summary.period.pageViews} page views</p>
         </section>
       </div>
@@ -136,6 +136,8 @@ export default async function AdminAnalyticsPage({
                   <th>Path</th>
                   <th>Title</th>
                   <th>Country</th>
+                  <th>IP</th>
+                  <th>Device</th>
                   <th>Referrer</th>
                 </tr>
               </thead>
@@ -146,7 +148,9 @@ export default async function AdminAnalyticsPage({
                     <td>{row.path}</td>
                     <td>{row.title || "—"}</td>
                     <td>{row.country || "—"}</td>
-                    <td style={{ maxWidth: 220, wordBreak: "break-all" }}>
+                    <td className="analytics-mono">{row.ip || "—"}</td>
+                    <td>{row.device || "—"}</td>
+                    <td style={{ maxWidth: 200, wordBreak: "break-all" }}>
                       {row.referrer || "—"}
                     </td>
                   </tr>

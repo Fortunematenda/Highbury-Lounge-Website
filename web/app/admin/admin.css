@@ -2761,15 +2761,50 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-kpi-card {
-  background: white;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(252, 249, 250, 0.98)),
+    white;
   border: 1px solid rgba(42, 18, 32, 0.08);
-  border-radius: var(--admin-radius);
+  border-radius: 14px;
   box-shadow: var(--admin-shadow);
-  padding: 14px;
+  padding: 14px 14px 12px;
   display: grid;
   gap: 8px;
   min-width: 0;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.admin-kpi-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 14px 0 0 14px;
+  opacity: 0.9;
+}
+
+.admin-kpi-card.is-link {
+  cursor: pointer;
+}
+
+.admin-kpi-card.is-link:hover,
+.admin-kpi-card.is-link:focus-visible {
+  border-color: rgba(112, 22, 63, 0.22);
+  box-shadow: 0 12px 28px rgba(42, 18, 32, 0.1);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.admin-kpi-card.is-link:active {
+  transform: translateY(0);
 }
 
 .admin-kpi-card:hover {
@@ -2778,7 +2813,7 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-kpi-card.skeleton {
-  min-height: 112px;
+  min-height: 118px;
   background: linear-gradient(90deg, #f3eef1, #faf7f8, #f3eef1);
   background-size: 200% 100%;
   animation: admin-shimmer 1.2s linear infinite;
@@ -2788,6 +2823,7 @@ textarea.admin-textarea-fixed {
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  padding-left: 4px;
 }
 
 .admin-kpi-title {
@@ -2807,26 +2843,28 @@ textarea.admin-textarea-fixed {
 .admin-kpi-value {
   display: block;
   margin-top: 6px;
-  font-size: 1.55rem;
+  font-size: 1.65rem;
   font-weight: 700;
   line-height: 1.1;
   color: var(--ink);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
 }
 
 .admin-kpi-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   background: rgba(112, 22, 63, 0.06);
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
 .admin-kpi-meta {
   min-height: 22px;
+  padding-left: 4px;
 }
 
 .admin-kpi-delta {
@@ -2907,6 +2945,30 @@ textarea.admin-textarea-fixed {
   height: 40px;
   background: linear-gradient(90deg, transparent, rgba(42, 18, 32, 0.04), transparent);
   border-radius: 8px;
+}
+
+.analytics-stat-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-bottom: 18px;
+}
+
+.analytics-stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.analytics-stat-value {
+  display: block;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
 }
 
 .admin-chart-grid {
