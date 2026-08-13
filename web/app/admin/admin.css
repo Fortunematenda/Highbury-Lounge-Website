@@ -589,13 +589,14 @@
   position: relative;
   display: inline-flex;
   justify-content: flex-end;
-  width: 100%;
+  width: auto;
   flex: 0 0 auto;
+  max-width: 40px;
 }
 
-.admin-mobile-card .admin-row-actions {
-  width: auto;
-  max-width: 40px;
+.admin-table td .admin-row-actions {
+  width: 100%;
+  max-width: none;
 }
 
 .admin-kebab {
@@ -1756,10 +1757,11 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-mobile-card {
+  position: relative;
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 14px;
+  padding: 14px 48px 14px 14px;
   width: 100%;
   min-width: 0;
   overflow: hidden;
@@ -1770,7 +1772,7 @@ textarea.admin-textarea-fixed {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
   gap: 12px;
-  padding: 10px;
+  padding: 10px 48px 10px 10px;
   align-items: start;
 }
 
@@ -1804,11 +1806,17 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-mobile-card-top {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 8px;
+  display: block;
   min-width: 0;
+}
+
+.admin-mobile-card .admin-row-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: auto;
+  max-width: 40px;
 }
 
 .admin-mobile-card-heading {
@@ -1821,8 +1829,9 @@ textarea.admin-textarea-fixed {
   font-size: 15px;
   line-height: 1.35;
   color: var(--ink);
+  white-space: normal;
   overflow-wrap: break-word;
-  word-break: normal;
+  word-break: break-word;
 }
 
 .admin-mobile-card-sub {
