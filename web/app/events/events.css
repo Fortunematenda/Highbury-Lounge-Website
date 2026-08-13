@@ -913,8 +913,10 @@
     min-height: 420px;
   }
   .events-hero-copy {
-    margin: 0 6vw;
-    padding-bottom: 40px;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0 16px 40px;
   }
   .event-featured-card {
     grid-template-columns: minmax(140px, 42%) minmax(0, 1fr);
@@ -949,10 +951,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .event-detail-layout {
-    padding: 50px 6vw 30px;
+    padding: 50px 16px 30px;
   }
   .event-detail-breadcrumb {
-    padding: 16px 6vw 0;
+    padding: 16px 16px 0;
   }
 }
 
@@ -964,8 +966,10 @@
     align-items: flex-end;
   }
   .events-hero-copy {
-    margin: 0 22px;
-    padding-bottom: 32px;
+    margin: 0;
+    width: auto;
+    max-width: none;
+    padding: 0 16px 32px;
   }
   .events-hero-text {
     font-size: 14px;
@@ -979,10 +983,12 @@
   .section.events-find-ticket-section,
   .section.events-subscribe-section,
   .section.event-related-section {
-    padding: 56px 20px;
+    padding: 40px 16px;
+    width: 100%;
+    max-width: 100%;
   }
   .section.events-past-section.is-empty {
-    padding: 28px 20px;
+    padding: 24px 16px;
   }
   .events-filter-bar {
     padding: 18px;
@@ -1074,13 +1080,13 @@
     min-height: 280px;
   }
   .event-detail-hero-copy {
-    padding: 0 20px 28px;
+    padding: 0 16px 28px;
   }
   .event-detail-breadcrumb {
-    padding: 14px 20px 0;
+    padding: 14px 16px 0;
   }
   .event-detail-layout {
-    padding: 40px 20px 24px;
+    padding: 40px 16px 24px;
   }
   .event-detail-gallery {
     grid-template-columns: 1fr 1fr;

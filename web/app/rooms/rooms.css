@@ -1146,6 +1146,10 @@ body.has-room-gallery-open {
 }
 
 @media (max-width: 720px) {
+  .hl-rooms-container {
+    padding-inline: 16px;
+  }
+
   .hl-rooms-grid {
     grid-template-columns: 1fr;
   }

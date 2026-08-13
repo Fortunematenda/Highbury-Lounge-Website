@@ -1990,6 +1990,32 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   }
 }
 
+@media (max-width: 900px) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .home-container,
+  .section,
+  .hl-rooms-container {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 16px;
+  }
+
+  .contact-section,
+  footer {
+    padding-inline: 16px;
+  }
+
+  .celebrate > div:last-child {
+    padding-inline: 16px;
+  }
+}
+
 @media (max-width: 680px) {
   .site-header { height: 72px; padding: 0 16px; }
   .has-site-header { padding-top: 72px; }
@@ -2058,8 +2084,8 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   .menu-note .button { width: 100%; }
   .gallery-grid { grid-template-columns: 1fr; grid-auto-rows: 260px; }
   .gallery-wide { grid-row: auto; }
-  .contact-section { padding: 80px 22px; }
-  footer { padding: 50px 22px 90px; }
+  .contact-section { padding: 80px 16px; }
+  footer { padding: 50px 16px 90px; }
   .whatsapp-float span { display: none; }
   .booking-modal { padding: 42px 22px 25px; }
   .preview-hero { height: 220px; }
