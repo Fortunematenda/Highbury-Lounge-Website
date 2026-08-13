@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { BackLink } from "@/app/components/BackLink";
 import { CompactImageStrip } from "@/app/components/PreviewMediaGallery";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatDate } from "@/lib/format";
 import { pickTranslated } from "@/lib/i18n/content";
 import { todayISODate } from "@/lib/stay-dates";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
@@ -142,7 +142,7 @@ function RoomResultCard({
 }
 
 function SearchResultsInner() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const params = useSearchParams();
   const router = useRouter();
   const [checkIn, setCheckIn] = useState(params.get("checkIn") ?? "");
@@ -153,6 +153,9 @@ function SearchResultsInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<AvailableRoom[]>([]);
+  const [editingSearch, setEditingSearch] = useState(
+    !(params.get("checkIn") && params.get("checkOut")),
+  );
 
   const today = todayISODate();
 
@@ -183,6 +186,7 @@ function SearchResultsInner() {
     setChildren(params.get("children") ?? "0");
     setRooms(params.get("rooms") ?? "1");
     if (checkInP && checkOutP) {
+      setEditingSearch(false);
       void load(params);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -197,8 +201,12 @@ function SearchResultsInner() {
       children,
       rooms,
     });
+    setEditingSearch(false);
     router.push(`/rooms/search?${next.toString()}`);
   }
+
+  const hasActiveSearch = Boolean(checkIn && checkOut);
+  const showFullForm = editingSearch || !hasActiveSearch;
 
   return (
     <main className="booking-flow booking-flow--search">
@@ -213,6 +221,29 @@ function SearchResultsInner() {
           <Link href="/book/find">Find my booking</Link> with your reference.
         </p>
 
+        {hasActiveSearch && !showFullForm ? (
+          <div className="search-summary">
+            <div className="search-summary-copy">
+              <p className="search-summary-dates">
+                {formatDate(checkIn, i18n.language)} –{" "}
+                {formatDate(checkOut, i18n.language)}
+              </p>
+              <p className="search-summary-meta">
+                {adults} {t("booking.adults")} · {children}{" "}
+                {t("booking.children")} · {rooms} {t("booking.rooms")}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="button outline"
+              onClick={() => setEditingSearch(true)}
+            >
+              {t("booking.updateDates")}
+            </button>
+          </div>
+        ) : null}
+
+        {showFullForm ? (
         <form className="search-form" onSubmit={onSearch}>
           <label>
             {t("booking.checkIn")}
@@ -267,10 +298,29 @@ function SearchResultsInner() {
               required
             />
           </label>
-          <button className="button primary" type="submit">
-            {t("booking.search")}
-          </button>
+          <div className="search-form-actions">
+            <button className="button primary" type="submit">
+              {t("booking.search")}
+            </button>
+            {hasActiveSearch ? (
+              <button
+                className="button outline"
+                type="button"
+                onClick={() => {
+                  setCheckIn(params.get("checkIn") ?? "");
+                  setCheckOut(params.get("checkOut") ?? "");
+                  setAdults(params.get("adults") ?? "2");
+                  setChildren(params.get("children") ?? "0");
+                  setRooms(params.get("rooms") ?? "1");
+                  setEditingSearch(false);
+                }}
+              >
+                {t("booking.cancelUpdate")}
+              </button>
+            ) : null}
+          </div>
         </form>
+        ) : null}
 
         {error ? (
           <p className="form-error" role="alert">

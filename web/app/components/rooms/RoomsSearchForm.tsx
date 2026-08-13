@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { Search } from "lucide-react";
+import { formatDate } from "@/lib/format";
 import { todayISODate } from "@/lib/stay-dates";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 
@@ -9,6 +10,7 @@ type Props = {
   checkIn?: string;
   checkOut?: string;
   guests?: number;
+  compactWhenFilled?: boolean;
 };
 
 function addDaysISO(isoDate: string, days: number) {
@@ -24,11 +26,14 @@ export function RoomsSearchForm({
   checkIn = "",
   checkOut = "",
   guests = 2,
+  compactWhenFilled = false,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const today = todayISODate();
   const defaultCheckIn = checkIn || today;
   const defaultCheckOut = checkOut || addDaysISO(defaultCheckIn, 1);
+  const hasFilledSearch = Boolean(checkIn && checkOut);
+  const [editing, setEditing] = useState(!(compactWhenFilled && hasFilledSearch));
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,6 +67,29 @@ export function RoomsSearchForm({
     // Full navigation so the server page reloads with searchParams (vinext/RSC),
     // then jump to the results section.
     window.location.assign(`/rooms?${qs.toString()}#rooms-results`);
+  }
+
+  if (compactWhenFilled && hasFilledSearch && !editing) {
+    return (
+      <div className="hl-rooms-search-summary">
+        <div className="search-summary-copy">
+          <p className="search-summary-dates">
+            {formatDate(checkIn, i18n.language)} –{" "}
+            {formatDate(checkOut, i18n.language)}
+          </p>
+          <p className="search-summary-meta">
+            {guests} {guests === 1 ? t("booking.guest") : t("booking.guests")}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="button outline"
+          onClick={() => setEditing(true)}
+        >
+          {t("booking.updateDates")}
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -103,10 +131,24 @@ export function RoomsSearchForm({
           ))}
         </select>
       </label>
-      <button className="button primary" type="submit" disabled={submitting}>
-        <Search size={18} aria-hidden="true" />
-        {submitting ? t("booking.checkingAvailability") : t("rooms.searchRooms")}
-      </button>
+      <div className="hl-rooms-search-actions">
+        <button className="button primary" type="submit" disabled={submitting}>
+          <Search size={18} aria-hidden="true" />
+          {submitting ? t("booking.checkingAvailability") : t("rooms.searchRooms")}
+        </button>
+        {compactWhenFilled && hasFilledSearch ? (
+          <button
+            className="button outline"
+            type="button"
+            onClick={() => {
+              setError("");
+              setEditing(false);
+            }}
+          >
+            {t("booking.cancelUpdate")}
+          </button>
+        ) : null}
+      </div>
       {error ? (
         <p className="form-error hl-rooms-search-error" role="alert">
           {error}

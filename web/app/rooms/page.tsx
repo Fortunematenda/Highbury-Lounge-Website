@@ -75,6 +75,7 @@ export default async function RoomsPage({
           checkIn={checkIn}
           checkOut={checkOut}
           guests={guests}
+          compactWhenFilled={searched}
         />
       </section>
 

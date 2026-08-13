@@ -62,5 +62,7 @@
   "whatsappBookingMessage": "Mhoro Highbury Lounge, nhamba yangu yebooking ndi {{reference}}.",
   "optional": "zvisiri zvinosungirwa",
   "total": "Mari yese",
-  "to": "kusvika"
+  "to": "kusvika",
+  "updateDates": "Shandura mazuva",
+  "cancelUpdate": "Kanzura"
 }

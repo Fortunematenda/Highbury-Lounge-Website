@@ -62,5 +62,7 @@
   "whatsappBookingMessage": "Hello Highbury Lounge, my booking reference is {{reference}}.",
   "optional": "optional",
   "total": "Total",
-  "to": "to"
+  "to": "to",
+  "updateDates": "Update dates",
+  "cancelUpdate": "Cancel"
 }

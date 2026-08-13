@@ -62,5 +62,7 @@
   "whatsappBookingMessage": "您好 Highbury Lounge，我的预订编号是 {{reference}}。",
   "optional": "可选",
   "total": "合计",
-  "to": "至"
+  "to": "至",
+  "updateDates": "修改日期",
+  "cancelUpdate": "取消"
 }

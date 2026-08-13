@@ -62,5 +62,7 @@
   "whatsappBookingMessage": "Sawubona Highbury Lounge, inombolo yami yokubhuka ngu {{reference}}.",
   "optional": "okungaphoqelekile",
   "total": "Isamba",
-  "to": "kuya"
+  "to": "kuya",
+  "updateDates": "Buyekeza izinsuku",
+  "cancelUpdate": "Khansela"
 }
