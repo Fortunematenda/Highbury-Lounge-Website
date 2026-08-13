@@ -4853,6 +4853,7 @@ textarea.admin-textarea-fixed {
   left: -12000px;
   top: 0;
   width: 900px;
+  height: auto;
   pointer-events: none;
   opacity: 1;
   visibility: visible;

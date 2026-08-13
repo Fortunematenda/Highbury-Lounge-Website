@@ -77,76 +77,51 @@ function wait(ms: number) {
 }
 
 async function captureElement(el: HTMLElement) {
-  const previous = {
-    position: el.style.position,
-    left: el.style.left,
-    top: el.style.top,
-    right: el.style.right,
-    transform: el.style.transform,
-    opacity: el.style.opacity,
-    zIndex: el.style.zIndex,
-    pointerEvents: el.style.pointerEvents,
-    visibility: el.style.visibility,
-  };
+  // Capture a clone off-DOM via html-to-image `style` overrides.
+  // Do NOT move/cover the live page — that caused the blank flash.
+  const width = Math.max(el.scrollWidth, 900);
+  const height = Math.max(el.scrollHeight, 1);
 
-  // Full-opacity on-screen capture (opacity < 1 was washing out the PDF).
-  // A white cover hides the flash from the admin.
-  const cover = document.createElement("div");
-  cover.setAttribute("data-reports-pdf-cover", "1");
-  cover.style.cssText =
-    "position:fixed;inset:0;z-index:2147483646;background:#ffffff;";
-  document.body.appendChild(cover);
-
-  el.style.position = "fixed";
-  el.style.left = "0";
-  el.style.top = "0";
-  el.style.right = "auto";
-  el.style.transform = "none";
-  el.style.opacity = "1";
-  el.style.visibility = "visible";
-  el.style.zIndex = "2147483645";
-  el.style.pointerEvents = "none";
-
-  await wait(900);
+  await wait(200);
   try {
     return await toPng(el, {
       cacheBust: true,
       pixelRatio: 2,
       backgroundColor: "#ffffff",
-      width: Math.max(el.scrollWidth, 900),
-      height: Math.max(el.scrollHeight, 1),
+      width,
+      height,
       style: {
-        opacity: "1",
+        position: "static",
+        left: "0",
+        top: "0",
+        right: "auto",
         transform: "none",
+        opacity: "1",
+        visibility: "visible",
         background: "#ffffff",
+        width: `${width}px`,
       },
     });
   } catch (firstError) {
     console.warn("toPng failed, retrying", firstError);
-    await wait(500);
+    await wait(400);
     return toPng(el, {
       cacheBust: true,
       pixelRatio: 1.5,
       backgroundColor: "#ffffff",
-      width: Math.max(el.scrollWidth, 900),
-      height: Math.max(el.scrollHeight, 1),
+      width,
+      height,
       style: {
-        opacity: "1",
+        position: "static",
+        left: "0",
+        top: "0",
         transform: "none",
+        opacity: "1",
+        visibility: "visible",
         background: "#ffffff",
+        width: `${width}px`,
       },
     });
-  } finally {
-    cover.remove();
-    el.style.position = previous.position;
-    el.style.left = previous.left;
-    el.style.top = previous.top;
-    el.style.right = previous.right;
-    el.style.transform = previous.transform;
-    el.style.opacity = previous.opacity;
-    el.style.zIndex = previous.zIndex;
-    el.style.pointerEvents = previous.pointerEvents;
-    el.style.visibility = previous.visibility;
   }
 }
 
@@ -518,23 +493,7 @@ export function ReportsPdfButton({
     }
 
     setBusy(true);
-    const hostPrev = {
-      left: host.style.left,
-      top: host.style.top,
-      transform: host.style.transform,
-      opacity: host.style.opacity,
-      zIndex: host.style.zIndex,
-      visibility: host.style.visibility,
-    };
     try {
-      // Unclip the offscreen host so the sheet can paint at full opacity.
-      host.style.left = "0";
-      host.style.top = "0";
-      host.style.transform = "none";
-      host.style.opacity = "1";
-      host.style.visibility = "visible";
-      host.style.zIndex = "2147483644";
-
       if (!chartsReady) await wait(900);
       const stamp = data.today || new Date().toISOString().slice(0, 10);
       const safeRange = data.rangeLabel.replace(/[^\w\-]+/g, "_").slice(0, 40);
@@ -549,12 +508,6 @@ export function ReportsPdfButton({
         err instanceof Error ? err.message : "Could not create PDF report",
       );
     } finally {
-      host.style.left = hostPrev.left;
-      host.style.top = hostPrev.top;
-      host.style.transform = hostPrev.transform;
-      host.style.opacity = hostPrev.opacity;
-      host.style.zIndex = hostPrev.zIndex;
-      host.style.visibility = hostPrev.visibility;
       setBusy(false);
     }
   }
