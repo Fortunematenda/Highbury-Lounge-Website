@@ -39,6 +39,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#1a0e14",
 };
 
 function resolvePathname(headerStore: Headers) {
@@ -76,7 +77,11 @@ export default async function RootLayout({
   const isAdmin = pathname.startsWith("/admin");
 
   return (
-    <html lang={initialLocale ?? "en"} className={`${inter.variable} ${playfair.variable}`}>
+    <html
+      lang={initialLocale ?? "en"}
+      className={`${inter.variable} ${playfair.variable}`}
+      style={{ backgroundColor: "#1a0e14" }}
+    >
       <Script
         src="/crypto-polyfill.js"
         strategy="beforeInteractive"
@@ -85,6 +90,14 @@ export default async function RootLayout({
         src="/home-scroll-reset.js"
         strategy="beforeInteractive"
       />
+      {pathname === "/" || !pathname ? (
+        <link
+          rel="preload"
+          as="image"
+          href="/images/hero-venue.jpg"
+          fetchPriority="high"
+        />
+      ) : null}
       <body className="antialiased">
         {isAdmin ? (
           children

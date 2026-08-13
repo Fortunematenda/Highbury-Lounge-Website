@@ -23,6 +23,7 @@
   align-items: flex-end;
   color: white;
   overflow: hidden;
+  background-color: #1a0e14;
 }
 .events-hero > img {
   position: absolute;

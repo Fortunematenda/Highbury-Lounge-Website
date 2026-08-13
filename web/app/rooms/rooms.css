@@ -18,6 +18,7 @@
   display: flex;
   align-items: flex-end;
   min-height: clamp(430px, 48vh, 560px);
+  background-color: #1a0e14;
   background-size: cover;
   background-position: center;
   color: #fff;

@@ -8,10 +8,14 @@
   --paper: #fffdf9;
   --sage: #56624f;
   --line: #e8ddd4;
+  --hero-fallback: #1a0e14;
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  background-color: var(--hero-fallback);
+}
 .home-page { overflow-anchor: none; }
 body {
   margin: 0;
@@ -384,6 +388,7 @@ a { color: inherit; text-decoration: none; }
 .hero-block {
   position: relative;
   margin-bottom: 56px;
+  background-color: var(--hero-fallback);
 }
 .hero {
   position: relative;
@@ -394,6 +399,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   overflow: hidden;
+  background-color: var(--hero-fallback);
 }
 @media (min-width: 1440px) {
   .hero {

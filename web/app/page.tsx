@@ -173,6 +173,7 @@ export default function Home() {
     dine_image_1: "/images/dining.jpg",
     dine_image_2: "/images/food.jpg",
   });
+  const [heroSrc, setHeroSrc] = useState("/images/hero-venue.jpg");
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [conferencePreview, setConferencePreview] = useState<HomeVenue | null>(null);
   const [foodPreview, setFoodPreview] = useState<PublicFoodItem | null>(null);
@@ -235,6 +236,14 @@ export default function Home() {
       })
       .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    const next = settings.hero_image || "/images/hero-venue.jpg";
+    if (next === heroSrc) return;
+    const img = new Image();
+    img.onload = () => setHeroSrc(next);
+    img.src = next;
+  }, [settings.hero_image, heroSrc]);
 
   const rooms: HomeRoom[] = useMemo(() => {
     const sorted = [...apiRooms].sort((a, b) => Number(!!b.isFeatured) - Number(!!a.isFeatured));
@@ -526,7 +535,12 @@ export default function Home() {
     <main className="home-page">
       <div className="hero-block">
         <section className="hero" id="home">
-          <img src={settings.hero_image || "/images/hero-venue.jpg"} alt="Aerial view of Highbury Lounge gardens and event venue" />
+          <img
+            src={heroSrc}
+            alt="Aerial view of Highbury Lounge gardens and event venue"
+            fetchPriority="high"
+            decoding="async"
+          />
           <div className="hero-shade" />
           <div className="hero-copy">
             <p className="eyebrow light">{t("home.eyebrow")}</p>
