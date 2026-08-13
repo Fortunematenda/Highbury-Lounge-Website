@@ -22,7 +22,6 @@ const NAV: NavItem[] = [
   { type: "hash", href: "/#conferences", key: "nav.conferences" },
   { type: "route", href: "/events", key: "nav.events", match: "/events" },
   { type: "hash", href: "/#gallery", key: "nav.gallery" },
-  { type: "hash", href: "/#about", key: "nav.about" },
   { type: "hash", href: "/#contact", key: "nav.contact" },
 ];
 
