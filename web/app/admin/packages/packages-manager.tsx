@@ -7,6 +7,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -32,7 +33,7 @@ export function PackagesManager({ packages }: { packages: PackageRow[] }) {
   const [error, setError] = useState("");
 
   async function onDelete(pkg: PackageRow) {
-    if (!window.confirm(`Delete “${pkg.name}”? This cannot be undone.`)) {
+    if (!(await confirmDialog(`Delete “${pkg.name}”? This cannot be undone.`))) {
       return;
     }
     setBusy(true);

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",
+    "@radix-ui/react-alert-dialog": "^1.1.23",
     "date-fns": "^4.4.0",
     "drizzle-orm": "0.45.2",
     "html-to-image": "^1.11.13",

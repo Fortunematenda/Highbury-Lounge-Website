@@ -10,6 +10,7 @@ import {
   Star,
   Users,
 } from "lucide-react";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import { AdminRowActions } from "@/app/admin/components/AdminRowActions";
 import {
   PmsEmptyState,
@@ -40,7 +41,7 @@ export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
   const [busyId, setBusyId] = useState<number | null>(null);
 
   async function removeRoom(room: RoomRow) {
-    const ok = window.confirm(
+    const ok = await confirmDialog(
       `Remove “${room.name}”? If it has bookings it will be deactivated instead.`,
     );
     if (!ok) return;

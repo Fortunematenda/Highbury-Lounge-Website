@@ -7,6 +7,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -34,9 +35,9 @@ export function PaymentsList({ rows }: { rows: PaymentRow[] }) {
 
   async function onDelete(p: PaymentRow) {
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete payment of ${p.currency} ${Number(p.amount).toFixed(2)} for ${p.reference}? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminRowActions } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 
 type GalleryImage = {
   id: number;
@@ -43,7 +44,7 @@ export function GalleryManager({ images }: { images: GalleryImage[] }) {
   }
 
   async function onDelete(id: number) {
-    if (!window.confirm("Remove this gallery image from the website?")) return;
+    if (!(await confirmDialog("Remove this gallery image from the website?"))) return;
     setBusy(true);
     setError("");
     try {

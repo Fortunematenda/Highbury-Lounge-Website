@@ -13,6 +13,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminLangTabs,
   buildTranslationDraft,
@@ -197,9 +198,9 @@ export function EditRoomForm({
 
   async function deactivate() {
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Deactivate “${room.name}”? Guests will no longer see it.`,
-      )
+      ))
     ) {
       return;
     }

@@ -7,6 +7,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -64,9 +65,9 @@ export function ReservationsList({ rows }: { rows: ReservationRow[] }) {
 
   async function onDelete(row: ReservationRow) {
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete reservation ${row.reference}? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

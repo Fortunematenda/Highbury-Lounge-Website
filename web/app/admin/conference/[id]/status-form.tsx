@@ -8,6 +8,7 @@ import {
   AdminTextInput,
   AdminTextarea,
 } from "@/app/admin/components/form-fields";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import { DetailFieldGrid } from "@/app/admin/components/detail-page";
 
 const STATUSES = [
@@ -77,9 +78,9 @@ export function ConferenceStatusForm({
   async function onDelete() {
     if (busy) return;
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete conference enquiry ${reference}? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 
 export function TicketOrderActions({
   orderId,
@@ -22,11 +23,23 @@ export function TicketOrderActions({
 
   async function run(action: "verify" | "cancel") {
     if (busy) return;
-    const confirmMsg =
+    const ok = await confirmDialog(
       action === "verify"
-        ? "Mark this bank payment as verified and issue the ticket?"
-        : "Cancel this ticket order?";
-    if (!window.confirm(confirmMsg)) return;
+        ? {
+            title: "Verify payment?",
+            description:
+              "Mark this bank payment as verified and issue the ticket?",
+            confirmLabel: "Verify",
+            tone: "default",
+          }
+        : {
+            title: "Cancel ticket order?",
+            description: "Cancel this ticket order?",
+            confirmLabel: "Cancel order",
+            tone: "danger",
+          },
+    );
+    if (!ok) return;
 
     setBusy(true);
     try {
@@ -49,9 +62,9 @@ export function TicketOrderActions({
   async function onDelete() {
     if (busy) return;
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete ticket order ${reference}? This permanently removes the order and cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

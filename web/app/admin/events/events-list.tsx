@@ -9,6 +9,7 @@ import {
   AdminRowActions,
   type AdminRowAction,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -115,7 +116,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
   }
 
   async function remove(row: EventRow) {
-    const ok = window.confirm(
+    const ok = await confirmDialog(
       `Delete “${row.title}”? This will remove it from the website. This cannot be undone.`,
     );
     if (!ok) return;
@@ -136,8 +137,13 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
     }
   }
 
-  function cancelEvent(row: EventRow) {
-    const ok = window.confirm(`Cancel “${row.title}”? Guests will see it as cancelled.`);
+  async function cancelEvent(row: EventRow) {
+    const ok = await confirmDialog({
+      title: "Cancel event?",
+      description: `Cancel “${row.title}”? Guests will see it as cancelled.`,
+      confirmLabel: "Cancel event",
+      tone: "danger",
+    });
     if (!ok) return;
     void patchEvent(row.id, { status: "cancelled" }, "Event cancelled");
   }
@@ -178,7 +184,7 @@ export function EventsList({ rows }: { rows: EventRow[] }) {
         label: "Cancel event",
         danger: true,
         disabled: busy,
-        onClick: () => cancelEvent(row),
+        onClick: () => void cancelEvent(row),
       });
     }
     actions.push({

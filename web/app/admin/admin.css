@@ -1182,6 +1182,80 @@ textarea.admin-textarea-fixed {
   color: var(--wine);
 }
 
+/* Radix alert / confirm dialog */
+.admin-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 27, 31, 0.5);
+  z-index: 600;
+  animation: admin-alert-fade-in 140ms ease-out;
+}
+
+.admin-alert-content {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 601;
+  width: min(420px, calc(100vw - 32px));
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px 22px 18px;
+  box-shadow: 0 18px 48px rgba(36, 27, 31, 0.22);
+  animation: admin-alert-pop-in 160ms ease-out;
+}
+
+.admin-alert-title {
+  font-family: Georgia, "Times New Roman", serif;
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  color: var(--wine);
+}
+
+.admin-alert-description {
+  margin: 0;
+  color: var(--ink-muted, #5c4f55);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.admin-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+@keyframes admin-alert-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes admin-alert-pop-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-alert-overlay,
+  .admin-alert-content {
+    animation: none;
+  }
+}
+
 @media (max-width: 960px) {
   .admin-shell,
   .admin-shell.is-collapsed {

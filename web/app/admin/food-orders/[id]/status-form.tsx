@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FOOD_ORDER_STATUSES } from "@/lib/food-order-status";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 
 export function FoodOrderStatusForm({
   foodOrderId,
@@ -43,9 +44,9 @@ export function FoodOrderStatusForm({
   async function onDelete() {
     if (saving) return;
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete food order ${reference}? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

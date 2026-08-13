@@ -17,6 +17,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import { toast } from "sonner";
 import { uploadEventImage } from "@/app/admin/events/event-image-upload";
 import {
@@ -586,7 +587,7 @@ export function EventForm({
 
   async function onDelete() {
     if (!initial) return;
-    if (!window.confirm(`Delete “${initial.title}”? This cannot be undone.`)) {
+    if (!(await confirmDialog(`Delete “${initial.title}”? This cannot be undone.`))) {
       return;
     }
     setDeleting(true);

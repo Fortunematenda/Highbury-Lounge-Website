@@ -8,6 +8,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -38,9 +39,9 @@ export function TicketOrdersList({ rows }: { rows: TicketOrderRow[] }) {
 
   async function onDelete(row: TicketOrderRow) {
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete ticket order ${row.reference}? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

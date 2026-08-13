@@ -7,6 +7,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -36,9 +37,13 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
 
   async function onDelete(b: BookingRow) {
     if (
-      !window.confirm(
-        `Delete booking ${b.reference}? This permanently removes the booking, guest, payments, and linked food orders. This cannot be undone.`,
-      )
+      !(await confirmDialog({
+        title: `Delete booking ${b.reference}?`,
+        description:
+          "This permanently removes the booking, guest, payments, and linked food orders. This cannot be undone.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
     ) {
       return;
     }

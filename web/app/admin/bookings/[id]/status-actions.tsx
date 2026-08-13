@@ -6,6 +6,7 @@ import {
   AdminFormField,
   AdminTextarea,
 } from "@/app/admin/components/form-fields";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 
 const ACTIONS = [
   "Confirmed",
@@ -61,9 +62,13 @@ export function BookingStatusActions({
   async function onDelete() {
     if (deleting || pending) return;
     if (
-      !window.confirm(
-        `Delete booking ${reference}? This permanently removes the booking, guest, payments, and linked food orders. This cannot be undone.`,
-      )
+      !(await confirmDialog({
+        title: `Delete booking ${reference}?`,
+        description:
+          "This permanently removes the booking, guest, payments, and linked food orders. This cannot be undone.",
+        confirmLabel: "Delete",
+        tone: "danger",
+      }))
     ) {
       return;
     }

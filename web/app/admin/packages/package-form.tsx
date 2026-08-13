@@ -11,6 +11,7 @@ import {
   AdminLangTabs,
   buildTranslationDraft,
 } from "@/app/admin/components/AdminLangTabs";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminImageGalleryField,
   packageCoverEndpoints,
@@ -228,9 +229,9 @@ export function PackageForm({
   async function onDelete() {
     if (!initial) return;
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete “${initial.name}”? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

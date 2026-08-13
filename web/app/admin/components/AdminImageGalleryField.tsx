@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/lib/compress-image";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 
 export type GalleryImage = {
   id: number;
@@ -132,7 +133,7 @@ export function AdminImageGalleryField({
 
   async function removeSaved(imageId: number) {
     if (!endpoints?.remove) return;
-    if (!window.confirm("Remove this image?")) return;
+    if (!(await confirmDialog("Remove this image?"))) return;
     setBusy(true);
     setError("");
     try {

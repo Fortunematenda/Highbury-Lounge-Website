@@ -9,6 +9,7 @@ import {
   AdminSelect,
   AdminTextarea,
 } from "@/app/admin/components/form-fields";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import { DetailFieldGrid } from "@/app/admin/components/detail-page";
 import { RESERVATION_STATUSES } from "@/lib/event-constants";
 
@@ -55,9 +56,9 @@ export function ReservationStatusForm({
   async function onDelete() {
     if (busy) return;
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete reservation ${reference}? This permanently removes it and cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

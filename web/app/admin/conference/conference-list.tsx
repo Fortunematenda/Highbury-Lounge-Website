@@ -7,6 +7,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -29,9 +30,9 @@ export function ConferenceList({ rows }: { rows: EnquiryRow[] }) {
 
   async function onDelete(r: EnquiryRow) {
     if (
-      !window.confirm(
+      !(await confirmDialog(
         `Delete conference enquiry ${r.reference}? This cannot be undone.`,
-      )
+      ))
     ) {
       return;
     }

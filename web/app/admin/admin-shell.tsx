@@ -14,6 +14,7 @@ import { AdminGlobalSearch } from "@/app/admin/components/AdminGlobalSearch";
 import { AdminNotificationsBell } from "@/app/admin/components/AdminNotificationsBell";
 import { resolveAdminRouteMeta } from "@/app/admin/lib/admin-route-meta";
 import { Toaster } from "sonner";
+import { ConfirmDialogProvider } from "@/app/admin/components/confirm-dialog";
 import {
   BarChart3,
   BedDouble,
@@ -273,6 +274,7 @@ export function AdminShell({
   }
 
   return (
+    <ConfirmDialogProvider>
     <div
       className={`admin-shell${menuOpen ? " menu-open" : ""}${collapsed ? " is-collapsed" : ""}`}
     >
@@ -449,5 +451,6 @@ export function AdminShell({
         }}
       />
     </div>
+    </ConfirmDialogProvider>
   );
 }

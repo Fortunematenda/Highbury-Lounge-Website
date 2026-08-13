@@ -6,6 +6,7 @@ import {
   AdminClickableRow,
   AdminRowActions,
 } from "@/app/admin/components/AdminRowActions";
+import { confirmDialog } from "@/app/admin/components/confirm-dialog";
 import {
   AdminMobileCard,
   AdminMobileMeta,
@@ -27,7 +28,7 @@ export function BlocksList({ blocks }: { blocks: BlockRow[] }) {
   const [error, setError] = useState("");
 
   async function removeBlock(block: BlockRow) {
-    if (!window.confirm("Remove this room block?")) return;
+    if (!(await confirmDialog("Remove this room block?"))) return;
     setBusyId(block.id);
     setError("");
     try {
