@@ -2364,6 +2364,16 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   .available-room-pricing {
     grid-column: 1 / -1;
   }
+  .booking-flow-panel,
+  .booking-flow--search .booking-flow-panel {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 20px 16px 72px;
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+  }
 }
 @media (max-width: 640px) {
   .search-form {
@@ -2372,19 +2382,31 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   }
   .booking-flow {
     overflow-x: clip;
+    background: #fff;
   }
-  .booking-flow-panel {
+  .booking-flow-panel,
+  .booking-flow--search .booking-flow-panel {
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding: 18px 14px 88px;
-    border-left: 0;
-    border-right: 0;
+    padding: 16px 16px 88px;
+    border: 0;
     box-shadow: none;
   }
   .booking-flow-top {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .available-room {
+    grid-template-columns: 1fr;
+    padding: 0;
+    overflow: hidden;
+  }
+  .available-room-media > img:first-of-type {
+    height: 200px;
+  }
+  .available-room-copy {
+    padding: 14px 14px 8px;
   }
   .booking-summary-card {
     grid-template-columns: 1fr;
