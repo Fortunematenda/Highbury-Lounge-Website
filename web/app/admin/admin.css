@@ -590,6 +590,12 @@
   display: inline-flex;
   justify-content: flex-end;
   width: 100%;
+  flex: 0 0 auto;
+}
+
+.admin-mobile-card .admin-row-actions {
+  width: auto;
+  max-width: 40px;
 }
 
 .admin-kebab {
@@ -1762,15 +1768,15 @@ textarea.admin-textarea-fixed {
 
 .admin-mobile-card.has-image {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   gap: 12px;
   padding: 10px;
   align-items: start;
 }
 
 .admin-mobile-card-image {
-  width: 92px;
-  height: 92px;
+  width: 88px;
+  height: 88px;
   border-radius: 10px;
   overflow: hidden;
   background: #ece6e9;
@@ -1786,6 +1792,7 @@ textarea.admin-textarea-fixed {
 
 .admin-mobile-card-main {
   min-width: 0;
+  max-width: 100%;
 }
 
 .admin-mobile-card.is-clickable {
@@ -1797,16 +1804,16 @@ textarea.admin-textarea-fixed {
 }
 
 .admin-mobile-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
   min-width: 0;
 }
 
 .admin-mobile-card-heading {
   min-width: 0;
-  flex: 1;
+  max-width: 100%;
 }
 
 .admin-mobile-card-heading strong {
@@ -1814,8 +1821,8 @@ textarea.admin-textarea-fixed {
   font-size: 15px;
   line-height: 1.35;
   color: var(--ink);
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .admin-mobile-card-sub {
@@ -1823,8 +1830,8 @@ textarea.admin-textarea-fixed {
   font-size: 13px;
   color: var(--admin-muted);
   line-height: 1.4;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .admin-mobile-card-body {
@@ -1846,8 +1853,8 @@ textarea.admin-textarea-fixed {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--admin-muted);
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .admin-mobile-meta dd {
@@ -1856,7 +1863,7 @@ textarea.admin-textarea-fixed {
   font-weight: 600;
   color: var(--ink);
   line-height: 1.35;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: break-word;
 }
 
@@ -3361,13 +3368,13 @@ textarea.admin-textarea-fixed {
 
 @media (max-width: 560px) {
   .admin-mobile-card.has-image {
-    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
     gap: 10px;
   }
 
   .admin-mobile-card-image {
-    width: 76px;
-    height: 76px;
+    width: 72px;
+    height: 72px;
   }
 
   .admin-kpi-grid {

@@ -2092,14 +2092,23 @@ footer > p { color: #b9aeb2; font-size: 11px; text-transform: uppercase; letter-
   }
   .available-room .button { width: 100%; }
   .conference-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(110px, 38%) minmax(0, 1fr);
     height: auto;
+    min-height: 140px;
   }
   .conference-card > img {
-    min-height: 180px;
-    height: 180px;
+    min-height: 140px;
+    height: 100%;
+    align-self: stretch;
   }
-  .conference-card > div { padding: 18px 16px; }
+  .conference-card > div {
+    padding: 14px 14px 14px 0;
+    min-width: 0;
+  }
+  .conference-card h3 {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
   .booking-modal h2 { font-size: clamp(1.6rem, 6vw, 2rem); }
   .form-row { grid-template-columns: 1fr; }
 }
