@@ -81,6 +81,10 @@ export default async function RootLayout({
         src="/crypto-polyfill.js"
         strategy="beforeInteractive"
       />
+      <Script
+        src="/home-scroll-reset.js"
+        strategy="beforeInteractive"
+      />
       <body className="antialiased">
         {isAdmin ? (
           children

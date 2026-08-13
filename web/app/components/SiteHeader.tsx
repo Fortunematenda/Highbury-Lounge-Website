@@ -80,6 +80,21 @@ export function SiteHeader({ variant = "solid" }: Props) {
     };
   }, [menuOpen]);
 
+  function goHomeTop() {
+    setMenuOpen(false);
+    if (pathname !== "/") return false;
+    if (window.location.hash) {
+      window.history.replaceState(null, "", "/");
+    }
+    const html = document.documentElement;
+    html.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+    window.setTimeout(() => {
+      html.style.scrollBehavior = "";
+    }, 50);
+    return true;
+  }
+
   function goHomeSection(hash: string) {
     setMenuOpen(false);
     if (pathname === "/") {
@@ -123,6 +138,9 @@ export function SiteHeader({ variant = "solid" }: Props) {
         className="brand brand-with-logo"
         href="/"
         aria-label={t("brand.homeAria")}
+        onClick={(event) => {
+          if (goHomeTop()) event.preventDefault();
+        }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -145,7 +163,13 @@ export function SiteHeader({ variant = "solid" }: Props) {
                 href={item.href}
                 className={active ? "is-active" : undefined}
                 aria-current={active ? "page" : undefined}
-                onClick={() => setMenuOpen(false)}
+                onClick={(event) => {
+                  if (item.href === "/" && goHomeTop()) {
+                    event.preventDefault();
+                    return;
+                  }
+                  setMenuOpen(false);
+                }}
               >
                 {t(item.key)}
               </Link>

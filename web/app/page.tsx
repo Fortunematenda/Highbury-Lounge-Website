@@ -321,36 +321,69 @@ export default function Home() {
       window.history.scrollRestoration = "manual";
     }
 
+    function navigationType() {
+      const entry = performance.getEntriesByType(
+        "navigation",
+      )[0] as PerformanceNavigationTiming | undefined;
+      return entry?.type ?? "navigate";
+    }
+
+    function isReload() {
+      return navigationType() === "reload";
+    }
+
     function shouldStayAtTop() {
+      if (isReload()) return true;
       const hash = window.location.hash;
-      return !hash || hash === "#events" || hash === "#home";
+      return (
+        !hash ||
+        hash === "#" ||
+        hash === "#events" ||
+        hash === "#home" ||
+        hash === "#upcoming-home-events"
+      );
     }
 
     function pinToTop() {
       if (!shouldStayAtTop()) return;
-      if (window.location.hash === "#events" || window.location.hash === "#home") {
-        window.history.replaceState(null, "", window.location.pathname);
+      const html = document.documentElement;
+      html.style.scrollBehavior = "auto";
+      if (window.location.hash) {
+        window.history.replaceState(
+          null,
+          "",
+          window.location.pathname + window.location.search,
+        );
       }
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      window.scrollTo(0, 0);
+      html.scrollTop = 0;
+      document.body.scrollTop = 0;
     }
 
     const hash = window.location.hash;
-    if (hash === "#booking-search" && isMobileBookingViewport()) {
+    if (
+      !isReload() &&
+      hash === "#booking-search" &&
+      isMobileBookingViewport()
+    ) {
       window.setTimeout(() => setBookingModalOpen(true), 80);
       return;
     }
 
     if (shouldStayAtTop()) {
       pinToTop();
-      // Async home sections (upcoming events) can shift layout after first paint.
-      const t1 = window.setTimeout(pinToTop, 80);
-      const t2 = window.setTimeout(pinToTop, 350);
+      // Images, announcement banner, and events load after first paint and
+      // would otherwise restore or re-anchor the previous bottom scroll.
+      const delays = [0, 50, 120, 300, 600, 1200, 2000];
+      const timers = delays.map((ms) => window.setTimeout(pinToTop, ms));
       const onPageShow = () => pinToTop();
+      const onLoad = () => pinToTop();
       window.addEventListener("pageshow", onPageShow);
+      window.addEventListener("load", onLoad);
       return () => {
-        window.clearTimeout(t1);
-        window.clearTimeout(t2);
+        timers.forEach((id) => window.clearTimeout(id));
         window.removeEventListener("pageshow", onPageShow);
+        window.removeEventListener("load", onLoad);
       };
     }
 
@@ -490,7 +523,7 @@ export default function Home() {
   const foodServiceLabel = t(FOOD_SERVICE_I18N[foodService]);
 
   return (
-    <main>
+    <main className="home-page">
       <div className="hero-block">
         <section className="hero" id="home">
           <img src={settings.hero_image || "/images/hero-venue.jpg"} alt="Aerial view of Highbury Lounge gardens and event venue" />

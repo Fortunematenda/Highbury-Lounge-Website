@@ -12,6 +12,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+.home-page { overflow-anchor: none; }
 body {
   margin: 0;
   background: var(--paper);
