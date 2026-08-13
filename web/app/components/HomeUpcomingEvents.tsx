@@ -122,9 +122,12 @@ function EventCard({
   );
 }
 
-export function HomeUpcomingEvents() {
-  const [events, setEvents] = useState<HomeEvent[]>([]);
-  const [loaded, setLoaded] = useState(false);
+export function HomeUpcomingEvents({
+  initialEvents = [],
+}: {
+  initialEvents?: PublicEvent[];
+}) {
+  const [events, setEvents] = useState<HomeEvent[]>(initialEvents);
   const [selectedEvent, setSelectedEvent] = useState<HomeEvent | null>(null);
   const [reserveOpen, setReserveOpen] = useState(false);
   const [ticketsOpen, setTicketsOpen] = useState(false);
@@ -141,25 +144,24 @@ export function HomeUpcomingEvents() {
   }
 
   useEffect(() => {
+    if (initialEvents.length > 0) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/events?scope=upcoming&limit=3");
         if (!res.ok) return;
         const data = (await res.json()) as { events?: HomeEvent[] };
-        if (!cancelled) setEvents(data.events ?? []);
+        if (!cancelled && data.events) setEvents(data.events);
       } catch {
-        /* ignore */
-      } finally {
-        if (!cancelled) setLoaded(true);
+        /* keep the events already on the page */
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialEvents.length]);
 
-  if (!loaded || events.length === 0) return null;
+  if (events.length === 0) return null;
 
   const count = events.length;
   const gridClass =
