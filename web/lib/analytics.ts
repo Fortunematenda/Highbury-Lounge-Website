@@ -73,7 +73,7 @@ export function detectDevice(ua: string | null | undefined): string | null {
 export function normalizeIp(raw: string | null | undefined): string | null {
   if (!raw) return null;
   let ip = raw.trim();
-  if (!ip || ip === "unknown" || ip === "::1" || ip === "127.0.0.1") return ip || null;
+  if (!ip || ip.toLowerCase() === "unknown") return null;
   // "[::1]:1234" or "1.2.3.4:5678"
   if (ip.startsWith("[")) {
     const end = ip.indexOf("]");

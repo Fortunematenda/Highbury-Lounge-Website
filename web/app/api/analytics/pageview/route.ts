@@ -10,7 +10,6 @@ import {
 import { jsonError } from "@/lib/format";
 
 const recentHits = new Map<string, number>();
-const countryCache = new Map<string, string | null>();
 const VISITOR_COOKIE = "hl_vid";
 
 function newVisitorId() {
@@ -20,14 +19,14 @@ function newVisitorId() {
   return `v_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function clientIp(request: Request): string {
-  return (
+function headerIp(request: Request): string | null {
+  const raw =
     request.headers.get("cf-connecting-ip") ||
     request.headers.get("true-client-ip") ||
     request.headers.get("x-real-ip") ||
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "unknown"
-  );
+    null;
+  return normalizeIp(raw);
 }
 
 function countryFromHeaders(request: Request): string | null {
@@ -43,44 +42,21 @@ function countryFromHeaders(request: Request): string | null {
   return code.slice(0, 8);
 }
 
-function isPublicIp(ip: string | null): boolean {
-  if (!ip) return false;
-  if (ip === "unknown" || ip === "::1" || ip === "127.0.0.1") return false;
-  if (ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("127.")) {
-    return false;
-  }
-  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return false;
-  return true;
+function normalizeCountry(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const code = raw.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return null;
+  return code;
 }
 
-/** Best-effort country from public IP when CDN headers are absent (e.g. Contabo). */
-async function lookupCountry(ip: string | null): Promise<string | null> {
-  if (!isPublicIp(ip) || !ip) return null;
-  if (countryCache.has(ip)) return countryCache.get(ip) ?? null;
-
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 1200);
-    const res = await fetch(
-      `https://ipapi.co/${encodeURIComponent(ip)}/country_code/`,
-      {
-        signal: ctrl.signal,
-        headers: { Accept: "text/plain" },
-      },
-    );
-    clearTimeout(timer);
-    if (!res.ok) {
-      countryCache.set(ip, null);
-      return null;
-    }
-    const text = (await res.text()).trim().toUpperCase();
-    const code = /^[A-Z]{2}$/.test(text) ? text : null;
-    countryCache.set(ip, code);
-    return code;
-  } catch {
-    countryCache.set(ip, null);
-    return null;
+function isPrivateOrLocal(ip: string | null): boolean {
+  if (!ip) return true;
+  if (ip === "unknown" || ip === "::1" || ip === "127.0.0.1") return true;
+  if (ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("127.")) {
+    return true;
   }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(ip)) return true;
+  return false;
 }
 
 export async function POST(request: Request) {
@@ -95,6 +71,8 @@ export async function POST(request: Request) {
       referrer?: string;
       title?: string;
       visitorId?: string;
+      ip?: string;
+      country?: string;
     };
 
     const path = normalizeTrackedPath(body.path || "/");
@@ -109,8 +87,14 @@ export async function POST(request: Request) {
       visitorId = newVisitorId();
     }
 
-    const ipRaw = clientIp(request);
-    const ip = normalizeIp(ipRaw);
+    const fromHeaders = headerIp(request);
+    const fromClient = normalizeIp(body.ip);
+    // Prefer real public client IP (browser geo) when proxy only sees Docker/private hop
+    const ip =
+      (!isPrivateOrLocal(fromHeaders) ? fromHeaders : null) ||
+      fromClient ||
+      fromHeaders;
+
     const rateKey = `${ip || "unknown"}:${visitorId}`;
     const now = Date.now();
     const last = recentHits.get(rateKey) ?? 0;
@@ -119,10 +103,8 @@ export async function POST(request: Request) {
     }
     recentHits.set(rateKey, now);
 
-    let country = countryFromHeaders(request);
-    if (!country) {
-      country = await lookupCountry(ip);
-    }
+    const country =
+      countryFromHeaders(request) || normalizeCountry(body.country);
 
     await recordPageView({
       visitorId,

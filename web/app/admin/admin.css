@@ -4720,3 +4720,87 @@ textarea.admin-textarea-fixed {
     justify-content: stretch;
   }
 }
+
+.reports-filters {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.reports-date-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.reports-date-fields label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--admin-muted);
+}
+
+.reports-export-card .admin-card-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reports-export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.reports-export-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(42, 18, 32, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: linear-gradient(180deg, #fff, #fcf9fa);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.reports-export-link:hover,
+.reports-export-link:focus-visible {
+  border-color: rgba(112, 22, 63, 0.28);
+  box-shadow: 0 8px 20px rgba(42, 18, 32, 0.08);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.reports-export-link strong {
+  display: block;
+  color: var(--wine, #70163f);
+  font-size: 0.95rem;
+}
+
+.reports-export-link small {
+  display: block;
+  margin-top: 2px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.admin-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: admin-spin 0.9s linear infinite;
+}

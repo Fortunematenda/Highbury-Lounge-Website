@@ -50,24 +50,73 @@ function emptyTrend(start: string, end: string) {
   return points;
 }
 
-function resolveRange(raw: string | null): {
-  key: RangeKey;
+function resolveRange(
+  raw: string | null,
+  fromParam?: string | null,
+  toParam?: string | null,
+): {
+  key: string;
   since: string;
+  until: string;
   label: string;
   trendDays: number;
 } {
   const today = todayISODate();
+  const from =
+    fromParam && /^\d{4}-\d{2}-\d{2}$/.test(fromParam) ? fromParam : null;
+  const to =
+    toParam && /^\d{4}-\d{2}-\d{2}$/.test(toParam) ? toParam : null;
+
+  if (from || to) {
+    const since = from || daysAgoISO(29);
+    const until = to || today;
+    const start = new Date(`${since}T12:00:00Z`);
+    const end = new Date(`${until}T12:00:00Z`);
+    const trendDays = Math.max(
+      1,
+      Math.min(
+        366,
+        Math.round((end.getTime() - start.getTime()) / 86400000) + 1,
+      ),
+    );
+    return {
+      key: "custom",
+      since,
+      until,
+      label: `${since} → ${until}`,
+      trendDays,
+    };
+  }
+
   const key = (raw ?? "30") as RangeKey | string;
   if (key === "today" || key === "1") {
-    return { key: "today", since: today, label: "Today", trendDays: 1 };
+    return {
+      key: "today",
+      since: today,
+      until: today,
+      label: "Today",
+      trendDays: 1,
+    };
   }
   if (key === "7") {
-    return { key: "7", since: daysAgoISO(6), label: "7 Days", trendDays: 7 };
+    return {
+      key: "7",
+      since: daysAgoISO(6),
+      until: today,
+      label: "7 Days",
+      trendDays: 7,
+    };
   }
   if (key === "month") {
     const since = `${today.slice(0, 8)}01`;
     const day = Number(today.slice(8, 10));
-    return { key: "month", since, label: "This Month", trendDays: Math.max(1, day) };
+    return {
+      key: "month",
+      since,
+      until: today,
+      label: "This Month",
+      trendDays: Math.max(1, day),
+    };
   }
   if (key === "year") {
     const since = `${today.slice(0, 4)}-01-01`;
@@ -80,28 +129,58 @@ function resolveRange(raw: string | null): {
     return {
       key: "year",
       since,
+      until: today,
       label: "This Year",
       trendDays: Math.min(trendDays, 366),
     };
   }
-  return { key: "30", since: daysAgoISO(29), label: "30 Days", trendDays: 30 };
+  return {
+    key: "30",
+    since: daysAgoISO(29),
+    until: today,
+    label: "30 Days",
+    trendDays: 30,
+  };
+}
+
+/** Calendar-date compare that works for both SQLite and ISO timestamps. */
+function createdOnOrAfter(column: unknown, ymd: string) {
+  return sql`substr(${column}, 1, 10) >= ${ymd}`;
+}
+
+function createdBefore(column: unknown, ymd: string) {
+  return sql`substr(${column}, 1, 10) < ${ymd}`;
+}
+
+function createdOnOrBefore(column: unknown, ymd: string) {
+  return sql`substr(${column}, 1, 10) <= ${ymd}`;
 }
 
 export async function GET(request: Request) {
   try {
     const user = await requireAdmin();
     const url = new URL(request.url);
-    const rangeInfo = resolveRange(url.searchParams.get("range"));
-    const { since, key: rangeKey, label: rangeLabel, trendDays } = rangeInfo;
+    const rangeInfo = resolveRange(
+      url.searchParams.get("range"),
+      url.searchParams.get("from"),
+      url.searchParams.get("to"),
+    );
+    const {
+      since,
+      until,
+      key: rangeKey,
+      label: rangeLabel,
+      trendDays,
+    } = rangeInfo;
     const previousSpanDays = Math.max(
       1,
       Math.round(
-        (new Date(`${todayISODate()}T12:00:00Z`).getTime() -
+        (new Date(`${until}T12:00:00Z`).getTime() -
           new Date(`${since}T12:00:00Z`).getTime()) /
           86400000,
       ) + 1,
     );
-    const previousSince = daysAgoISO(previousSpanDays * 2 - 1);
+    const previousSince = addDaysISO(since, -previousSpanDays);
     const db = getDb();
     const today = todayISODate();
     const tomorrow = addDaysISO(today, 1);
@@ -242,7 +321,12 @@ export async function GET(request: Request) {
         totalAmount: bookings.totalAmount,
       })
       .from(bookings)
-      .where(gte(bookings.createdAt, since));
+      .where(
+        and(
+          createdOnOrAfter(bookings.createdAt, since),
+          createdOnOrBefore(bookings.createdAt, until),
+        ),
+      );
 
     const previousBookings = await db
       .select({
@@ -253,18 +337,18 @@ export async function GET(request: Request) {
       .from(bookings)
       .where(
         and(
-          gte(bookings.createdAt, previousSince),
-          sql`${bookings.createdAt} < ${since}`,
+          createdOnOrAfter(bookings.createdAt, previousSince),
+          createdBefore(bookings.createdAt, since),
         ),
       );
 
-    const trendStart =
-      trendDays <= 1 ? today : daysAgoISO(Math.min(trendDays, 90) - 1);
+    const trendStart = since;
+    const trendEnd = until < today ? until : today;
     const bookingTrendMap = new Map(
-      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+      emptyTrend(trendStart, trendEnd).map((p) => [p.date, 0]),
     );
     const revenueTrendMap = new Map(
-      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+      emptyTrend(trendStart, trendEnd).map((p) => [p.date, 0]),
     );
     for (const row of periodBookings) {
       const day = venueDay(row.createdAt);
@@ -337,7 +421,7 @@ export async function GET(request: Request) {
       createdAt: string;
     }> = [];
     const preorderTrendMap = new Map(
-      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+      emptyTrend(trendStart, trendEnd).map((p) => [p.date, 0]),
     );
 
     try {
@@ -367,7 +451,12 @@ export async function GET(request: Request) {
       const foodPeriod = await db
         .select({ createdAt: foodOrders.createdAt })
         .from(foodOrders)
-        .where(gte(foodOrders.createdAt, since));
+        .where(
+          and(
+            createdOnOrAfter(foodOrders.createdAt, since),
+            createdOnOrBefore(foodOrders.createdAt, until),
+          ),
+        );
       for (const row of foodPeriod) {
         const day = venueDay(row.createdAt);
         if (preorderTrendMap.has(day)) {
@@ -395,7 +484,7 @@ export async function GET(request: Request) {
     const [todayBookingsRow] = await db
       .select({ value: sql<number>`count(*)` })
       .from(bookings)
-      .where(sql`date(${bookings.createdAt}) = ${today}`);
+      .where(sql`substr(${bookings.createdAt}, 1, 10) = ${today}`);
 
     const recent = await db
       .select({
@@ -429,9 +518,14 @@ export async function GET(request: Request) {
     const conferencePeriod = await db
       .select({ createdAt: conferenceEnquiries.createdAt })
       .from(conferenceEnquiries)
-      .where(gte(conferenceEnquiries.createdAt, since));
+      .where(
+        and(
+          createdOnOrAfter(conferenceEnquiries.createdAt, since),
+          createdOnOrBefore(conferenceEnquiries.createdAt, until),
+        ),
+      );
     const conferenceTrendMap = new Map(
-      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+      emptyTrend(trendStart, trendEnd).map((p) => [p.date, 0]),
     );
     for (const row of conferencePeriod) {
       const day = venueDay(row.createdAt);
@@ -450,7 +544,7 @@ export async function GET(request: Request) {
         ),
       );
 
-    const occupancyTrend = emptyTrend(trendStart, today).map((p) => ({
+    const occupancyTrend = emptyTrend(trendStart, trendEnd).map((p) => ({
       date: p.date,
       value: occupancyRate,
     }));
@@ -493,7 +587,7 @@ export async function GET(request: Request) {
       createdAt: string;
     }> = [];
     const ticketTrendMap = new Map(
-      emptyTrend(trendStart, today).map((p) => [p.date, 0]),
+      emptyTrend(trendStart, trendEnd).map((p) => [p.date, 0]),
     );
 
     try {
@@ -559,7 +653,12 @@ export async function GET(request: Request) {
       const ticketPeriod = await db
         .select({ createdAt: eventTicketOrders.createdAt })
         .from(eventTicketOrders)
-        .where(gte(eventTicketOrders.createdAt, since));
+        .where(
+          and(
+            createdOnOrAfter(eventTicketOrders.createdAt, since),
+            createdOnOrBefore(eventTicketOrders.createdAt, until),
+          ),
+        );
       for (const row of ticketPeriod) {
         const day = venueDay(row.createdAt);
         if (ticketTrendMap.has(day)) {
