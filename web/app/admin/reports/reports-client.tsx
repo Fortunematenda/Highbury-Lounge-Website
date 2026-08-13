@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMoney } from "@/lib/format";
-import {
-  Download,
-  Loader2,
-  FileSpreadsheet,
-} from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { ReportsPdfButton, type ReportsPdfData } from "./reports-pdf";
 
 const DashboardCharts = lazy(() =>
@@ -218,40 +214,41 @@ export function ReportsClient() {
   const exportFrom = from || "";
   const exportTo = to || "";
 
-  const pdfData: ReportsPdfData | null = data
-    ? {
-        rangeLabel: data.rangeLabel,
-        today: data.today,
-        periodBookings: periodBookingCount,
-        periodRevenue,
-        occupancyRate: data.totals.occupancyRate,
-        occupiedRooms: data.totals.occupiedRooms,
-        availableRooms: data.totals.availableRooms,
-        maintenanceRooms: data.totals.maintenanceRooms,
-        totalRooms: data.totals.totalRooms,
-        confirmedBookings: data.totals.confirmedBookings,
-        pendingBookings: data.totals.pendingBookings,
-        cancelledBookings: data.totals.cancelledBookings,
-        foodPreorders: data.totals.foodPreorders,
-        ticketsSold: data.totals.ticketsSold,
-        ticketRevenue: data.totals.ticketRevenue,
-        conferenceRequests: data.totals.conferenceRequests,
-        bookingTrend: data.trends.bookingTrend,
-        revenueTrend: data.trends.revenueTrend,
-        bookingStatusBreakdown: data.bookingStatusBreakdown,
-        revenueSources: data.revenueSources,
-        recentBookings: data.recentBookings.map((b) => ({
-          reference: b.reference,
-          status: b.status,
-          checkIn: b.checkIn,
-          checkOut: b.checkOut,
-          totalAmount: b.totalAmount,
-          currency: b.currency,
-          roomName: b.roomName,
-          guestName: [b.firstName, b.lastName].filter(Boolean).join(" "),
-        })),
-      }
-    : null;
+  const pdfData: ReportsPdfData | null = useMemo(() => {
+    if (!data) return null;
+    return {
+      rangeLabel: data.rangeLabel,
+      today: data.today,
+      periodBookings: periodBookingCount,
+      periodRevenue,
+      occupancyRate: data.totals.occupancyRate,
+      occupiedRooms: data.totals.occupiedRooms,
+      availableRooms: data.totals.availableRooms,
+      maintenanceRooms: data.totals.maintenanceRooms,
+      totalRooms: data.totals.totalRooms,
+      confirmedBookings: data.totals.confirmedBookings,
+      pendingBookings: data.totals.pendingBookings,
+      cancelledBookings: data.totals.cancelledBookings,
+      foodPreorders: data.totals.foodPreorders,
+      ticketsSold: data.totals.ticketsSold,
+      ticketRevenue: data.totals.ticketRevenue,
+      conferenceRequests: data.totals.conferenceRequests,
+      bookingTrend: data.trends.bookingTrend,
+      revenueTrend: data.trends.revenueTrend,
+      bookingStatusBreakdown: data.bookingStatusBreakdown,
+      revenueSources: data.revenueSources,
+      recentBookings: data.recentBookings.map((b) => ({
+        reference: b.reference,
+        status: b.status,
+        checkIn: b.checkIn,
+        checkOut: b.checkOut,
+        totalAmount: b.totalAmount,
+        currency: b.currency,
+        roomName: b.roomName,
+        guestName: [b.firstName, b.lastName].filter(Boolean).join(" "),
+      })),
+    };
+  }, [data, periodBookingCount, periodRevenue]);
 
   return (
     <div className="admin-page pms-page reports-page">
@@ -392,30 +389,37 @@ export function ReportsClient() {
           </Suspense>
 
           <section className="admin-card reports-export-card">
-            <div className="admin-card-head">
-              <h2>
-                <FileSpreadsheet size={18} aria-hidden /> Pull reports
-              </h2>
+            <div className="reports-pdf-cta">
+              <div>
+                <h2>Visual PDF report</h2>
+                <p className="page-sub">
+                  Download a branded PDF with KPI summary, graphs, occupancy,
+                  status breakdown, and recent bookings.
+                </p>
+              </div>
               <ReportsPdfButton data={pdfData} disabled={loading} />
             </div>
-            <p className="page-sub" style={{ marginBottom: 14 }}>
-              Download a visual PDF with graphs, or CSV files for accounting.
-              Optional From/To dates above filter CSV exports.
-            </p>
-            <div className="reports-export-grid">
-              {EXPORTS.map((item) => (
-                <a
-                  key={item.type}
-                  className="reports-export-link"
-                  href={csvHref(item.type, range, exportFrom, exportTo)}
-                >
-                  <Download size={16} aria-hidden />
-                  <span>
-                    <strong>{item.label}</strong>
-                    <small>{item.hint}</small>
-                  </span>
-                </a>
-              ))}
+
+            <div className="reports-csv-block">
+              <h3>CSV spreadsheet exports</h3>
+              <p className="page-sub" style={{ marginBottom: 12 }}>
+                Optional From/To dates above filter these spreadsheet downloads.
+              </p>
+              <div className="reports-export-grid">
+                {EXPORTS.map((item) => (
+                  <a
+                    key={item.type}
+                    className="reports-export-link"
+                    href={csvHref(item.type, range, exportFrom, exportTo)}
+                  >
+                    <Download size={16} aria-hidden />
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.hint}</small>
+                    </span>
+                  </a>
+                ))}
+              </div>
             </div>
           </section>
 

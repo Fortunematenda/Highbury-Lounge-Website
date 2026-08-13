@@ -4813,20 +4813,51 @@ textarea.admin-textarea-fixed {
 }
 
 .reports-header-actions .admin-btn,
-.reports-export-card .admin-btn {
+.reports-export-card .admin-btn,
+.reports-pdf-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+}
+
+.reports-pdf-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 0 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(42, 18, 32, 0.08);
+}
+
+.reports-pdf-cta h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  color: var(--wine, #70163f);
+}
+
+.reports-pdf-cta .page-sub {
+  margin: 0;
+  max-width: 46ch;
+}
+
+.reports-csv-block h3 {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
 }
 
 .reports-pdf-offscreen {
   position: fixed;
-  left: -10000px;
+  left: 0;
   top: 0;
   width: 900px;
+  transform: translate(-120vw, 0);
   pointer-events: none;
   opacity: 1;
   z-index: -1;
+  overflow: hidden;
 }
 
 .reports-pdf-sheet {

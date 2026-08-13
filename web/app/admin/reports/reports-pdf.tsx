@@ -67,18 +67,67 @@ const CHART_COLORS = [
 
 function shortDate(iso: string) {
   if (!iso || iso.length < 10) return iso;
-  return iso.slice(5); // MM-DD keeps chart labels compact
+  return iso.slice(5);
 }
 
-async function elementToPdfPages(el: HTMLElement, filename: string) {
-  const dataUrl = await toPng(el, {
-    cacheBust: true,
-    pixelRatio: 2,
-    backgroundColor: "#ffffff",
-    width: el.scrollWidth,
-    height: el.scrollHeight,
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
   });
+}
 
+async function captureElement(el: HTMLElement) {
+  const previous = {
+    position: el.style.position,
+    left: el.style.left,
+    top: el.style.top,
+    transform: el.style.transform,
+    opacity: el.style.opacity,
+    zIndex: el.style.zIndex,
+    pointerEvents: el.style.pointerEvents,
+  };
+
+  // Bring on-screen briefly so SVG charts rasterize reliably.
+  el.style.position = "fixed";
+  el.style.left = "0";
+  el.style.top = "0";
+  el.style.transform = "none";
+  el.style.opacity = "0.01";
+  el.style.zIndex = "2147483000";
+  el.style.pointerEvents = "none";
+
+  await wait(800);
+  try {
+    return await toPng(el, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: "#ffffff",
+      width: el.scrollWidth,
+      height: el.scrollHeight,
+    });
+  } catch (firstError) {
+    console.warn("toPng failed, retrying", firstError);
+    await wait(500);
+    return toPng(el, {
+      cacheBust: true,
+      pixelRatio: 1.5,
+      backgroundColor: "#ffffff",
+      width: el.scrollWidth,
+      height: el.scrollHeight,
+    });
+  } finally {
+    el.style.position = previous.position;
+    el.style.left = previous.left;
+    el.style.top = previous.top;
+    el.style.transform = previous.transform;
+    el.style.opacity = previous.opacity;
+    el.style.zIndex = previous.zIndex;
+    el.style.pointerEvents = previous.pointerEvents;
+  }
+}
+
+async function downloadPdfFromElement(el: HTMLElement, filename: string) {
+  const dataUrl = await captureElement(el);
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -109,7 +158,7 @@ async function elementToPdfPages(el: HTMLElement, filename: string) {
     const sliceCanvas = document.createElement("canvas");
     const sliceHeight = Math.min(pageHeightPx, imgHeightPx - offsetPx);
     sliceCanvas.width = imgWidthPx;
-    sliceCanvas.height = sliceHeight;
+    sliceCanvas.height = Math.max(1, Math.floor(sliceHeight));
     const ctx = sliceCanvas.getContext("2d");
     if (!ctx) throw new Error("Canvas unavailable");
     ctx.fillStyle = "#ffffff";
@@ -165,7 +214,7 @@ function ReportsPdfLayout({ data }: { data: ReportsPdfData }) {
             {data.today ? ` · Generated ${data.today}` : ""}
           </p>
         </div>
-        <div className="reports-pdf-brand">Admin report</div>
+        <div className="reports-pdf-brand">PDF report</div>
       </header>
 
       <section className="reports-pdf-kpis">
@@ -223,6 +272,7 @@ function ReportsPdfLayout({ data }: { data: ReportsPdfData }) {
                     stroke="#70163f"
                     fill="#70163f"
                     fillOpacity={0.16}
+                    isAnimationActive={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -249,6 +299,7 @@ function ReportsPdfLayout({ data }: { data: ReportsPdfData }) {
                     stroke="#a91f62"
                     fill="#a91f62"
                     fillOpacity={0.16}
+                    isAnimationActive={false}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -268,14 +319,27 @@ function ReportsPdfLayout({ data }: { data: ReportsPdfData }) {
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={28} />
                   <Tooltip />
-                  <Bar dataKey="occupied" stackId="a" fill="#70163f" name="Occupied" />
+                  <Bar
+                    dataKey="occupied"
+                    stackId="a"
+                    fill="#70163f"
+                    name="Occupied"
+                    isAnimationActive={false}
+                  />
                   <Bar
                     dataKey="maintenance"
                     stackId="a"
                     fill="#c47a2c"
                     name="Maintenance"
+                    isAnimationActive={false}
                   />
-                  <Bar dataKey="available" stackId="a" fill="#d6c7cf" name="Available" />
+                  <Bar
+                    dataKey="available"
+                    stackId="a"
+                    fill="#d6c7cf"
+                    name="Available"
+                    isAnimationActive={false}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -297,6 +361,7 @@ function ReportsPdfLayout({ data }: { data: ReportsPdfData }) {
                     innerRadius="38%"
                     outerRadius="68%"
                     paddingAngle={2}
+                    isAnimationActive={false}
                   >
                     {data.bookingStatusBreakdown.map((entry, index) => (
                       <Cell
@@ -345,7 +410,12 @@ function ReportsPdfLayout({ data }: { data: ReportsPdfData }) {
                     tick={{ fontSize: 10 }}
                   />
                   <Tooltip formatter={(v) => formatMoney(Number(v ?? 0))} />
-                  <Bar dataKey="amount" fill="#a91f62" radius={[0, 4, 4, 0]} />
+                  <Bar
+                    dataKey="amount"
+                    fill="#a91f62"
+                    radius={[0, 4, 4, 0]}
+                    isAnimationActive={false}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -401,57 +471,56 @@ export function ReportsPdfButton({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
-  const [readyTick, setReadyTick] = useState(0);
+  const [chartsReady, setChartsReady] = useState(false);
 
+  // Keep the PDF layout mounted (offscreen) so charts are already painted.
   useEffect(() => {
-    if (!busy || !data) return;
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const el = hostRef.current?.querySelector(
-            ".reports-pdf-sheet",
-          ) as HTMLElement | null;
-          if (!el) throw new Error("Report layout not ready");
-          // Give Recharts a moment to paint
-          await new Promise((r) => window.setTimeout(r, 450));
-          if (cancelled) return;
-          const stamp = data.today || new Date().toISOString().slice(0, 10);
-          const safeRange = data.rangeLabel.replace(/[^\w\-]+/g, "_").slice(0, 40);
-          await elementToPdfPages(
-            el,
-            `highbury-report-${safeRange}-${stamp}.pdf`,
-          );
-          toast.success("PDF report downloaded");
-        } catch (err) {
-          console.error(err);
-          toast.error(
-            err instanceof Error ? err.message : "Could not create PDF report",
-          );
-        } finally {
-          if (!cancelled) setBusy(false);
-        }
-      })();
-    }, 80);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [busy, readyTick, data]);
+    if (!data) {
+      setChartsReady(false);
+      return;
+    }
+    setChartsReady(false);
+    const timer = window.setTimeout(() => setChartsReady(true), 900);
+    return () => window.clearTimeout(timer);
+  }, [data]);
 
-  function onDownload() {
+  async function onDownload() {
     if (!data || busy || disabled) return;
+    const el = hostRef.current?.querySelector(
+      ".reports-pdf-sheet",
+    ) as HTMLElement | null;
+    if (!el) {
+      toast.error("PDF layout is still preparing. Try again in a second.");
+      return;
+    }
+
     setBusy(true);
-    setReadyTick((n) => n + 1);
+    try {
+      if (!chartsReady) await wait(900);
+      const stamp = data.today || new Date().toISOString().slice(0, 10);
+      const safeRange = data.rangeLabel.replace(/[^\w\-]+/g, "_").slice(0, 40);
+      await downloadPdfFromElement(
+        el,
+        `highbury-report-${safeRange}-${stamp}.pdf`,
+      );
+      toast.success("PDF report downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err instanceof Error ? err.message : "Could not create PDF report",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <>
       <button
         type="button"
-        className="admin-btn"
+        className="admin-btn reports-pdf-btn"
         disabled={!data || busy || disabled}
-        onClick={onDownload}
+        onClick={() => void onDownload()}
       >
         {busy ? (
           <Loader2 className="spin" size={16} aria-hidden />
@@ -461,7 +530,7 @@ export function ReportsPdfButton({
         {busy ? "Building PDF…" : "Download PDF report"}
       </button>
 
-      {busy && data ? (
+      {data ? (
         <div className="reports-pdf-offscreen" aria-hidden ref={hostRef}>
           <ReportsPdfLayout data={data} />
         </div>
