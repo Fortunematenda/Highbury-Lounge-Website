@@ -277,10 +277,12 @@
   color: #6d6065;
   cursor: pointer;
 }
-.events-free-toggle input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--magenta);
+.events-free-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
 }
 
 .events-empty-state {
@@ -878,11 +880,14 @@
   line-height: 1.5;
   color: #6d6065;
 }
-.event-modal-consent input {
+.event-modal-consent input[type="checkbox"] {
   margin-top: 2px;
-  width: 16px;
-  min-height: 16px;
-  accent-color: var(--magenta);
+  width: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  height: 18px;
+  padding: 0;
+  flex-shrink: 0;
 }
 .event-reservation-modal textarea {
   width: 100%;
@@ -1241,7 +1246,7 @@
   color: #6b5a60;
 }
 
-.event-reservation-modal input,
+.event-reservation-modal input:not([type="checkbox"]):not([type="radio"]),
 .event-reservation-modal select,
 .event-reservation-modal textarea {
   font-family: var(--font-inter), Arial, sans-serif;

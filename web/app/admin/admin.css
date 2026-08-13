@@ -2208,16 +2208,13 @@ textarea.admin-textarea-fixed {
   gap: 8px 12px;
 }
 
-.menu-check {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center;
-  gap: 8px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: var(--ink) !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
+.menu-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .menu-fieldset {
@@ -3759,11 +3756,13 @@ textarea.admin-textarea-fixed {
   line-height: 1.35;
 }
 
-.room-toggle input {
+.room-toggle input[type="checkbox"] {
   margin-top: 2px;
   width: 18px;
   height: 18px;
-  accent-color: var(--wine);
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
   flex-shrink: 0;
 }
 
