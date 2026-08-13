@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useRef, type FormEvent, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
@@ -78,6 +78,20 @@ export function BookingSearchModal({
 
   if (!open || typeof document === "undefined") return null;
 
+  function openPicker(event: MouseEvent<HTMLElement>) {
+    const control = event.currentTarget.querySelector("input, select") as
+      | HTMLInputElement
+      | HTMLSelectElement
+      | null;
+    if (!control) return;
+    control.focus();
+    try {
+      if (typeof control.showPicker === "function") control.showPicker();
+    } catch {
+      /* picker already open or unsupported */
+    }
+  }
+
   function submit(event: FormEvent) {
     event.preventDefault();
     onSearch();
@@ -115,7 +129,10 @@ export function BookingSearchModal({
         <form className="booking-search-modal-form" onSubmit={submit} noValidate>
           <label className="booking-search-modal-field">
             <span>{t("booking.checkIn")}</span>
-            <div className="booking-search-modal-value">
+            <div
+              className="booking-search-modal-value"
+              onClick={openPicker}
+            >
               <input
                 ref={checkInRef}
                 type="date"
@@ -131,7 +148,10 @@ export function BookingSearchModal({
 
           <label className="booking-search-modal-field">
             <span>{t("booking.checkOut")}</span>
-            <div className="booking-search-modal-value">
+            <div
+              className="booking-search-modal-value"
+              onClick={openPicker}
+            >
               <input
                 type="date"
                 min={checkIn || today}
@@ -146,7 +166,10 @@ export function BookingSearchModal({
 
           <label className="booking-search-modal-field">
             <span>{t("booking.adults")}</span>
-            <div className="booking-search-modal-value">
+            <div
+              className="booking-search-modal-value"
+              onClick={openPicker}
+            >
               <select
                 value={adults}
                 onChange={(e) => onAdultsChange(e.target.value)}
@@ -164,7 +187,10 @@ export function BookingSearchModal({
 
           <label className="booking-search-modal-field">
             <span>{t("booking.children")}</span>
-            <div className="booking-search-modal-value">
+            <div
+              className="booking-search-modal-value"
+              onClick={openPicker}
+            >
               <select
                 value={children}
                 onChange={(e) => onChildrenChange(e.target.value)}
@@ -182,7 +208,10 @@ export function BookingSearchModal({
 
           <label className="booking-search-modal-field">
             <span>{t("booking.rooms")}</span>
-            <div className="booking-search-modal-value">
+            <div
+              className="booking-search-modal-value"
+              onClick={openPicker}
+            >
               <select
                 value={roomsCount}
                 onChange={(e) => onRoomsChange(e.target.value)}
