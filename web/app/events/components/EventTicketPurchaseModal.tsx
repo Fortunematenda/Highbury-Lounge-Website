@@ -147,6 +147,10 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not create ticket order");
+      if (data.paynowRedirectUrl) {
+        window.location.href = data.paynowRedirectUrl as string;
+        return;
+      }
       setCreated({
         reference: data.order.reference,
         ticketUrl: data.ticketUrl,

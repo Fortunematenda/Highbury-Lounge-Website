@@ -449,7 +449,7 @@ export async function verifyTicketOrder(
       paymentStatus: "paid",
       ticketCode,
       verifiedAt: new Date().toISOString(),
-      verifiedBy: adminUserId,
+      verifiedBy: adminUserId > 0 ? adminUserId : null,
       adminNotes: notes?.trim() || existing.adminNotes,
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })

@@ -20,6 +20,21 @@ export WRANGLER_SEND_METRICS=false
 # Keep admin sessions working on plain HTTP unless explicitly enabled.
 export COOKIE_SECURE="${COOKIE_SECURE:-false}"
 
+# Sync selected env into .dev.vars so wrangler local exposes them to the Worker.
+{
+  echo "COOKIE_SECURE=${COOKIE_SECURE}"
+  [ -n "${SITE_URL:-}" ] && echo "SITE_URL=${SITE_URL}"
+  [ -n "${PUBLIC_SITE_URL:-}" ] && echo "PUBLIC_SITE_URL=${PUBLIC_SITE_URL}"
+  [ -n "${PAYNOW_INTEGRATION_ID:-}" ] && echo "PAYNOW_INTEGRATION_ID=${PAYNOW_INTEGRATION_ID}"
+  [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && echo "PAYNOW_INTEGRATION_KEY=${PAYNOW_INTEGRATION_KEY}"
+  [ -n "${SEED_KEY:-}" ] && echo "SEED_KEY=${SEED_KEY}"
+  [ -n "${SMTP_HOST:-}" ] && echo "SMTP_HOST=${SMTP_HOST}"
+  [ -n "${SMTP_PORT:-}" ] && echo "SMTP_PORT=${SMTP_PORT}"
+  [ -n "${SMTP_USER:-}" ] && echo "SMTP_USER=${SMTP_USER}"
+  [ -n "${SMTP_PASS:-}" ] && echo "SMTP_PASS=${SMTP_PASS}"
+  [ -n "${SMTP_FROM:-}" ] && echo "SMTP_FROM=${SMTP_FROM}"
+} > /app/.dev.vars
+
 # Apply pending D1 migrations against the same persist path the app uses.
 # Missing tables (e.g. food_orders) cause opaque Server Component errors in prod.
 if [ -f wrangler.migrate.toml ] && [ -d drizzle ]; then

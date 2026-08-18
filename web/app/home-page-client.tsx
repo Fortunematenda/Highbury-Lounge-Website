@@ -523,6 +523,10 @@ export function HomePage({
       if (!res.ok) {
         throw new Error(data.error || "Unable to submit food order.");
       }
+      if (data.paynowRedirectUrl) {
+        window.location.href = data.paynowRedirectUrl as string;
+        return;
+      }
       setFoodOrderReference(data.foodOrder?.reference ?? "");
       setFoodOrderSubmitted(true);
     } catch (err) {

@@ -3,6 +3,8 @@ import {
   TicketError,
 } from "@/lib/event-tickets";
 import { jsonError } from "@/lib/format";
+import { isPaynowConfigured } from "@/lib/paynow";
+import { startPaynowForTicketOrder } from "@/lib/paynow-payments";
 
 const recentSubmissions = new Map<string, number>();
 
@@ -38,6 +40,16 @@ export async function POST(request: Request) {
       quantity: Number(body.quantity || 1),
     });
 
+    let paynowRedirectUrl: string | null = null;
+    if (isPaynowConfigured() && Number(result.order.totalAmount) > 0) {
+      try {
+        const checkout = await startPaynowForTicketOrder(result.order.id);
+        paynowRedirectUrl = checkout.redirectUrl;
+      } catch (err) {
+        console.error("Paynow ticket initiate failed:", err);
+      }
+    }
+
     return Response.json(
       {
         ok: true,
@@ -59,6 +71,7 @@ export async function POST(request: Request) {
         },
         bank: result.bank,
         ticketUrl: `/events/tickets/${result.order.reference}`,
+        paynowRedirectUrl,
       },
       { status: 201 },
     );

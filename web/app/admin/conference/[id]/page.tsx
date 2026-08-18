@@ -58,7 +58,14 @@ export default async function ConferenceDetailPage({
       ]}
       title={e.reference}
       description={`${e.contactName} · ${e.eventType} on ${formatDate(e.preferredDate)}`}
-      status={<StatusBadge status={e.status} />}
+      status={
+        <>
+          <StatusBadge status={e.status} />
+          {e.paymentStatus && e.paymentStatus !== "n/a" ? (
+            <StatusBadge status={`Pay: ${e.paymentStatus}`} />
+          ) : null}
+        </>
+      }
       backAction={{
         label: "Back to conference requests",
         href: "/admin/conference",
@@ -88,6 +95,24 @@ export default async function ConferenceDetailPage({
                 <dt>Contact</dt>
                 <dd>{e.contactName}</dd>
               </div>
+              <div>
+                <dt>Payment</dt>
+                <dd>{e.paymentStatus}</dd>
+              </div>
+              {e.quotationAmount != null && Number(e.quotationAmount) > 0 ? (
+                <div>
+                  <dt>Guest pay link</dt>
+                  <dd>
+                    <a
+                      href={`/conference/pay/${e.reference}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      /conference/pay/{e.reference}
+                    </a>
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           </section>
           <DetailMetadataCard

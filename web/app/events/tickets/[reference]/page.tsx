@@ -120,11 +120,11 @@ export default async function TicketOrderPage({
             <div className="event-ticket-bank">
               <h2>How to pay</h2>
               <p>
-                Deposit{" "}
+                Pay online with Paynow, or deposit{" "}
                 <strong>
                   {order.currency} {Number(order.totalAmount).toFixed(2)}
                 </strong>{" "}
-                using reference{" "}
+                by bank transfer using reference{" "}
                 <strong className="event-ticket-ref">{order.reference}</strong>.
               </p>
               <p>
@@ -154,7 +154,7 @@ export default async function TicketOrderPage({
             </div>
 
             <div className="event-ticket-actions">
-              <TicketOrderClient reference={order.reference} />
+              <TicketOrderClient reference={order.reference} canPay />
               <p className="muted event-ticket-help">
                 Lost this page later?{" "}
                 <Link href="/events#find-ticket">Find my ticket</Link>

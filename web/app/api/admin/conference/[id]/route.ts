@@ -56,6 +56,16 @@ export async function PATCH(
         body.quotationAmount === null || body.quotationAmount === ""
           ? null
           : Number(body.quotationAmount);
+      if (
+        patch.quotationAmount != null &&
+        Number(patch.quotationAmount) > 0 &&
+        existing.paymentStatus !== "paid"
+      ) {
+        patch.paymentStatus = "unpaid";
+      }
+      if (patch.quotationAmount == null && existing.paymentStatus !== "paid") {
+        patch.paymentStatus = "n/a";
+      }
     }
     if (body.quotationNotes !== undefined) {
       patch.quotationNotes = body.quotationNotes
@@ -92,6 +102,7 @@ export async function PATCH(
                 ? `USD ${existing.quotationAmount.toFixed(2)}`
                 : undefined,
           status: newStatus,
+          ticketUrl: `${(process.env.SITE_URL || process.env.PUBLIC_SITE_URL || "").replace(/\/$/, "")}/conference/pay/${existing.reference}`,
         },
         relatedType: "conference_enquiry",
         relatedId: enquiryId,

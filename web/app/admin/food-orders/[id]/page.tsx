@@ -44,7 +44,12 @@ export default async function AdminFoodOrderDetailPage({
       ]}
       title={order.reference}
       description={`${order.guestName || "Guest"} · ${formatMoney(order.totalAmount, order.currency)}`}
-      status={<StatusBadge status={order.status} />}
+      status={
+        <>
+          <StatusBadge status={order.status} />
+          <StatusBadge status={`Pay: ${order.paymentStatus}`} />
+        </>
+      }
       backAction={{ label: "Back to food orders", href: "/admin/food-orders" }}
       sidebar={
         <>
@@ -82,6 +87,10 @@ export default async function AdminFoodOrderDetailPage({
                     {formatMoney(order.totalAmount, order.currency)}
                   </strong>
                 </dd>
+              </div>
+              <div>
+                <dt>Payment</dt>
+                <dd>{order.paymentStatus}</dd>
               </div>
               {booking ? (
                 <div>

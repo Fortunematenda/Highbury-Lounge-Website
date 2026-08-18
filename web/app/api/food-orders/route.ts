@@ -1,5 +1,7 @@
 import { createFoodOrder, FoodOrderError } from "@/lib/food-orders";
 import { jsonError } from "@/lib/format";
+import { isPaynowConfigured } from "@/lib/paynow";
+import { startPaynowForFoodOrder } from "@/lib/paynow-payments";
 
 const recentSubmissions = new Map<string, number>();
 
@@ -68,6 +70,20 @@ export async function POST(request: Request) {
       items,
     });
 
+    let paynowRedirectUrl: string | null = null;
+    if (
+      isPaynowConfigured() &&
+      !result.order.bookingId &&
+      Number(result.order.totalAmount) > 0
+    ) {
+      try {
+        const checkout = await startPaynowForFoodOrder(result.order.id);
+        paynowRedirectUrl = checkout.redirectUrl;
+      } catch (err) {
+        console.error("Paynow food order initiate failed:", err);
+      }
+    }
+
     return Response.json(
       {
         ok: true,
@@ -75,9 +91,12 @@ export async function POST(request: Request) {
           id: result.order.id,
           reference: result.order.reference,
           status: result.order.status,
+          paymentStatus: result.order.paymentStatus,
           totalAmount: result.order.totalAmount,
           currency: result.order.currency,
         },
+        paynowRedirectUrl,
+        orderUrl: `/food-orders/${result.order.reference}`,
       },
       { status: 201 },
     );

@@ -1,5 +1,7 @@
 import { createBooking, BookingError } from "@/lib/bookings";
 import { jsonError } from "@/lib/format";
+import { isPaynowConfigured } from "@/lib/paynow";
+import { startPaynowForBooking } from "@/lib/paynow-payments";
 
 const recentSubmissions = new Map<string, number>();
 
@@ -85,6 +87,16 @@ export async function POST(request: Request) {
       },
     });
 
+    let paynowRedirectUrl: string | null = null;
+    if (isPaynowConfigured() && Number(booking.totalAmount) > 0) {
+      try {
+        const checkout = await startPaynowForBooking(booking.id);
+        paynowRedirectUrl = checkout.redirectUrl;
+      } catch (err) {
+        console.error("Paynow booking initiate failed:", err);
+      }
+    }
+
     return Response.json(
       {
         ok: true,
@@ -99,7 +111,9 @@ export async function POST(request: Request) {
           nights: booking.nights,
           expiresAt: booking.expiresAt,
           extrasTotal: booking.extrasTotal,
+          paymentStatus: booking.paymentStatus,
         },
+        paynowRedirectUrl,
       },
       { status: 201 },
     );

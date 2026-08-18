@@ -162,6 +162,7 @@ export async function createFoodOrder(input: CreateFoodOrderInput) {
       serviceTime: input.serviceTime || null,
       serviceType: input.serviceType || null,
       status: "Pending",
+      paymentStatus: bookingId ? "unpaid" : "pending",
       specialInstructions: input.specialInstructions?.trim() || null,
       totalAmount,
       currency,

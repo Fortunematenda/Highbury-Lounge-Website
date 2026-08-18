@@ -19,6 +19,7 @@ type FoodOrderRow = {
   id: number;
   reference: string;
   status: string;
+  paymentStatus?: string;
   guestName: string | null;
   totalAmount: number;
   currency: string;
@@ -91,6 +92,7 @@ export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
               <th>Ordered items</th>
               <th>Total</th>
               <th>Food status</th>
+              <th>Payment</th>
               <th>Booking</th>
               <th>Created</th>
               <th aria-label="Actions" />
@@ -99,7 +101,7 @@ export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={9}>No food orders match your filters.</td>
+                <td colSpan={10}>No food orders match your filters.</td>
               </tr>
             ) : (
               rows.map((row) => (
@@ -120,6 +122,7 @@ export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
                       {row.status}
                     </span>
                   </td>
+                  <td>{row.paymentStatus || "—"}</td>
                   <td>
                     {row.bookingReference ? (
                       <>
@@ -158,13 +161,16 @@ export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
               subtitle={row.guestName || "Guest"}
               actions={actionsFor(row)}
             >
-              <div style={{ marginBottom: 10 }}>
+              <div style={{ marginBottom: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <span
                   className="admin-badge"
                   style={{ background: statusColor(row.status) }}
                 >
                   {row.status}
                 </span>
+                {row.paymentStatus ? (
+                  <span className="admin-badge">{row.paymentStatus}</span>
+                ) : null}
               </div>
               <AdminMobileMeta
                 items={[
@@ -173,6 +179,7 @@ export function FoodOrdersList({ rows }: { rows: FoodOrderRow[] }) {
                     label: "Total",
                     value: formatMoney(row.totalAmount, row.currency),
                   },
+                  { label: "Payment", value: row.paymentStatus || "—" },
                   { label: "Room", value: row.roomName || "—" },
                   {
                     label: "Booking",

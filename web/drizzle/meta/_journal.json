@@ -71,6 +71,13 @@
       "when": 1785500000000,
       "tag": "0009_site_analytics_ip_device",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1785600000000,
+      "tag": "0010_paynow",
+      "breakpoints": true
     }
   ]
 }

@@ -350,6 +350,8 @@ export const conferenceEnquiries = sqliteTable(
     quotationAmount: real("quotation_amount"),
     quotationNotes: text("quotation_notes"),
     adminNotes: text("admin_notes"),
+    /** n/a | unpaid | paid | pending */
+    paymentStatus: text("payment_status").notNull().default("n/a"),
     ...timestamps,
   },
   (t) => [
@@ -516,6 +518,8 @@ export const foodOrders = sqliteTable(
     serviceType: text("service_type"),
     /** Pending | Preparing | Ready | Delivered | Cancelled */
     status: text("status").notNull().default("Pending"),
+    /** pending | paid | unpaid — booking-linked orders use unpaid (covered by booking) */
+    paymentStatus: text("payment_status").notNull().default("pending"),
     specialInstructions: text("special_instructions"),
     totalAmount: real("total_amount").notNull().default(0),
     currency: text("currency").notNull().default("USD"),
@@ -824,5 +828,31 @@ export const sitePageViews = sqliteTable(
     index("site_page_views_created_idx").on(t.createdAt),
     index("site_page_views_path_idx").on(t.path),
     index("site_page_views_visitor_idx").on(t.visitorId),
+  ],
+);
+
+/** Paynow gateway payment attempts linked to bookings, tickets, food, conference. */
+export const paynowTransactions = sqliteTable(
+  "paynow_transactions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    reference: text("reference").notNull().unique(),
+    /** booking | ticket_order | food_order | conference */
+    entityType: text("entity_type").notNull(),
+    entityId: integer("entity_id").notNull(),
+    amount: real("amount").notNull(),
+    currency: text("currency").notNull().default("USD"),
+    /** pending | paid | cancelled | failed */
+    status: text("status").notNull().default("pending"),
+    paynowReference: text("paynow_reference"),
+    pollUrl: text("poll_url"),
+    browserUrl: text("browser_url"),
+    rawInitJson: text("raw_init_json"),
+    rawResultJson: text("raw_result_json"),
+    ...timestamps,
+  },
+  (t) => [
+    index("paynow_transactions_entity_idx").on(t.entityType, t.entityId),
+    index("paynow_transactions_status_idx").on(t.status),
   ],
 );

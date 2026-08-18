@@ -219,6 +219,10 @@ function BookInner() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t("validation.unableCreateBooking"));
+      if (data.paynowRedirectUrl) {
+        window.location.href = data.paynowRedirectUrl as string;
+        return;
+      }
       router.push(
         `/book/success?reference=${encodeURIComponent(data.booking.reference)}&total=${data.booking.totalAmount}&currency=${data.booking.currency}`,
       );

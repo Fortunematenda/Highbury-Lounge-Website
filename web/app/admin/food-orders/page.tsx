@@ -62,6 +62,7 @@ export default async function AdminFoodOrdersPage({
     id: number;
     reference: string;
     status: string;
+    paymentStatus: string;
     guestName: string | null;
     totalAmount: number;
     currency: string;
@@ -80,6 +81,7 @@ export default async function AdminFoodOrdersPage({
         id: foodOrders.id,
         reference: foodOrders.reference,
         status: foodOrders.status,
+        paymentStatus: foodOrders.paymentStatus,
         guestName: foodOrders.guestName,
         totalAmount: foodOrders.totalAmount,
         currency: foodOrders.currency,

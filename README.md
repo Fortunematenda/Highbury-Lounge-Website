@@ -103,7 +103,8 @@ Copy `web/.env.example`. Important variables:
 | `MAX_MENU_IMAGE_SIZE_MB` | Max menu image upload size (default `5`) |
 | `PUBLIC_UPLOAD_BASE_URL` | Public path prefix for R2-served uploads (default `/uploads`) |
 | `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional email delivery |
-| Future `PAYMENT_*` | Reserved for payment gateway |
+| `PAYNOW_INTEGRATION_ID` / `PAYNOW_INTEGRATION_KEY` | Paynow Zimbabwe checkout (bookings, tickets, food, conference) |
+| `SITE_URL` | Public site origin for emails and Paynow return/result URLs |
 
 Without SMTP, notifications are stored with status `unconfigured` and are **not** marked sent.
 
@@ -149,17 +150,31 @@ Historical bookings store a pricing snapshot and do not change when rates are up
 
 Templates cover booking received/confirmed/declined/awaiting payment/cancelled and conference enquiry events. Attempts are logged under **Admin → Notifications**.
 
-## Payments (prepared, not live)
+## Payments (Paynow)
 
-Payment rows and statuses (Unpaid, Partially Paid, Paid, Refunded, Failed) exist. Admins can record cash / bank transfer / mobile money / manual card. No gateway and no card storage yet.
+Online checkout uses **Paynow Zimbabwe** for room bookings, event tickets, standalone food pre-orders, and conference quotations.
+
+Set in `web/.env` (Docker Contabo: `/opt/highbury-lounge/.env`):
+
+```
+SITE_URL=http://161.97.120.107:8095
+PAYNOW_INTEGRATION_ID=your-integration-id
+PAYNOW_INTEGRATION_KEY=your-integration-key
+```
+
+Never commit the integration key. After deploy, migration `0010_paynow` runs on container start. Leave the Paynow dashboard Notification URL blank — each transaction sends its own `resulturl` / `returnurl` from `SITE_URL`.
+
+Admins can still record cash / bank / EcoCash / card payments manually for walk-ins.
+
 
 ## Guest booking flow
 
 1. Home search → `/rooms/search`
 2. Reserve → `/book`
-3. Success → `/book/success` (Pending, awaiting confirmation)
+3. Paynow checkout (when configured) → `/book/success`
 
-Conference enquiries: `/conference`
+Conference enquiries: `/conference` · pay quotation: `/conference/pay/[reference]`
+
 
 ## Scripts
 
