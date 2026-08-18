@@ -328,7 +328,8 @@ export async function startPaynowForBooking(bookingId: number) {
     amount: Number(booking.totalAmount),
     currency: booking.currency,
     description: `Room booking ${booking.reference}`,
-    authEmail: guest?.email,
+    // Omit guest email: Paynow test mode rejects authemail unless it is the merchant account email.
+    authEmail: null,
     successPath: successPathForEntity("booking", booking.reference, {
       total: booking.totalAmount,
       currency: booking.currency,
@@ -353,7 +354,8 @@ export async function startPaynowForTicketOrder(orderId: number) {
     amount: Number(order.totalAmount),
     currency: order.currency,
     description: `Event tickets ${order.reference}`,
-    authEmail: order.email,
+    // Omit guest email: Paynow test mode rejects authemail unless it is the merchant account email.
+    authEmail: null,
     successPath: successPathForEntity("ticket_order", order.reference),
   });
 
