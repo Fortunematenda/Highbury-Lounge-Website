@@ -48,11 +48,29 @@ if [ -f wrangler.migrate.toml ] && [ -d drizzle ]; then
     || echo "WARNING: D1 migration apply failed — check logs; app will still start."
 fi
 
+# Node proxy for outbound Paynow HTTPS (wrangler local often cannot reach Paynow).
+export PAYNOW_PROXY_PORT="${PAYNOW_PROXY_PORT:-3010}"
+export PAYNOW_PROXY_URL="http://127.0.0.1:${PAYNOW_PROXY_PORT}"
+node /app/scripts/paynow-proxy.cjs &
+PROXY_PID=$!
+sleep 1
+if ! kill -0 "$PROXY_PID" 2>/dev/null; then
+  echo "WARNING: Paynow Node proxy failed to start"
+else
+  echo "Paynow Node proxy started (pid $PROXY_PID) on ${PAYNOW_PROXY_URL}"
+fi
+
 # Also pass critical vars on the CLI so they are always available to the Worker.
 WRANGLER_VARS="--var COOKIE_SECURE:${COOKIE_SECURE}"
 [ -n "${SITE_URL:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var SITE_URL:${SITE_URL}"
 [ -n "${PAYNOW_INTEGRATION_ID:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_INTEGRATION_ID:${PAYNOW_INTEGRATION_ID}"
 [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_INTEGRATION_KEY:${PAYNOW_INTEGRATION_KEY}"
+WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_PROXY_URL:${PAYNOW_PROXY_URL}"
+
+cleanup() {
+  kill "$PROXY_PID" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
 
 # shellcheck disable=SC2086
 exec npx wrangler dev \

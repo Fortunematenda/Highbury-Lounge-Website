@@ -5,6 +5,36 @@
  */
 
 const INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction";
+const PAYNOW_PROXY_URL =
+  (typeof process !== "undefined" &&
+    process.env.PAYNOW_PROXY_URL?.trim().replace(/\/$/, "")) ||
+  "http://127.0.0.1:3010";
+
+async function postInitiate(body: string): Promise<string> {
+  // Prefer local Node proxy (reliable outbound HTTPS in Docker + wrangler local).
+  try {
+    const proxied = await fetch(`${PAYNOW_PROXY_URL}/initiate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+    if (proxied.ok || proxied.status < 500) {
+      return await proxied.text();
+    }
+  } catch {
+    // Fall through to direct Paynow call.
+  }
+
+  const res = await fetch(INITIATE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json, text/plain, */*",
+    },
+    body,
+  });
+  return res.text();
+}
 
 export class PaynowError extends Error {
   status: number;
@@ -167,33 +197,59 @@ export async function initiatePayment(
   fields.hash = await createPaynowHash(fields, integrationKey);
 
   const body = new URLSearchParams(fields).toString();
+  let lastError: unknown = null;
 
-  const res = await fetch(INITIATE_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-  const rawText = await res.text();
-  const raw = parsePaynowBody(rawText);
-  const status = (raw.status || "").toLowerCase();
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const rawText = await postInitiate(body);
+      const raw = parsePaynowBody(rawText);
+      const status = (raw.status || "").toLowerCase();
 
-  if (status === "ok" || status === "ok!") {
-    return {
-      success: true,
-      browserUrl: raw.browserurl || raw.browserUrl,
-      pollUrl: raw.pollurl || raw.pollUrl,
-      paynowReference: raw.paynowreference || raw.paynowReference,
-      raw,
-    };
+      if (status === "ok" || status === "ok!") {
+        return {
+          success: true,
+          browserUrl: raw.browserurl || raw.browserUrl,
+          pollUrl: raw.pollurl || raw.pollUrl,
+          paynowReference: raw.paynowreference || raw.paynowReference,
+          raw,
+        };
+      }
+
+      // If proxy returned JSON error, surface it.
+      if (rawText.trim().startsWith("{")) {
+        try {
+          const parsed = JSON.parse(rawText) as { error?: string };
+          if (parsed.error) {
+            return { success: false, error: parsed.error, raw };
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+
+      return {
+        success: false,
+        error: raw.error || raw.status || rawText || "Paynow initiation failed.",
+        raw,
+      };
+    } catch (err) {
+      lastError = err;
+      const message = err instanceof Error ? err.message : String(err);
+      const retryable =
+        /network connection lost|fetch failed|econnreset|etimedout|socket/i.test(
+          message,
+        );
+      if (!retryable || attempt === 4) break;
+      await new Promise((r) => setTimeout(r, 400 * attempt));
+    }
   }
 
-  return {
-    success: false,
-    error: raw.error || raw.status || rawText || "Paynow initiation failed.",
-    raw,
-  };
+  const detail =
+    lastError instanceof Error ? lastError.message : "Unknown network error";
+  throw new PaynowError(
+    `Could not reach Paynow (${detail}). Check outbound HTTPS from the server to www.paynow.co.zw.`,
+    502,
+  );
 }
 
 export type PollPaymentResult = {
