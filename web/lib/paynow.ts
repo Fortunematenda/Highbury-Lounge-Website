@@ -10,8 +10,49 @@ const PAYNOW_PROXY_URL =
     process.env.PAYNOW_PROXY_URL?.trim().replace(/\/$/, "")) ||
   "http://127.0.0.1:3010";
 
+/** Outbound HTTPS via Node (bypasses workerd fetch "Network connection lost"). */
+async function postInitiateViaNodeHttps(body: string): Promise<string> {
+  const https = await import("node:https");
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: "www.paynow.co.zw",
+        path: "/interface/initiatetransaction",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(body),
+          Accept: "*/*",
+        },
+        timeout: 25000,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => chunks.push(chunk));
+        res.on("end", () =>
+          resolve(Buffer.concat(chunks).toString("utf8")),
+        );
+      },
+    );
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Paynow request timed out"));
+    });
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 async function postInitiate(body: string): Promise<string> {
-  // Prefer local Node proxy (reliable outbound HTTPS in Docker + wrangler local).
+  // 1) Node https (best path inside wrangler local / Docker)
+  try {
+    return await postInitiateViaNodeHttps(body);
+  } catch (err) {
+    console.error("Paynow node:https failed:", err);
+  }
+
+  // 2) Local Node proxy (same container)
   try {
     const proxied = await fetch(`${PAYNOW_PROXY_URL}/initiate`, {
       method: "POST",
@@ -21,10 +62,11 @@ async function postInitiate(body: string): Promise<string> {
     if (proxied.ok || proxied.status < 500) {
       return await proxied.text();
     }
-  } catch {
-    // Fall through to direct Paynow call.
+  } catch (err) {
+    console.error("Paynow proxy failed:", err);
   }
 
+  // 3) Worker fetch last
   const res = await fetch(INITIATE_URL, {
     method: "POST",
     headers: {
