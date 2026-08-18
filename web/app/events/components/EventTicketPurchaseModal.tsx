@@ -151,6 +151,9 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
         window.location.href = data.paynowRedirectUrl as string;
         return;
       }
+      if (data.paynowError) {
+        toast.error(String(data.paynowError));
+      }
       setCreated({
         reference: data.order.reference,
         ticketUrl: data.ticketUrl,
@@ -160,7 +163,11 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
         currency: data.order.currency,
         bank: data.bank,
       });
-      toast.success("Order created — use the reference when you pay");
+      toast.success(
+        data.paynowError
+          ? "Order created — pay online from the ticket page or use bank transfer"
+          : "Order created — use the reference when you pay",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create order");
     } finally {

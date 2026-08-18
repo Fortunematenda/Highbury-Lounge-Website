@@ -35,6 +35,9 @@ export COOKIE_SECURE="${COOKIE_SECURE:-false}"
   [ -n "${SMTP_FROM:-}" ] && echo "SMTP_FROM=${SMTP_FROM}"
 } > /app/.dev.vars
 
+echo "Paynow configured: $([ -n "${PAYNOW_INTEGRATION_ID:-}" ] && [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && [ -n "${SITE_URL:-}" ] && echo yes || echo no)"
+echo "SITE_URL=${SITE_URL:-<unset>}"
+
 # Apply pending D1 migrations against the same persist path the app uses.
 # Missing tables (e.g. food_orders) cause opaque Server Component errors in prod.
 if [ -f wrangler.migrate.toml ] && [ -d drizzle ]; then
@@ -45,10 +48,17 @@ if [ -f wrangler.migrate.toml ] && [ -d drizzle ]; then
     || echo "WARNING: D1 migration apply failed — check logs; app will still start."
 fi
 
+# Also pass critical vars on the CLI so they are always available to the Worker.
+WRANGLER_VARS="--var COOKIE_SECURE:${COOKIE_SECURE}"
+[ -n "${SITE_URL:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var SITE_URL:${SITE_URL}"
+[ -n "${PAYNOW_INTEGRATION_ID:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_INTEGRATION_ID:${PAYNOW_INTEGRATION_ID}"
+[ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_INTEGRATION_KEY:${PAYNOW_INTEGRATION_KEY}"
+
+# shellcheck disable=SC2086
 exec npx wrangler dev \
   --config dist/server/wrangler.json \
   --local \
   --ip 0.0.0.0 \
   --port 3000 \
   --persist-to .wrangler/state \
-  --var "COOKIE_SECURE:${COOKIE_SECURE}"
+  $WRANGLER_VARS

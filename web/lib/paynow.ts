@@ -1,6 +1,7 @@
 /**
  * Paynow Zimbabwe web checkout helpers (hash + initiate + poll).
- * Docs: https://developers.paynow.co.zw/
+ * Hashing matches the official Paynow Node SDK:
+ * URL-encode values, concat in field order, append integrationKey.toLowerCase(), SHA512 uppercase.
  */
 
 const INITIATE_URL = "https://www.paynow.co.zw/interface/initiatetransaction";
@@ -19,16 +20,28 @@ export type PaynowEntityType =
   | "food_order"
   | "conference";
 
+function readEnv(name: string): string {
+  const fromProcess = (process.env[name] || "").trim();
+  if (fromProcess) return fromProcess;
+  try {
+    // Optional Cloudflare Worker bindings (wrangler vars / .dev.vars)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { env } = require("cloudflare:workers") as {
+      env?: Record<string, string | undefined>;
+    };
+    return String(env?.[name] ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
 export function getPaynowConfig() {
-  const integrationId = (process.env.PAYNOW_INTEGRATION_ID || "").trim();
-  const integrationKey = (process.env.PAYNOW_INTEGRATION_KEY || "").trim();
-  const siteUrl = (
-    process.env.SITE_URL ||
-    process.env.PUBLIC_SITE_URL ||
-    ""
-  )
-    .trim()
-    .replace(/\/$/, "");
+  const integrationId = readEnv("PAYNOW_INTEGRATION_ID");
+  const integrationKey = readEnv("PAYNOW_INTEGRATION_KEY");
+  const siteUrl = (readEnv("SITE_URL") || readEnv("PUBLIC_SITE_URL")).replace(
+    /\/$/,
+    "",
+  );
 
   return { integrationId, integrationKey, siteUrl };
 }
@@ -64,7 +77,17 @@ async function sha512Upper(input: string): Promise<string> {
     .toUpperCase();
 }
 
-/** Build Paynow hash: concatenate field values (excluding hash) + integration key. */
+function urlEncode(value: string): string {
+  return encodeURI(value);
+}
+
+function urlDecode(value: string): string {
+  return decodeURIComponent(
+    (value + "").replace(/%(?![\da-f]{2})/gi, "%25").replace(/\+/g, "%20"),
+  );
+}
+
+/** Build Paynow hash (Node SDK compatible). */
 export async function createPaynowHash(
   values: Record<string, string>,
   integrationKey: string,
@@ -74,7 +97,7 @@ export async function createPaynowHash(
     if (key.toLowerCase() === "hash") continue;
     concat += value ?? "";
   }
-  concat += integrationKey;
+  concat += integrationKey.toLowerCase();
   return sha512Upper(concat);
 }
 
@@ -90,8 +113,12 @@ export async function verifyPaynowHash(
 
 function parsePaynowBody(raw: string): Record<string, string> {
   const out: Record<string, string> = {};
-  const params = new URLSearchParams(raw);
-  for (const [key, value] of params.entries()) {
+  const pairs = (raw.startsWith("?") ? raw.slice(1) : raw).split("&");
+  for (const pair of pairs) {
+    if (!pair) continue;
+    const idx = pair.indexOf("=");
+    const key = urlDecode(idx >= 0 ? pair.slice(0, idx) : pair);
+    const value = urlDecode(idx >= 0 ? pair.slice(idx + 1) : "");
     out[key] = value;
   }
   return out;
@@ -124,21 +151,23 @@ export async function initiatePayment(
     throw new PaynowError("Payment amount must be greater than zero.");
   }
 
+  // Field order matches official Paynow Node SDK `build()`.
+  // Hash uses raw (not encoded) values + integrationKey.toLowerCase() per Paynow docs.
   const fields: Record<string, string> = {
-    id: String(integrationId),
+    resulturl: input.resultUrl,
+    returnurl: input.returnUrl,
     reference: input.reference,
     amount: amount.toFixed(2),
+    id: String(integrationId),
     additionalinfo: input.additionalInfo.slice(0, 200),
-    returnurl: input.returnUrl,
-    resulturl: input.resultUrl,
+    authemail: input.authEmail?.trim().toLowerCase() || "",
     status: "Message",
   };
-  if (input.authEmail?.trim()) {
-    fields.authemail = input.authEmail.trim().toLowerCase();
-  }
+
   fields.hash = await createPaynowHash(fields, integrationKey);
 
   const body = new URLSearchParams(fields).toString();
+
   const res = await fetch(INITIATE_URL, {
     method: "POST",
     headers: {
@@ -162,7 +191,7 @@ export async function initiatePayment(
 
   return {
     success: false,
-    error: raw.error || raw.status || "Paynow initiation failed.",
+    error: raw.error || raw.status || rawText || "Paynow initiation failed.",
     raw,
   };
 }
@@ -178,7 +207,7 @@ export type PollPaymentResult = {
 
 export async function pollPayment(pollUrl: string): Promise<PollPaymentResult> {
   const { integrationKey } = requirePaynowConfig();
-  const res = await fetch(pollUrl, { method: "GET" });
+  const res = await fetch(pollUrl, { method: "POST", body: null });
   const rawText = await res.text();
   const raw = parsePaynowBody(rawText);
 
