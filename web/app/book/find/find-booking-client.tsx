@@ -24,7 +24,6 @@ type FoundBooking = {
 export function FindBookingClient() {
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [booking, setBooking] = useState<FoundBooking | null>(null);
@@ -57,32 +56,6 @@ export function FindBookingClient() {
       setError(err instanceof Error ? err.message : "Lookup failed");
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function payNow() {
-    if (!booking || paying) return;
-    setPaying(true);
-    setError("");
-    try {
-      const res = await fetch("/api/payments/paynow/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          entityType: "booking",
-          reference: booking.reference,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not start payment");
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl as string;
-        return;
-      }
-      throw new Error("Payment redirect missing");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start payment");
-      setPaying(false);
     }
   }
 
@@ -150,20 +123,9 @@ export function FindBookingClient() {
               </li>
             </ul>
             <div className="hero-actions" style={{ marginTop: 18 }}>
-              {booking.paymentStatus !== "Paid" ? (
-                <button
-                  className="button primary"
-                  type="button"
-                  onClick={() => void payNow()}
-                  disabled={paying}
-                >
-                  {paying ? "Redirecting…" : "Pay now"}
-                </button>
-              ) : (
-                <Link className="button primary" href="/">
-                  Return home
-                </Link>
-              )}
+              <Link className="button primary" href="/">
+                Return home
+              </Link>
               <Link className="button outline" href="/rooms">
                 Browse rooms
               </Link>

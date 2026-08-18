@@ -120,11 +120,11 @@ export default async function TicketOrderPage({
             <div className="event-ticket-bank">
               <h2>How to pay</h2>
               <p>
-                Pay online with Paynow, or deposit{" "}
+                Deposit{" "}
                 <strong>
                   {order.currency} {Number(order.totalAmount).toFixed(2)}
                 </strong>{" "}
-                by bank transfer using reference{" "}
+                using reference{" "}
                 <strong className="event-ticket-ref">{order.reference}</strong>.
               </p>
               <p>
@@ -154,7 +154,8 @@ export default async function TicketOrderPage({
             </div>
 
             <div className="event-ticket-actions">
-              <TicketOrderClient reference={order.reference} canPay />
+              {/* canPay: set true (or isPaynowConfigured()) when PAYNOW_ENABLED for go-live */}
+              <TicketOrderClient reference={order.reference} canPay={false} />
               <p className="muted event-ticket-help">
                 Lost this page later?{" "}
                 <Link href="/events#find-ticket">Find my ticket</Link>

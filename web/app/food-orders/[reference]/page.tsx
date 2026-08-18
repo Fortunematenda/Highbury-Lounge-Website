@@ -28,7 +28,9 @@ function FoodOrderInner() {
     Array<{ name: string; quantity: number; totalPrice: number }>
   >([]);
   const [error, setError] = useState("");
-  const [paying, setPaying] = useState(false);
+  // Paynow guest checkout — re-enable when PAYNOW_ENABLED=true (go-live).
+  // const [paying, setPaying] = useState(false);
+  // const [paynowReady, setPaynowReady] = useState(false);
 
   useEffect(() => {
     if (!reference) return;
@@ -48,31 +50,32 @@ function FoodOrderInner() {
     })();
   }, [reference]);
 
-  async function payNow() {
-    if (!order || paying) return;
-    setPaying(true);
-    setError("");
-    try {
-      const res = await fetch("/api/payments/paynow/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          entityType: "food_order",
-          reference: order.reference,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not start payment");
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl as string;
-        return;
-      }
-      throw new Error("Payment redirect missing");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start payment");
-      setPaying(false);
-    }
-  }
+  // When going live with Paynow, restore this and the Pay now button below.
+  // async function payNow() {
+  //   if (!order || paying) return;
+  //   setPaying(true);
+  //   setError("");
+  //   try {
+  //     const res = await fetch("/api/payments/paynow/initiate", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         entityType: "food_order",
+  //         reference: order.reference,
+  //       }),
+  //     });
+  //     const data = await res.json().catch(() => ({}));
+  //     if (!res.ok) throw new Error(data.error || "Could not start payment");
+  //     if (data.redirectUrl) {
+  //       window.location.href = data.redirectUrl as string;
+  //       return;
+  //     }
+  //     throw new Error("Payment redirect missing");
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : "Could not start payment");
+  //     setPaying(false);
+  //   }
+  // }
 
   const paid =
     paidFlag || order?.paymentStatus === "paid" || Boolean(order?.bookingId);
@@ -82,7 +85,7 @@ function FoodOrderInner() {
       <section className="booking-flow-panel success-panel">
         <BackLink href="/#dine-menu" label="Back to menu" />
         <p className="eyebrow">Food pre-order</p>
-        <h1>{paid ? "Order confirmed" : "Complete payment"}</h1>
+        <h1>{paid ? "Order confirmed" : "Order received"}</h1>
         {error ? (
           <p className="form-error" role="alert">
             {error}
@@ -101,10 +104,11 @@ function FoodOrderInner() {
               </strong>
             </p>
             <p className="muted">
-              Payment: {order.paymentStatus}
               {order.bookingId
-                ? " (included with room booking)"
-                : ""}
+                ? "This order is included with your room booking."
+                : paid
+                  ? "Payment received."
+                  : "Our team will confirm payment and service details with you."}
             </p>
             <ul>
               {items.map((item) => (
@@ -115,6 +119,7 @@ function FoodOrderInner() {
               ))}
             </ul>
             <div className="hero-actions">
+              {/* Paynow CTA — uncomment when PAYNOW_ENABLED=true for go-live
               {!paid && !order.bookingId ? (
                 <button
                   className="button primary"
@@ -124,11 +129,11 @@ function FoodOrderInner() {
                 >
                   {paying ? "Redirecting…" : "Pay now"}
                 </button>
-              ) : (
-                <Link className="button primary" href="/">
-                  Return home
-                </Link>
-              )}
+              ) : null}
+              */}
+              <Link className="button primary" href="/">
+                Return home
+              </Link>
               <Link className="button outline" href="/#dine-menu">
                 Back to menu
               </Link>

@@ -147,12 +147,10 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not create ticket order");
+      // Paynow auto-redirect is gated by PAYNOW_ENABLED on the server.
       if (data.paynowRedirectUrl) {
         window.location.href = data.paynowRedirectUrl as string;
         return;
-      }
-      if (data.paynowError) {
-        toast.error(String(data.paynowError));
       }
       setCreated({
         reference: data.order.reference,
@@ -163,11 +161,7 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
         currency: data.order.currency,
         bank: data.bank,
       });
-      toast.success(
-        data.paynowError
-          ? "Order created — pay online from the ticket page or use bank transfer"
-          : "Order created — use the reference when you pay",
-      );
+      toast.success("Order created — use the reference when you pay");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create order");
     } finally {
@@ -214,6 +208,7 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
             <p>
               Your order reference is{" "}
               <strong className="event-ticket-ref">{created.reference}</strong>.
+              Use this exact reference when you deposit.
             </p>
             <ul className="event-ticket-pay-summary">
               <li>
@@ -229,56 +224,8 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
                 </strong>
               </li>
             </ul>
-            <div className="form-row" style={{ marginTop: 8, marginBottom: 16 }}>
-              <button
-                type="button"
-                className="button primary form-submit"
-                disabled={submitting}
-                onClick={async () => {
-                  setSubmitting(true);
-                  setError("");
-                  try {
-                    const res = await fetch("/api/payments/paynow/initiate", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        entityType: "ticket_order",
-                        reference: created.reference,
-                        email: form.email,
-                      }),
-                    });
-                    const data = await res.json().catch(() => ({}));
-                    if (!res.ok) {
-                      throw new Error(data.error || "Could not start Paynow");
-                    }
-                    if (data.redirectUrl) {
-                      window.location.href = data.redirectUrl as string;
-                      return;
-                    }
-                    throw new Error("Paynow redirect missing");
-                  } catch (err) {
-                    setError(
-                      err instanceof Error
-                        ? err.message
-                        : "Could not start Paynow",
-                    );
-                    setSubmitting(false);
-                  }
-                }}
-              >
-                {submitting ? "Opening Paynow…" : "Pay online with Paynow"}
-              </button>
-              <Link className="button outline" href={created.ticketUrl}>
-                View order
-              </Link>
-            </div>
             <div className="event-ticket-bank">
-              <h3>Or pay by bank transfer</h3>
-              <p>
-                Use reference{" "}
-                <strong className="event-ticket-ref">{created.reference}</strong>{" "}
-                when you deposit.
-              </p>
+              <h3>Bank details</h3>
               <p>
                 <strong>{created.bank.bankName}</strong>
                 <br />
@@ -302,12 +249,15 @@ export function EventTicketPurchaseModal({ event, open, onClose }: Props) {
               ) : null}
             </div>
             <div className="form-row" style={{ marginTop: 16 }}>
+              <Link className="button primary form-submit" href={created.ticketUrl}>
+                View order / ticket
+              </Link>
               <button type="button" className="button ghost" onClick={onClose}>
                 Close
               </button>
             </div>
             <p className="muted" style={{ marginTop: 12 }}>
-              Lost this later?{" "}
+              We emailed these details to you. Lost the email later?{" "}
               <Link href="/events#find-ticket">Find my ticket</Link>
             </p>
           </div>

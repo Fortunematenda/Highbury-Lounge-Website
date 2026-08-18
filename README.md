@@ -103,7 +103,8 @@ Copy `web/.env.example`. Important variables:
 | `MAX_MENU_IMAGE_SIZE_MB` | Max menu image upload size (default `5`) |
 | `PUBLIC_UPLOAD_BASE_URL` | Public path prefix for R2-served uploads (default `/uploads`) |
 | `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional email delivery |
-| `PAYNOW_INTEGRATION_ID` / `PAYNOW_INTEGRATION_KEY` | Paynow Zimbabwe checkout (bookings, tickets, food, conference) |
+| `PAYNOW_ENABLED` | Guest online checkout switch (`false` until live; set `true` to turn Paynow on) |
+| `PAYNOW_INTEGRATION_ID` / `PAYNOW_INTEGRATION_KEY` | Paynow Zimbabwe keys (safe to keep on server while disabled) |
 | `SITE_URL` | Public site origin for emails and Paynow return/result URLs |
 
 Without SMTP, notifications are stored with status `unconfigured` and are **not** marked sent.
@@ -152,15 +153,18 @@ Templates cover booking received/confirmed/declined/awaiting payment/cancelled a
 
 ## Payments (Paynow)
 
-Online checkout uses **Paynow Zimbabwe** for room bookings, event tickets, standalone food pre-orders, and conference quotations.
+Paynow Zimbabwe is **implemented and tested**, but **guest checkout is off** until go-live so customers keep using bank transfer.
 
 Set in `web/.env` (Docker Contabo: `/opt/highbury-lounge/.env`):
 
 ```
-SITE_URL=http://161.97.120.107:8095
+SITE_URL=https://www.highbury-lounge.co.zw
+PAYNOW_ENABLED=false
 PAYNOW_INTEGRATION_ID=your-integration-id
 PAYNOW_INTEGRATION_KEY=your-integration-key
 ```
+
+When Paynow approves live mode: set `PAYNOW_ENABLED=true`, restore any commented “Pay now” CTAs if needed, redeploy. Until then guests see bank-transfer flows for tickets/bookings.
 
 Never commit the integration key. After deploy, migration `0010_paynow` runs on container start. Leave the Paynow dashboard Notification URL blank — each transaction sends its own `resulturl` / `returnurl` from `SITE_URL`.
 
@@ -171,7 +175,7 @@ Admins can still record cash / bank / EcoCash / card payments manually for walk-
 
 1. Home search → `/rooms/search`
 2. Reserve → `/book`
-3. Paynow checkout (when configured) → `/book/success`
+3. Success → `/book/success` (bank / contact until Paynow is enabled)
 
 Conference enquiries: `/conference` · pay quotation: `/conference/pay/[reference]`
 

@@ -25,6 +25,7 @@ export COOKIE_SECURE="${COOKIE_SECURE:-false}"
   echo "COOKIE_SECURE=${COOKIE_SECURE}"
   [ -n "${SITE_URL:-}" ] && echo "SITE_URL=${SITE_URL}"
   [ -n "${PUBLIC_SITE_URL:-}" ] && echo "PUBLIC_SITE_URL=${PUBLIC_SITE_URL}"
+  echo "PAYNOW_ENABLED=${PAYNOW_ENABLED:-false}"
   [ -n "${PAYNOW_INTEGRATION_ID:-}" ] && echo "PAYNOW_INTEGRATION_ID=${PAYNOW_INTEGRATION_ID}"
   [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && echo "PAYNOW_INTEGRATION_KEY=${PAYNOW_INTEGRATION_KEY}"
   [ -n "${SEED_KEY:-}" ] && echo "SEED_KEY=${SEED_KEY}"
@@ -35,7 +36,8 @@ export COOKIE_SECURE="${COOKIE_SECURE:-false}"
   [ -n "${SMTP_FROM:-}" ] && echo "SMTP_FROM=${SMTP_FROM}"
 } > /app/.dev.vars
 
-echo "Paynow configured: $([ -n "${PAYNOW_INTEGRATION_ID:-}" ] && [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && [ -n "${SITE_URL:-}" ] && echo yes || echo no)"
+echo "Paynow enabled: ${PAYNOW_ENABLED:-false}"
+echo "Paynow keys present: $([ -n "${PAYNOW_INTEGRATION_ID:-}" ] && [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && [ -n "${SITE_URL:-}" ] && echo yes || echo no)"
 echo "SITE_URL=${SITE_URL:-<unset>}"
 
 # Apply pending D1 migrations against the same persist path the app uses.
@@ -63,6 +65,7 @@ fi
 # Also pass critical vars on the CLI so they are always available to the Worker.
 WRANGLER_VARS="--var COOKIE_SECURE:${COOKIE_SECURE}"
 [ -n "${SITE_URL:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var SITE_URL:${SITE_URL}"
+WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_ENABLED:${PAYNOW_ENABLED:-false}"
 [ -n "${PAYNOW_INTEGRATION_ID:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_INTEGRATION_ID:${PAYNOW_INTEGRATION_ID}"
 [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_INTEGRATION_KEY:${PAYNOW_INTEGRATION_KEY}"
 WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_PROXY_URL:${PAYNOW_PROXY_URL}"

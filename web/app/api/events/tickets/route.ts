@@ -42,21 +42,17 @@ export async function POST(request: Request) {
 
     let paynowRedirectUrl: string | null = null;
     let paynowError: string | null = null;
-    if (Number(result.order.totalAmount) > 0) {
-      if (!isPaynowConfigured()) {
+    // Online Paynow checkout is opt-in via PAYNOW_ENABLED=true (kept ready for go-live).
+    if (isPaynowConfigured() && Number(result.order.totalAmount) > 0) {
+      try {
+        const checkout = await startPaynowForTicketOrder(result.order.id);
+        paynowRedirectUrl = checkout.redirectUrl;
+      } catch (err) {
+        console.error("Paynow ticket initiate failed:", err);
         paynowError =
-          "Online payment is not configured on the server (Paynow keys / SITE_URL).";
-      } else {
-        try {
-          const checkout = await startPaynowForTicketOrder(result.order.id);
-          paynowRedirectUrl = checkout.redirectUrl;
-        } catch (err) {
-          console.error("Paynow ticket initiate failed:", err);
-          paynowError =
-            err instanceof Error
-              ? err.message
-              : "Could not start Paynow checkout.";
-        }
+          err instanceof Error
+            ? err.message
+            : "Could not start Paynow checkout.";
       }
     }
 

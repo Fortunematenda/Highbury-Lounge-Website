@@ -19,10 +19,7 @@ function SuccessInner() {
   const total = Number(params.get("total") ?? "0");
   const currency = params.get("currency") ?? "USD";
   const paid = params.get("paid") === "1";
-  const pending = params.get("pending") === "1";
   const [whatsapp, setWhatsapp] = useState("+263786957068");
-  const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState("");
 
   useEffect(() => {
     void fetch("/api/public-settings", { cache: "no-store" })
@@ -33,29 +30,6 @@ function SuccessInner() {
       .catch(() => undefined);
   }, []);
 
-  async function payNow() {
-    if (!reference || paying) return;
-    setPaying(true);
-    setPayError("");
-    try {
-      const res = await fetch("/api/payments/paynow/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entityType: "booking", reference }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not start payment");
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl as string;
-        return;
-      }
-      throw new Error("Payment redirect missing");
-    } catch (err) {
-      setPayError(err instanceof Error ? err.message : "Could not start payment");
-      setPaying(false);
-    }
-  }
-
   return (
     <main className="booking-flow">
       <section className="booking-flow-panel success-panel">
@@ -63,11 +37,7 @@ function SuccessInner() {
         <span className="success-mark">✓</span>
         <p className="eyebrow">Highbury Lounge</p>
         <h1>
-          {paid
-            ? "Payment received"
-            : pending
-              ? "Payment pending"
-              : t("booking.reservationReceived")}
+          {paid ? "Payment received" : t("booking.reservationReceived")}
         </h1>
         <p>
           {paid
@@ -78,33 +48,11 @@ function SuccessInner() {
           {t("booking.estimatedTotal")}:{" "}
           <strong>{formatMoney(total, currency, i18n.language)}</strong>
         </p>
-        {!paid ? (
-          <p className="muted">
-            {pending
-              ? "If you completed payment on Paynow, it may take a moment to confirm. You can also try Pay now again."
-              : "Pay securely online with Paynow, or settle with us later."}
-          </p>
-        ) : null}
-        {payError ? (
-          <p className="form-error" role="alert">
-            {payError}
-          </p>
-        ) : null}
+        {!paid ? <p className="muted">{t("booking.paymentDisclaimer")}</p> : null}
         <div className="hero-actions">
-          {!paid ? (
-            <button
-              className="button primary"
-              type="button"
-              onClick={() => void payNow()}
-              disabled={paying || !reference}
-            >
-              {paying ? "Redirecting…" : "Pay now"}
-            </button>
-          ) : (
-            <Link className="button primary" href="/">
-              {t("actions.returnHome")}
-            </Link>
-          )}
+          <Link className="button primary" href="/">
+            {t("actions.returnHome")}
+          </Link>
           <Link className="button outline" href="/book/find">
             Find my booking
           </Link>

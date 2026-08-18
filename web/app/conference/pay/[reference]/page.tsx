@@ -27,7 +27,7 @@ function ConferencePayInner() {
   const [enquiry, setEnquiry] = useState<EnquiryView | null>(null);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [paying, setPaying] = useState(false);
+  // const [paying, setPaying] = useState(false); // Paynow — enable at go-live
   const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
@@ -58,43 +58,44 @@ function ConferencePayInner() {
     setUnlocked(true);
   }
 
-  async function payNow() {
-    if (!enquiry || paying) return;
-    setPaying(true);
-    setError("");
-    try {
-      const res = await fetch("/api/payments/paynow/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          entityType: "conference",
-          reference: enquiry.reference,
-          email: enquiry.email,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Could not start payment");
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl as string;
-        return;
-      }
-      throw new Error("Payment redirect missing");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start payment");
-      setPaying(false);
-    }
-  }
+  // Paynow guest checkout — restore when PAYNOW_ENABLED=true (go-live).
+  // async function payNow() {
+  //   if (!enquiry || paying) return;
+  //   setPaying(true);
+  //   setError("");
+  //   try {
+  //     const res = await fetch("/api/payments/paynow/initiate", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         entityType: "conference",
+  //         reference: enquiry.reference,
+  //         email: enquiry.email,
+  //       }),
+  //     });
+  //     const data = await res.json().catch(() => ({}));
+  //     if (!res.ok) throw new Error(data.error || "Could not start payment");
+  //     if (data.redirectUrl) {
+  //       window.location.href = data.redirectUrl as string;
+  //       return;
+  //     }
+  //     throw new Error("Payment redirect missing");
+  //   } catch (err) {
+  //     setError(err instanceof Error ? err.message : "Could not start payment");
+  //     setPaying(false);
+  //   }
+  // }
 
   const amount = Number(enquiry?.quotationAmount || 0);
   const paid = paidFlag || enquiry?.paymentStatus === "paid";
-  const canPay = unlocked && amount > 0 && !paid;
+  // const canPay = unlocked && amount > 0 && !paid;
 
   return (
     <main className="booking-flow">
       <section className="booking-flow-panel">
         <BackLink href="/conference" label="Back" />
         <p className="eyebrow">Conference quotation</p>
-        <h1>{paid ? "Payment received" : "Pay quotation"}</h1>
+        <h1>{paid ? "Payment received" : "Your quotation"}</h1>
 
         {error ? (
           <p className="form-error" role="alert">
@@ -141,7 +142,16 @@ function ConferencePayInner() {
               </form>
             ) : null}
 
+            {unlocked && !paid ? (
+              <p className="muted" style={{ marginTop: 12 }}>
+                Please pay by bank transfer using reference{" "}
+                <strong>{enquiry.reference}</strong>, or contact us to arrange
+                payment.
+              </p>
+            ) : null}
+
             <div className="hero-actions" style={{ marginTop: 18 }}>
+              {/* Paynow CTA — uncomment when PAYNOW_ENABLED=true for go-live
               {canPay ? (
                 <button
                   className="button primary"
@@ -152,8 +162,12 @@ function ConferencePayInner() {
                   {paying ? "Redirecting…" : "Pay now with Paynow"}
                 </button>
               ) : null}
-              <Link className="button outline" href="/">
+              */}
+              <Link className="button primary" href="/">
                 Return home
+              </Link>
+              <Link className="button outline" href="/conference">
+                Back to conference
               </Link>
             </div>
           </>

@@ -114,17 +114,26 @@ export function getPaynowConfig() {
     /\/$/,
     "",
   );
+  // Guest checkout stays off until Paynow goes live. Set PAYNOW_ENABLED=true to turn on.
+  const enabledRaw = readEnv("PAYNOW_ENABLED").toLowerCase();
+  const enabled = enabledRaw === "true" || enabledRaw === "1" || enabledRaw === "yes";
 
-  return { integrationId, integrationKey, siteUrl };
+  return { integrationId, integrationKey, siteUrl, enabled };
 }
 
 export function isPaynowConfigured() {
-  const { integrationId, integrationKey, siteUrl } = getPaynowConfig();
-  return Boolean(integrationId && integrationKey && siteUrl);
+  const { integrationId, integrationKey, siteUrl, enabled } = getPaynowConfig();
+  return Boolean(enabled && integrationId && integrationKey && siteUrl);
 }
 
 export function requirePaynowConfig() {
   const config = getPaynowConfig();
+  if (!config.enabled) {
+    throw new PaynowError(
+      "Online Paynow checkout is not enabled yet. Please pay by bank transfer.",
+      503,
+    );
+  }
   if (!config.integrationId || !config.integrationKey) {
     throw new PaynowError(
       "Paynow is not configured. Set PAYNOW_INTEGRATION_ID and PAYNOW_INTEGRATION_KEY.",
