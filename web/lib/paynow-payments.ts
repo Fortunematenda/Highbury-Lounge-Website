@@ -1,7 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
-  bookingGuests,
   bookings,
   conferenceEnquiries,
   eventTicketOrders,
@@ -314,13 +313,6 @@ export async function startPaynowForBooking(bookingId: number) {
   if (booking.paymentStatus === "Paid") {
     throw new PaynowError("This booking is already paid.");
   }
-  const [guest] = await db
-    .select()
-    .from(bookingGuests)
-    .where(
-      and(eq(bookingGuests.bookingId, bookingId), eq(bookingGuests.isPrimary, true)),
-    )
-    .limit(1);
 
   return startPaynowCheckout({
     entityType: "booking",
@@ -394,7 +386,7 @@ export async function startPaynowForFoodOrder(orderId: number) {
     amount: Number(order.totalAmount),
     currency: order.currency,
     description: `Food order ${order.reference}`,
-    authEmail: order.guestEmail,
+    authEmail: null,
     successPath: successPathForEntity("food_order", order.reference),
   });
 }
@@ -429,7 +421,7 @@ export async function startPaynowForConference(enquiryId: number) {
     amount,
     currency: "USD",
     description: `Conference quotation ${enquiry.reference}`,
-    authEmail: enquiry.email,
+    authEmail: null,
     successPath: successPathForEntity("conference", enquiry.reference),
   });
 }
