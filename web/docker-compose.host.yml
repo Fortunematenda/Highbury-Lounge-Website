@@ -1,0 +1,40 @@
+# Host-network compose for Contabo when mail only listens on 127.0.0.1.
+# nginx should proxy to http://127.0.0.1:8095
+#
+# Usage:
+#   docker compose -p highbury-lounge -f docker-compose.host.yml up -d --build
+
+services:
+  highbury-web:
+    build: .
+    container_name: highbury-lounge-web
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "8095"
+      HOST: "0.0.0.0"
+      CI: "true"
+      WRANGLER_SEND_METRICS: "false"
+      WRANGLER_LOG_PATH: .wrangler/wrangler.log
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      # Reach local Exim/cPanel mail on the same VPS
+      SMTP_HOST: "127.0.0.1"
+      SMTP_PORT: "465"
+      SMTP_TLS_SERVERNAME: "mail.highbury-lounge.co.zw"
+      SMTP_TLS_REJECT_UNAUTHORIZED: "0"
+    volumes:
+      - highbury-wrangler:/app/.wrangler
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8095/"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 50s
+
+volumes:
+  highbury-wrangler:
+    external: true
+    name: highbury-lounge_highbury-wrangler

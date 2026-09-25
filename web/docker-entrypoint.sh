@@ -108,10 +108,11 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # shellcheck disable=SC2086
+APP_PORT="${PORT:-3000}"
 exec npx wrangler dev \
   --config dist/server/wrangler.json \
   --local \
   --ip 0.0.0.0 \
-  --port 3000 \
+  --port "${APP_PORT}" \
   --persist-to .wrangler/state \
   $WRANGLER_VARS
