@@ -43,6 +43,7 @@ export COOKIE_SECURE="${COOKIE_SECURE:-false}"
 
 echo "Paynow enabled: ${PAYNOW_ENABLED:-false}"
 echo "Beds24 enabled: ${BEDS24_ENABLED:-false}"
+echo "SMTP configured: $([ -n "${SMTP_HOST:-}" ] && [ -n "${SMTP_USER:-}" ] && [ -n "${SMTP_PASS:-}" ] && echo yes || echo no)"
 echo "Paynow keys present: $([ -n "${PAYNOW_INTEGRATION_ID:-}" ] && [ -n "${PAYNOW_INTEGRATION_KEY:-}" ] && [ -n "${SITE_URL:-}" ] && echo yes || echo no)"
 echo "SITE_URL=${SITE_URL:-<unset>}"
 
@@ -68,6 +69,24 @@ else
   echo "Paynow Node proxy started (pid $PROXY_PID) on ${PAYNOW_PROXY_URL}"
 fi
 
+# Node proxy for SMTP (Worker cannot reliably open mail sockets).
+export SMTP_PROXY_PORT="${SMTP_PROXY_PORT:-3011}"
+export SMTP_PROXY_URL="http://127.0.0.1:${SMTP_PROXY_PORT}"
+node /app/scripts/smtp-proxy.cjs &
+SMTP_PROXY_PID=$!
+sleep 1
+if ! kill -0 "$SMTP_PROXY_PID" 2>/dev/null; then
+  echo "WARNING: SMTP Node proxy failed to start"
+else
+  echo "SMTP Node proxy started (pid $SMTP_PROXY_PID) on ${SMTP_PROXY_URL}"
+fi
+
+# Expose proxy URLs to the Worker (written after proxies start).
+{
+  echo "PAYNOW_PROXY_URL=${PAYNOW_PROXY_URL}"
+  echo "SMTP_PROXY_URL=${SMTP_PROXY_URL}"
+} >> /app/.dev.vars
+
 # Also pass critical vars on the CLI so they are always available to the Worker.
 WRANGLER_VARS="--var COOKIE_SECURE:${COOKIE_SECURE}"
 [ -n "${SITE_URL:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var SITE_URL:${SITE_URL}"
@@ -80,9 +99,11 @@ WRANGLER_VARS="$WRANGLER_VARS --var BEDS24_ENABLED:${BEDS24_ENABLED:-false}"
 [ -n "${BEDS24_WEBHOOK_SECRET:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var BEDS24_WEBHOOK_SECRET:${BEDS24_WEBHOOK_SECRET}"
 [ -n "${BEDS24_API_BASE_URL:-}" ] && WRANGLER_VARS="$WRANGLER_VARS --var BEDS24_API_BASE_URL:${BEDS24_API_BASE_URL}"
 WRANGLER_VARS="$WRANGLER_VARS --var PAYNOW_PROXY_URL:${PAYNOW_PROXY_URL}"
+WRANGLER_VARS="$WRANGLER_VARS --var SMTP_PROXY_URL:${SMTP_PROXY_URL}"
 
 cleanup() {
   kill "$PROXY_PID" 2>/dev/null || true
+  kill "$SMTP_PROXY_PID" 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 

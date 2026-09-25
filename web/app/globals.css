@@ -1085,18 +1085,42 @@ h2 { font-size: clamp(2.25rem, 3.6vw, 3.75rem); line-height: 1.02; letter-spacin
   overflow: hidden;
   background: #e9e5e1;
 }
-.home-event-image-wrap img {
+.home-event-image-wrap .event-card-media-blur {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(20px) brightness(0.45) saturate(1.05);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+.home-event-image-wrap img.event-card-media-img,
+.home-event-image-wrap img:not(.event-card-media-blur) {
   position: absolute;
   inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: var(--event-img-x, 50%) var(--event-img-y, 50%);
   display: block;
+  transform: scale(var(--event-img-zoom, 1));
+  transform-origin: var(--event-img-x, 50%) var(--event-img-y, 50%);
   transition: transform 0.45s ease;
 }
-.home-event-card:hover .home-event-image-wrap img {
-  transform: scale(1.03);
+.home-event-image-wrap img.event-card-media-img.is-mode-contain {
+  object-fit: contain;
+  object-position: center center;
+  transform: none;
+}
+.home-event-card:hover .home-event-image-wrap img.event-card-media-img.is-mode-fill,
+.home-event-card:hover .home-event-image-wrap img:not(.event-card-media-blur):not(.is-mode-contain) {
+  transform: scale(calc(var(--event-img-zoom, 1) * 1.03));
+}
+.home-event-card:hover .home-event-image-wrap img.event-card-media-img.is-mode-contain {
+  transform: none;
 }
 .home-event-information {
   display: grid;

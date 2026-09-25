@@ -144,6 +144,38 @@ async function sendViaSmtp(params: {
   subject: string;
   text: string;
 }) {
+  const proxyBase = (
+    process.env.SMTP_PROXY_URL ||
+    process.env.EMAIL_PROXY_URL ||
+    ""
+  )
+    .trim()
+    .replace(/\/$/, "");
+
+  // Prefer the Node SMTP proxy (Docker / wrangler local). Workerd often cannot
+  // open raw SMTP sockets. The proxy process holds SMTP_HOST/USER/PASS from
+  // Docker env — the Worker only needs SMTP_PROXY_URL.
+  if (proxyBase) {
+    const res = await fetch(`${proxyBase}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: params.to,
+        toName: params.toName ?? null,
+        subject: params.subject,
+        text: params.text,
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      error?: string;
+    };
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || `SMTP proxy failed (${res.status})`);
+    }
+    return { ok: true as const };
+  }
+
   const host = process.env.SMTP_HOST?.trim();
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASS?.trim();
@@ -151,7 +183,11 @@ async function sendViaSmtp(params: {
     return { ok: false as const, reason: "unconfigured" as const };
   }
 
-  const port = Number(process.env.SMTP_PORT || "587") || 587;
+  const port = Number(process.env.SMTP_PORT || "465") || 465;
+  const secure =
+    process.env.SMTP_SECURE === "true" ||
+    process.env.SMTP_SECURE === "1" ||
+    port === 465;
   const from =
     process.env.SMTP_FROM?.trim() ||
     `"Highbury Lounge" <${user}>`;
@@ -159,8 +195,15 @@ async function sendViaSmtp(params: {
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure,
     auth: { user, pass },
+    tls: {
+      servername: host,
+      minVersion: "TLSv1.2",
+    },
+    connectionTimeout: 20_000,
+    greetingTimeout: 20_000,
+    socketTimeout: 30_000,
   });
 
   await transporter.sendMail({
@@ -168,6 +211,7 @@ async function sendViaSmtp(params: {
     to: params.toName
       ? `"${params.toName.replace(/"/g, "")}" <${params.to}>`
       : params.to,
+    replyTo: user,
     subject: params.subject,
     text: params.text,
   });
@@ -190,7 +234,7 @@ export async function queueNotification(params: {
       settings.business_name || "Highbury Lounge",
       settings.address || "7504 Greenfield Cherries, Kadoma, Zimbabwe",
       `Phone: ${settings.phone || "+263 78 695 7068"}`,
-      `Email: ${settings.email || "test@higbury.com"}`,
+      `Email: ${settings.email || "reservations@highbury-lounge.co.zw"}`,
     ].join("\n"),
   };
 
@@ -255,6 +299,7 @@ export async function queueNotification(params: {
 
 export function isSmtpConfigured() {
   return Boolean(
-    process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS,
+    (process.env.SMTP_PROXY_URL || process.env.EMAIL_PROXY_URL)?.trim() ||
+      (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
   );
 }

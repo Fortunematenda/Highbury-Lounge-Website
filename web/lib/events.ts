@@ -29,6 +29,16 @@ import { queueNotification } from "@/lib/notifications";
 import { slugify } from "@/lib/slug";
 import { nowUtcIso, todayVenueStartIso, toVenueWallClock, nowVenueIso, toUtcIso } from "@/lib/timezone";
 
+function clampFraming(
+  value: number | null | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+) {
+  if (value == null || Number.isNaN(Number(value))) return fallback;
+  return Math.min(max, Math.max(min, Number(value)));
+}
+
 export {
   ACTION_TYPES,
   ENTRY_TYPES,
@@ -174,6 +184,11 @@ export function toPublicEvent(
     coverImage: event.coverImage,
     posterImage: event.posterImage,
     gallery: parseGallery(event.galleryJson),
+    imagePositionX: event.imagePositionX ?? 50,
+    imagePositionY: event.imagePositionY ?? 50,
+    imageZoom: event.imageZoom ?? 1,
+    imageDisplayMode: event.imageDisplayMode === "contain" ? "contain" : "fill",
+    imageAspectRatio: event.imageAspectRatio || "16/7",
     entryType: event.entryType,
     currency: event.currency,
     price: event.price,
@@ -467,6 +482,11 @@ export type EventInput = {
   coverImage?: string | null;
   posterImage?: string | null;
   gallery?: string[] | null;
+  imagePositionX?: number | null;
+  imagePositionY?: number | null;
+  imageZoom?: number | null;
+  imageDisplayMode?: string | null;
+  imageAspectRatio?: string | null;
   entryType?: string;
   currency?: string | null;
   price?: number | null;
@@ -549,6 +569,36 @@ function normalizeInput(input: EventInput, existing?: EventRow) {
     galleryJson: input.gallery
       ? JSON.stringify(input.gallery)
       : existing?.galleryJson ?? null,
+    imagePositionX: clampFraming(
+      input.imagePositionX !== undefined
+        ? input.imagePositionX
+        : existing?.imagePositionX,
+      50,
+      0,
+      100,
+    ),
+    imagePositionY: clampFraming(
+      input.imagePositionY !== undefined
+        ? input.imagePositionY
+        : existing?.imagePositionY,
+      50,
+      0,
+      100,
+    ),
+    imageZoom: clampFraming(
+      input.imageZoom !== undefined ? input.imageZoom : existing?.imageZoom,
+      1,
+      1,
+      3,
+    ),
+    imageDisplayMode:
+      (input.imageDisplayMode ?? existing?.imageDisplayMode) === "contain"
+        ? "contain"
+        : "fill",
+    imageAspectRatio:
+      input.imageAspectRatio?.trim() ||
+      existing?.imageAspectRatio ||
+      "16/7",
     entryType: entryType as EntryType,
     currency: input.currency?.trim() || existing?.currency || "USD",
     price,
@@ -667,6 +717,24 @@ export async function updateEvent(id: number, input: Partial<EventInput>) {
       input.coverImage !== undefined ? input.coverImage : existing.coverImage,
     posterImage:
       input.posterImage !== undefined ? input.posterImage : existing.posterImage,
+    imagePositionX:
+      input.imagePositionX !== undefined
+        ? input.imagePositionX
+        : existing.imagePositionX,
+    imagePositionY:
+      input.imagePositionY !== undefined
+        ? input.imagePositionY
+        : existing.imagePositionY,
+    imageZoom:
+      input.imageZoom !== undefined ? input.imageZoom : existing.imageZoom,
+    imageDisplayMode:
+      input.imageDisplayMode !== undefined
+        ? input.imageDisplayMode
+        : existing.imageDisplayMode,
+    imageAspectRatio:
+      input.imageAspectRatio !== undefined
+        ? input.imageAspectRatio
+        : existing.imageAspectRatio,
     gallery: input.gallery,
     entryType: input.entryType ?? existing.entryType,
     currency: input.currency ?? existing.currency,
@@ -787,6 +855,11 @@ export async function duplicateEvent(id: number) {
     timezone: existing.timezone,
     coverImage: existing.coverImage,
     posterImage: existing.posterImage,
+    imagePositionX: existing.imagePositionX,
+    imagePositionY: existing.imagePositionY,
+    imageZoom: existing.imageZoom,
+    imageDisplayMode: existing.imageDisplayMode,
+    imageAspectRatio: existing.imageAspectRatio,
     gallery: parseGallery(existing.galleryJson),
     entryType: existing.entryType,
     currency: existing.currency,

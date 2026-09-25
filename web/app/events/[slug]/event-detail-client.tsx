@@ -15,8 +15,8 @@ import { EventCard } from "../components/EventCard";
 import { EventReservationModal } from "../components/EventReservationModal";
 import { EventTicketPurchaseModal } from "../components/EventTicketPurchaseModal";
 import {
-  eventBannerImage,
   eventMapsHref,
+  eventPosterImage,
   formatEventDate,
   formatEventTimeRange,
   resolveEventAction,
@@ -99,7 +99,16 @@ export function EventDetailClient({ event, related, whatsappNumber }: Props) {
       <section className="event-detail-hero">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={eventBannerImage(event)}
+          className="event-detail-hero-blur"
+          src={eventPosterImage(event)}
+          alt=""
+          aria-hidden="true"
+        />
+        {/* Full original poster — never use the card crop framing here */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="event-detail-hero-poster"
+          src={eventPosterImage(event)}
           alt=""
           aria-hidden="true"
         />

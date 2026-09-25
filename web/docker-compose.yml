@@ -15,6 +15,10 @@ services:
       WRANGLER_LOG_PATH: .wrangler/wrangler.log
       # Override in .env with COOKIE_SECURE=true only when serving over HTTPS.
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    # Reach host mail (same Contabo server) from the container.
+    extra_hosts:
+      - "mail.highbury-lounge.co.zw:host-gateway"
+      - "host.docker.internal:host-gateway"
     volumes:
       - highbury-wrangler:/app/.wrangler
     restart: unless-stopped

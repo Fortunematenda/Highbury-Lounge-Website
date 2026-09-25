@@ -38,6 +38,11 @@ export type PublicEvent = {
   coverImage: string | null;
   posterImage: string | null;
   gallery: string[];
+  imagePositionX?: number | null;
+  imagePositionY?: number | null;
+  imageZoom?: number | null;
+  imageDisplayMode?: string | null;
+  imageAspectRatio?: string | null;
   entryType: string;
   currency: string | null;
   price: number | null;

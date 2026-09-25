@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { EVENT_CATEGORIES } from "@/lib/event-constants";
 import { EventCard } from "./components/EventCard";
+import { EventCardMediaImage } from "./components/EventCardMediaImage";
 import { EventReservationModal } from "./components/EventReservationModal";
 import { EventTicketPurchaseModal } from "./components/EventTicketPurchaseModal";
 import { EventsSubscribe } from "./components/EventsSubscribe";
@@ -201,8 +202,11 @@ export function EventsPageClient({
           </div>
           <div className="event-featured-card">
             <Link href={`/events/${featured.slug}`} className="event-featured-media">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={eventBannerImage(featured)} alt={featured.title} />
+              <EventCardMediaImage
+                src={eventBannerImage(featured)}
+                alt={featured.title}
+                framing={featured}
+              />
             </Link>
             <div className="event-featured-body">
               <span className="event-card-category">{featured.category}</span>

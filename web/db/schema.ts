@@ -641,6 +641,16 @@ export const events = sqliteTable(
     coverImage: text("cover_image"),
     posterImage: text("poster_image"),
     galleryJson: text("gallery_json"),
+    /** Card framing: horizontal focus 0–100 (object-position X). */
+    imagePositionX: real("image_position_x").default(50),
+    /** Card framing: vertical focus 0–100 (object-position Y). */
+    imagePositionY: real("image_position_y").default(50),
+    /** Card framing zoom (≥1). Original upload is never permanently cropped. */
+    imageZoom: real("image_zoom").default(1),
+    /** fill = cover + position; contain = full poster with blurred backdrop. */
+    imageDisplayMode: text("image_display_mode").default("fill"),
+    /** Aspect used by the public event card media (e.g. 16/7). */
+    imageAspectRatio: text("image_aspect_ratio").default("16/7"),
     /** free | fixed | from | contact */
     entryType: text("entry_type").notNull().default("contact"),
     currency: text("currency").notNull().default("USD"),

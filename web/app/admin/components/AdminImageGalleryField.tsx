@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/lib/compress-image";
 import { confirmDialog } from "@/app/admin/components/confirm-dialog";
+import { ImageCropDialog } from "@/app/admin/components/ImageCropDialog";
 
 export type GalleryImage = {
   id: number;
@@ -41,6 +42,12 @@ type Props = {
   hint?: string;
   /** Single-image mode (e.g. package cover) */
   single?: boolean;
+  /**
+   * When set, opens a crop dialog before upload/staging so the admin can
+   * choose which section of the photo is displayed (e.g. 16/7 banner, 4/5 poster).
+   */
+  cropAspect?: number;
+  cropTitle?: string;
 };
 
 export function AdminImageGalleryField({
@@ -54,6 +61,8 @@ export function AdminImageGalleryField({
   label = "Images",
   hint = "Upload JPG, PNG or WebP. The featured image is shown first.",
   single = false,
+  cropAspect,
+  cropTitle,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<GalleryImage[]>(initialImages);
@@ -61,6 +70,8 @@ export function AdminImageGalleryField({
   const [pending, setPending] = useState<PendingImage[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropFileName, setCropFileName] = useState("image.jpg");
 
   useEffect(() => {
     setImages(initialImages);
@@ -73,6 +84,7 @@ export function AdminImageGalleryField({
   useEffect(() => {
     return () => {
       for (const item of pending) URL.revokeObjectURL(item.previewUrl);
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -82,12 +94,40 @@ export function AdminImageGalleryField({
     onPendingFilesChange?.(next.map((p) => p.file));
   }
 
-  async function uploadFiles(fileList: FileList | null) {
+  function closeCropDialog() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  }
+
+  function beginCropOrUpload(fileList: FileList | null) {
     if (!fileList?.length) return;
+    let files = Array.from(fileList);
+    if (single || cropAspect) files = files.slice(0, 1);
+    const file = files[0];
+    if (!file) return;
+
+    if (cropAspect && cropAspect > 0) {
+      if (cropSrc) URL.revokeObjectURL(cropSrc);
+      setCropFileName(file.name || "image.jpg");
+      setCropSrc(URL.createObjectURL(file));
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
+    void processFiles(files);
+  }
+
+  async function onCropComplete(file: File) {
+    closeCropDialog();
+    await processFiles([file]);
+  }
+
+  async function processFiles(rawFiles: File[]) {
+    if (!rawFiles.length) return;
     setError("");
     setBusy(true);
     try {
-      let files = Array.from(fileList);
+      let files = rawFiles;
       if (single) files = files.slice(0, 1);
       // Compress large images client-side to avoid 413 errors.
       // Must be inside try/catch — phone HEIC/odd MIME often fails here.
@@ -197,6 +237,25 @@ export function AdminImageGalleryField({
     ? !singlePreviewUrl
     : images.length === 0 && pending.length === 0 && !featured;
 
+  const cropDialog =
+    cropAspect && cropAspect > 0 ? (
+      <ImageCropDialog
+        open={Boolean(cropSrc)}
+        imageSrc={cropSrc || ""}
+        aspect={cropAspect}
+        title={cropTitle || "Crop image"}
+        fileName={cropFileName}
+        onCancel={closeCropDialog}
+        onComplete={(file) => void onCropComplete(file)}
+      />
+    ) : null;
+
+  const pickLabel = cropAspect
+    ? singlePreviewUrl || (!single && (images.length > 0 || pending.length > 0))
+      ? "Replace & crop"
+      : "Choose & crop"
+    : null;
+
   if (single) {
     return (
       <div className="room-image-field">
@@ -208,7 +267,7 @@ export function AdminImageGalleryField({
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
-            void uploadFiles(e.dataTransfer.files);
+            beginCropOrUpload(e.dataTransfer.files);
           }}
         >
           <p>Drag & drop a photo here, or</p>
@@ -222,16 +281,18 @@ export function AdminImageGalleryField({
               ? singlePreviewUrl
                 ? "Uploading…"
                 : "Preparing…"
-              : singlePreviewUrl
-                ? "Replace image"
-                : "Add image"}
+              : pickLabel
+                ? pickLabel
+                : singlePreviewUrl
+                  ? "Replace image"
+                  : "Add image"}
           </button>
           <input
             ref={inputRef}
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*"
             className="admin-file-input-hidden"
-            onChange={(e) => void uploadFiles(e.target.files)}
+            onChange={(e) => beginCropOrUpload(e.target.files)}
           />
         </div>
 
@@ -239,7 +300,14 @@ export function AdminImageGalleryField({
 
         {singlePreviewUrl ? (
           <div className="admin-single-image-preview">
-            <figure className="admin-single-image-tile">
+            <figure
+              className="admin-single-image-tile"
+              style={
+                cropAspect
+                  ? { aspectRatio: String(cropAspect), maxWidth: "100%" }
+                  : undefined
+              }
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={singlePreviewUrl}
@@ -265,6 +333,7 @@ export function AdminImageGalleryField({
         ) : null}
 
         <p className="admin-muted room-image-hint">{hint}</p>
+        {cropDialog}
       </div>
     );
   }
@@ -279,7 +348,7 @@ export function AdminImageGalleryField({
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
-          void uploadFiles(e.dataTransfer.files);
+          beginCropOrUpload(e.dataTransfer.files);
         }}
       >
         <p>Drag & drop photos here, or</p>
@@ -289,15 +358,15 @@ export function AdminImageGalleryField({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? "Uploading…" : "Add images"}
+          {busy ? "Uploading…" : pickLabel || "Add images"}
         </button>
         <input
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,image/*"
-          multiple
+          multiple={!cropAspect}
           className="admin-file-input-hidden"
-          onChange={(e) => void uploadFiles(e.target.files)}
+          onChange={(e) => beginCropOrUpload(e.target.files)}
         />
       </div>
 
@@ -373,6 +442,7 @@ export function AdminImageGalleryField({
       ) : null}
 
       <p className="admin-muted room-image-hint">{hint}</p>
+      {cropDialog}
     </div>
   );
 }

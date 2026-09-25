@@ -24,12 +24,15 @@ import {
   AdminImageGalleryField,
   type AdminImageGalleryEndpoints,
 } from "@/app/admin/components/AdminImageGalleryField";
+import { EventImagePositionDialog } from "@/app/admin/components/EventImagePositionDialog";
 import {
   AdminFormField,
   AdminSelect,
   AdminTextInput,
   AdminTextarea,
 } from "@/app/admin/components/form-fields";
+import { normalizeEventImageFraming } from "@/lib/event-image-framing";
+import type { NormalizedEventImageFraming } from "@/lib/event-image-framing";
 import { PmsTabs } from "@/app/admin/components/pms";
 import {
   DetailFieldGrid,
@@ -101,6 +104,11 @@ export type EventRecord = {
   coverImage: string | null;
   posterImage: string | null;
   gallery: string[];
+  imagePositionX?: number | null;
+  imagePositionY?: number | null;
+  imageZoom?: number | null;
+  imageDisplayMode?: string | null;
+  imageAspectRatio?: string | null;
   entryType: string;
   currency: string;
   price: number | null;
@@ -332,6 +340,20 @@ export function EventForm({
   );
   const [pendingCover, setPendingCover] = useState<File[]>([]);
   const [pendingPoster, setPendingPoster] = useState<File[]>([]);
+  const [imageFraming, setImageFraming] = useState<NormalizedEventImageFraming>(
+    () =>
+      normalizeEventImageFraming({
+        imagePositionX: initial?.imagePositionX,
+        imagePositionY: initial?.imagePositionY,
+        imageZoom: initial?.imageZoom,
+        imageDisplayMode: initial?.imageDisplayMode,
+        imageAspectRatio: initial?.imageAspectRatio,
+      }),
+  );
+  const [positionDialog, setPositionDialog] = useState<{
+    src: string;
+    revokeOnClose: boolean;
+  } | null>(null);
 
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -339,6 +361,37 @@ export function EventForm({
 
   function markDirty() {
     setDirty(true);
+  }
+
+  function openPositionEditor(src: string, revokeOnClose = false) {
+    setPositionDialog((prev) => {
+      if (prev?.revokeOnClose && prev.src.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.src);
+      }
+      return { src, revokeOnClose };
+    });
+  }
+
+  function closePositionEditor() {
+    setPositionDialog((prev) => {
+      if (prev?.revokeOnClose && prev.src.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.src);
+      }
+      return null;
+    });
+  }
+
+  function openAdjustCardImage() {
+    if (pendingCover[0]) {
+      openPositionEditor(URL.createObjectURL(pendingCover[0]), true);
+      return;
+    }
+    if (pendingPoster[0]) {
+      openPositionEditor(URL.createObjectURL(pendingPoster[0]), true);
+      return;
+    }
+    const src = coverImage || posterImage;
+    if (src) openPositionEditor(src, false);
   }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -476,6 +529,11 @@ export function EventForm({
       posterImage: posterImage || coverImage,
       gallery: [],
       socialImage: posterImage || coverImage,
+      imagePositionX: imageFraming.imagePositionX,
+      imagePositionY: imageFraming.imagePositionY,
+      imageZoom: imageFraming.imageZoom,
+      imageDisplayMode: imageFraming.imageDisplayMode,
+      imageAspectRatio: imageFraming.imageAspectRatio,
       ...(form.actionType === "book_tickets"
         ? {
             ticketTypes: ticketTypes
@@ -961,7 +1019,7 @@ export function EventForm({
         <div className={tab === "media" ? "pms-tab-panel" : "pms-tab-panel pms-tab-panel-hidden"}>
           <DetailSectionCard
             title="Website banner"
-            description="Wide image for event cards and the detail hero. Best at about 1600×700."
+            description="Wide image for Upcoming Events cards. Upload the full original — then use Adjust Image to choose which part shows in the landscape card."
             icon={ImageIcon}
           >
             <AdminImageGalleryField
@@ -975,21 +1033,25 @@ export function EventForm({
               }
               single
               label="Website banner"
-              hint="Landscape JPG, PNG or WebP. Cards and the hero crop with object-fit cover — do not stretch."
+              hint="JPG, PNG or WebP. The original is stored in full. Use Adjust Image to frame it for the 16∶7 event card."
               onFeaturedChange={(url) => {
                 setCoverImage(url);
                 markDirty();
+                if (url) openPositionEditor(url, false);
               }}
               onPendingFilesChange={(files) => {
                 setPendingCover(files);
                 markDirty();
+                if (files[0]) {
+                  openPositionEditor(URL.createObjectURL(files[0]), true);
+                }
               }}
             />
           </DetailSectionCard>
 
           <DetailSectionCard
             title="Event poster"
-            description="Square or portrait flyer for social sharing and the clear poster on the event page. Best at 1080×1350 or 1080×1080."
+            description="Full portrait flyer for the event detail page and social sharing. Best at 1080×1350. Not permanently cropped."
           >
             <AdminImageGalleryField
               recordId={mode === "edit" ? initial?.id : null}
@@ -1002,16 +1064,40 @@ export function EventForm({
               }
               single
               label="Poster / flyer"
-              hint="Optional. If empty, the website banner is used. Ideal for WhatsApp and Facebook."
+              hint="Optional full poster. After upload, position how it appears on the landscape Upcoming Events card. Detail page always shows the full poster."
               onFeaturedChange={(url) => {
                 setPosterImage(url);
                 markDirty();
+                if (url) openPositionEditor(url, false);
               }}
               onPendingFilesChange={(files) => {
                 setPendingPoster(files);
                 markDirty();
+                if (files[0]) {
+                  openPositionEditor(URL.createObjectURL(files[0]), true);
+                }
               }}
             />
+            <div className="detail-inline-actions" style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="admin-btn secondary"
+                disabled={
+                  !(
+                    coverImage ||
+                    posterImage ||
+                    pendingCover[0] ||
+                    pendingPoster[0]
+                  )
+                }
+                onClick={openAdjustCardImage}
+              >
+                Adjust Image
+              </button>
+              <p className="admin-muted" style={{ margin: 0 }}>
+                Position / zoom for the Upcoming Events card ({imageFraming.imageDisplayMode === "contain" ? "show full poster" : `focus ${Math.round(imageFraming.imagePositionX)}% · ${Math.round(imageFraming.imagePositionY)}%`}).
+              </p>
+            </div>
           </DetailSectionCard>
         </div>
 
@@ -1481,6 +1567,20 @@ export function EventForm({
           ) : null}
         </div>
       </form>
+
+      {positionDialog ? (
+        <EventImagePositionDialog
+          open
+          imageSrc={positionDialog.src}
+          initial={imageFraming}
+          onCancel={closePositionEditor}
+          onSave={(next) => {
+            setImageFraming(next);
+            markDirty();
+            closePositionEditor();
+          }}
+        />
+      ) : null}
     </DetailPageShell>
   );
 }

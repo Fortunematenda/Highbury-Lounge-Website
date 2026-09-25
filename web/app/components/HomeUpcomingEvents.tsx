@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { EventCardMediaImage } from "@/app/events/components/EventCardMediaImage";
 import { EventReservationModal } from "@/app/events/components/EventReservationModal";
 import { EventTicketPurchaseModal } from "@/app/events/components/EventTicketPurchaseModal";
 import {
@@ -77,10 +78,9 @@ function EventCard({
         className="home-event-image-wrap"
         aria-label={event.title}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <EventCardMediaImage
           src={image}
-          alt=""
+          framing={event}
           loading="lazy"
           onError={(e) => {
             const img = e.currentTarget;

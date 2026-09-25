@@ -85,18 +85,42 @@
   overflow: hidden;
   background: #e9e5e1;
 }
-.event-featured-media > img {
+.event-featured-media .event-card-media-blur {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(20px) brightness(0.45) saturate(1.05);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+.event-featured-media > img.event-card-media-img,
+.event-featured-media > img:not(.event-card-media-blur) {
   position: absolute;
   inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: var(--event-img-x, 50%) var(--event-img-y, 50%);
   display: block;
+  transform: scale(var(--event-img-zoom, 1));
+  transform-origin: var(--event-img-x, 50%) var(--event-img-y, 50%);
   transition: transform 0.5s ease;
 }
-.event-featured-media:hover > img {
-  transform: scale(1.02);
+.event-featured-media > img.event-card-media-img.is-mode-contain {
+  object-fit: contain;
+  object-position: center center;
+  transform: none;
+}
+.event-featured-media:hover > img.event-card-media-img.is-mode-fill,
+.event-featured-media:hover > img:not(.event-card-media-blur):not(.is-mode-contain) {
+  transform: scale(calc(var(--event-img-zoom, 1) * 1.02));
+}
+.event-featured-media:hover > img.event-card-media-img.is-mode-contain {
+  transform: none;
 }
 .event-featured-body {
   display: flex;
@@ -315,20 +339,46 @@
   background: #e9e5e1;
   overflow: hidden;
 }
-.event-card-media > img {
+.event-card-media-blur {
+  position: absolute;
+  inset: -12%;
+  z-index: 0;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  object-position: center;
+  filter: blur(20px) brightness(0.45) saturate(1.05);
+  transform: scale(1.08);
+  pointer-events: none;
+}
+.event-card-media > img.event-card-media-img,
+.event-card-media > img:not(.event-card-media-blur) {
   position: absolute;
   inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: var(--event-img-x, 50%) var(--event-img-y, 50%);
   display: block;
+  transform: scale(var(--event-img-zoom, 1));
+  transform-origin: var(--event-img-x, 50%) var(--event-img-y, 50%);
   transition: transform 0.45s ease;
 }
-.event-card:hover .event-card-media > img {
-  transform: scale(1.03);
+.event-card-media > img.event-card-media-img.is-mode-contain {
+  object-fit: contain;
+  object-position: center center;
+  transform: none;
+  transform-origin: center center;
 }
-.event-card--past .event-card-media > img {
+.event-card:hover .event-card-media > img.event-card-media-img.is-mode-fill,
+.event-card:hover .event-card-media > img:not(.event-card-media-blur):not(.is-mode-contain) {
+  transform: scale(calc(var(--event-img-zoom, 1) * 1.03));
+}
+.event-card:hover .event-card-media > img.event-card-media-img.is-mode-contain {
+  transform: none;
+}
+.event-card--past .event-card-media > img:not(.event-card-media-blur) {
   filter: grayscale(0.55);
 }
 .event-card-date-badge {
@@ -623,14 +673,26 @@
     height: 460px;
   }
 }
-.event-detail-hero > img {
+.event-detail-hero-blur {
+  position: absolute;
+  inset: -16%;
+  z-index: 0;
+  width: 132%;
+  height: 132%;
+  object-fit: cover;
+  object-position: center;
+  filter: blur(28px) brightness(0.4) saturate(1.05);
+  transform: scale(1.1);
+  pointer-events: none;
+}
+.event-detail-hero-poster {
   position: absolute;
   inset: 0;
   z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
+  object-fit: contain;
+  object-position: center center;
   display: block;
 }
 .event-detail-hero-shade {

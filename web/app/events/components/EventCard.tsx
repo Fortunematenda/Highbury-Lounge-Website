@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Clock3, Users2 } from "lucide-react";
+import { EventCardMediaImage } from "@/app/events/components/EventCardMediaImage";
 import {
   CATEGORY_ICONS,
   eventBannerImage,
@@ -39,10 +40,9 @@ export function EventCard({
   return (
     <article className={`event-card event-card--${variant}`}>
       <Link href={href} className="event-card-media" aria-label={event.title}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <EventCardMediaImage
           src={eventBannerImage(event)}
-          alt=""
+          framing={event}
           loading={variant === "featured" ? "eager" : "lazy"}
           onError={(e) => {
             const img = e.currentTarget;
