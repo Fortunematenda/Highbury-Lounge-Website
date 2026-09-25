@@ -152,8 +152,48 @@ async function markBookingPaid(bookingId: number, paynowRef: string | null, amou
     .where(eq(bookings.id, bookingId));
 
   if (paymentStatus === "Paid") {
-    const { syncBookingOutboundIfEnabled } = await import("@/lib/channel-manager");
-    await syncBookingOutboundIfEnabled(bookingId);
+    const { syncBookingOutboundIfEnabled, isBeds24Enabled } = await import(
+      "@/lib/channel-manager"
+    );
+    const sync = await syncBookingOutboundIfEnabled(bookingId);
+
+    const [fresh] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+    if (!fresh) return;
+
+    const unpaidHold =
+      fresh.status === "Pending" || fresh.status === "Awaiting Payment";
+    const channelOk =
+      !isBeds24Enabled() ||
+      sync.synced ||
+      Boolean(fresh.externalBookingId) ||
+      fresh.syncStatus === "SYNCED";
+
+    if (unpaidHold && channelOk) {
+      const { updateBookingStatus } = await import("@/lib/bookings");
+      await updateBookingStatus({
+        bookingId,
+        newStatus: "Confirmed",
+        note: isBeds24Enabled()
+          ? "Auto-confirmed after Paynow payment and channel sync"
+          : "Auto-confirmed after Paynow payment",
+      });
+    } else if (unpaidHold && isBeds24Enabled() && !channelOk) {
+      const { createAdminNotification } = await import(
+        "@/lib/admin-notifications"
+      );
+      await createAdminNotification({
+        type: "channel_sync_failed",
+        title: "Paid booking not confirmed — channel sync failed",
+        message: `${fresh.reference} is paid but Beds24 sync failed. Confirm manually after fixing sync.`,
+        entityType: "booking",
+        entityId: bookingId,
+        actionUrl: `/admin/bookings/${bookingId}`,
+      });
+    }
   }
 }
 

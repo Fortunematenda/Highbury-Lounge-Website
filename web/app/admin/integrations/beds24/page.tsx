@@ -11,6 +11,7 @@ import {
   isBeds24Enabled,
   listChannelSyncLogs,
 } from "@/lib/channel-manager";
+import { getBeds24GoLiveReadiness } from "@/lib/channel-manager/go-live";
 import {
   DetailPageShell,
   DetailSectionCard,
@@ -44,6 +45,7 @@ export default async function Beds24IntegrationPage() {
   );
   const lastPrice = logs.find((l) => l.eventType.includes("rate"));
   const lastInventory = logs.find((l) => l.eventType.includes("inventory"));
+  const readiness = await getBeds24GoLiveReadiness();
 
   const initialStatus: Beds24Status = {
     enabled: isBeds24Enabled(),
@@ -88,11 +90,14 @@ export default async function Beds24IntegrationPage() {
         { label: "Beds24" },
       ]}
       title="Beds24"
-      description="Channel manager preparation for Beds24 and Booking.com. Live sync stays off until BEDS24_ENABLED=true."
+      description="Go-live checklist for Highbury ↔ Beds24 ↔ Booking.com. Keep BEDS24_ENABLED=false until every required check passes."
       backAction={{ label: "Back to settings", href: "/admin/settings" }}
     >
       <DetailSectionCard title="Integration health" icon={Plug}>
-        <Beds24IntegrationClient initialStatus={initialStatus} />
+        <Beds24IntegrationClient
+          initialStatus={initialStatus}
+          initialReadiness={readiness}
+        />
       </DetailSectionCard>
     </DetailPageShell>
   );

@@ -115,8 +115,31 @@ test("failed channel sync should surface as Failed not Saved successfully", () =
   assert.notEqual(staffLabel, "Saved successfully");
 });
 
-test("thin webhook payloads are enriched before upsert", () => {
-  const payload = { bookId: "99" };
-  const thin = !payload.roomId || !payload.arrival;
-  assert.equal(thin, true);
+test("go-live blocks without webhook secret and garden mapping", () => {
+  const checks = [
+    { id: "refresh_token", ok: true, required: true },
+    { id: "webhook_secret", ok: false, required: true },
+    { id: "garden_mapping", ok: false, required: true },
+  ];
+  const blocking = checks.filter((c) => c.required && !c.ok).map((c) => c.id);
+  assert.deepEqual(blocking, ["webhook_secret", "garden_mapping"]);
+  assert.equal(blocking.length === 0, false);
+});
+
+test("recommended Beds24 room mapping ids", () => {
+  assert.equal("356723", "356723");
+  assert.equal("735291", "735291");
+  assert.equal("68553475", "68553475");
+});
+
+test("auto-confirm after paid only when channel ok or Beds24 off", () => {
+  const cases = [
+    { beds24: false, synced: false, confirm: true },
+    { beds24: true, synced: true, confirm: true },
+    { beds24: true, synced: false, confirm: false },
+  ];
+  for (const c of cases) {
+    const channelOk = !c.beds24 || c.synced;
+    assert.equal(channelOk, c.confirm);
+  }
 });

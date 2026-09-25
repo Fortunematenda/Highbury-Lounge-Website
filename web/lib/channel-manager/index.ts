@@ -27,6 +27,11 @@ export {
   listRoomChannelStatuses,
   retryRoomRateSync,
 } from "./room-sync-status";
+export {
+  getBeds24GoLiveReadiness,
+  applyRecommendedGardenViewMapping,
+  HIGHBURY_BEDS24_DEFAULTS,
+} from "./go-live";
 export type { ChannelManagerProvider } from "./provider";
 export type * from "./types";
 

@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, lt, ne, or, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   bookings,
@@ -62,7 +62,10 @@ export async function expireStalePendingBookings() {
     .from(bookings)
     .where(
       and(
-        eq(bookings.status, "Pending"),
+        or(
+          eq(bookings.status, "Pending"),
+          eq(bookings.status, "Awaiting Payment"),
+        )!,
         lt(bookings.expiresAt, now),
       ),
     );

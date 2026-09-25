@@ -26,21 +26,45 @@ export type Beds24Status = {
   message: string;
 };
 
+export type GoLiveCheck = {
+  id: string;
+  label: string;
+  ok: boolean;
+  detail: string;
+  required: boolean;
+};
+
+export type GoLiveReadiness = {
+  ready: boolean;
+  enabled: boolean;
+  checks: GoLiveCheck[];
+  blocking: string[];
+  nextSteps: string[];
+};
+
 export function Beds24IntegrationClient({
   initialStatus,
+  initialReadiness,
 }: {
   initialStatus: Beds24Status;
+  initialReadiness: GoLiveReadiness;
 }) {
   const [status, setStatus] = useState(initialStatus);
+  const [readiness, setReadiness] = useState(initialReadiness);
   const [testing, setTesting] = useState(false);
+  const [mappingBusy, setMappingBusy] = useState(false);
 
   async function refresh() {
-    const res = await fetch("/api/admin/integrations/beds24/status", {
-      cache: "no-store",
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to load status");
-    setStatus(data);
+    const [statusRes, readyRes] = await Promise.all([
+      fetch("/api/admin/integrations/beds24/status", { cache: "no-store" }),
+      fetch("/api/admin/integrations/beds24/go-live", { cache: "no-store" }),
+    ]);
+    const statusData = await statusRes.json();
+    const readyData = await readyRes.json();
+    if (!statusRes.ok) throw new Error(statusData.error || "Failed to load status");
+    if (!readyRes.ok) throw new Error(readyData.error || "Failed to load readiness");
+    setStatus(statusData);
+    setReadiness(readyData);
   }
 
   async function testConnection() {
@@ -63,19 +87,100 @@ export function Beds24IntegrationClient({
     }
   }
 
+  async function applyGardenMapping() {
+    setMappingBusy(true);
+    try {
+      const res = await fetch("/api/admin/integrations/beds24/go-live", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "apply_garden_mapping" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Mapping failed");
+      toast.success(data.message || "Mapping applied");
+      if (data.readiness) setReadiness(data.readiness);
+      await refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Mapping failed");
+    } finally {
+      setMappingBusy(false);
+    }
+  }
+
   return (
     <div className="admin-stack" style={{ gap: 20 }}>
       {!status.enabled ? (
         <div className="admin-warn" role="status">
-          Beds24 synchronisation is disabled. Highbury continues to use local
-          availability, pricing, and Paynow. Configure credentials below, map
-          rooms, then set <code>BEDS24_ENABLED=true</code> when ready.
+          Beds24 synchronisation is disabled. Complete the go-live checklist
+          below, then set <code>BEDS24_ENABLED=true</code> on the server and
+          restart.
         </div>
       ) : (
         <div className="admin-success" role="status">
           Beds24 synchronisation is enabled.
         </div>
       )}
+
+      <div
+        className={readiness.ready ? "admin-success" : "admin-warn"}
+        role="status"
+      >
+        <strong>
+          Go-live readiness:{" "}
+          {readiness.ready ? "READY (flag still off until you enable it)" : "NOT READY"}
+        </strong>
+        {readiness.blocking.length ? (
+          <div style={{ marginTop: 6 }}>
+            Blocking: {readiness.blocking.join(" · ")}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Checklist</th>
+              <th>Status</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody>
+            {readiness.checks.map((check) => (
+              <tr key={check.id}>
+                <td>
+                  {check.label}
+                  {!check.required ? (
+                    <span className="muted"> · optional</span>
+                  ) : null}
+                </td>
+                <td>
+                  <strong
+                    style={{
+                      color: check.ok
+                        ? "var(--admin-success, #157347)"
+                        : "var(--admin-danger, #b42318)",
+                    }}
+                  >
+                    {check.ok ? "Pass" : "Fail"}
+                  </strong>
+                </td>
+                <td className="muted">{check.detail}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {readiness.nextSteps.length ? (
+        <ol style={{ margin: 0, paddingLeft: 20 }}>
+          {readiness.nextSteps.map((step) => (
+            <li key={step} style={{ marginBottom: 6 }}>
+              {step}
+            </li>
+          ))}
+        </ol>
+      ) : null}
 
       <div className="admin-table-wrap">
         <table className="admin-table">
@@ -99,14 +204,6 @@ export function Beds24IntegrationClient({
               </td>
             </tr>
             <tr>
-              <th>Property mapping</th>
-              <td>
-                {status.propertyIdConfigured
-                  ? "Property ID configured"
-                  : "Awaiting Beds24 Property ID"}
-              </td>
-            </tr>
-            <tr>
               <th>Room mapping</th>
               <td>
                 {status.roomMapping.status} — {status.roomMapping.mapped}/
@@ -119,25 +216,13 @@ export function Beds24IntegrationClient({
             <tr>
               <th>Booking.com accommodation</th>
               <td>
-                <code>{status.bookingComAccommodationNumber}</code> (channel
-                mapping pending in Beds24)
+                <code>{status.bookingComAccommodationNumber}</code> (managed in
+                Beds24 — Highbury does not call Booking.com directly)
               </td>
             </tr>
             <tr>
               <th>Last successful sync</th>
               <td>{status.lastSuccessfulSync || "—"}</td>
-            </tr>
-            <tr>
-              <th>Last incoming booking</th>
-              <td>{status.lastIncomingBooking || "—"}</td>
-            </tr>
-            <tr>
-              <th>Last price update</th>
-              <td>{status.lastPriceUpdate || "—"}</td>
-            </tr>
-            <tr>
-              <th>Last inventory update</th>
-              <td>{status.lastInventoryUpdate || "—"}</td>
             </tr>
             <tr>
               <th>Failed synchronisations</th>
@@ -163,6 +248,16 @@ export function Beds24IntegrationClient({
           disabled={testing}
         >
           {testing ? "Testing…" : "Test Connection"}
+        </button>
+        <button
+          type="button"
+          className="admin-btn secondary"
+          onClick={() => void applyGardenMapping()}
+          disabled={mappingBusy}
+        >
+          {mappingBusy
+            ? "Applying…"
+            : "Apply Garden View mapping (735291)"}
         </button>
         <Link className="admin-btn secondary" href="/admin/integrations/beds24/mapping">
           Room Mapping
