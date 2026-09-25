@@ -348,9 +348,25 @@ export async function updateBookingStatus(params: {
     .limit(1);
   if (!booking) throw new BookingError("Booking not found.", 404);
 
+  const settings = await getSettingsMap();
+  const pendingHours = Number(settings.pending_expiry_hours ?? "24");
+  const patch: {
+    status: string;
+    updatedAt: ReturnType<typeof sql>;
+    expiresAt?: string;
+  } = {
+    status: params.newStatus,
+    updatedAt: sql`CURRENT_TIMESTAMP`,
+  };
+  if (params.newStatus === "Awaiting Payment") {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + (Number.isFinite(pendingHours) ? pendingHours : 24));
+    patch.expiresAt = expiresAt.toISOString();
+  }
+
   await db
     .update(bookings)
-    .set({ status: params.newStatus, updatedAt: sql`CURRENT_TIMESTAMP` })
+    .set(patch)
     .where(eq(bookings.id, params.bookingId));
 
   await db.insert(bookingStatusHistory).values({

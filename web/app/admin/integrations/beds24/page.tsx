@@ -12,6 +12,7 @@ import {
   listChannelSyncLogs,
 } from "@/lib/channel-manager";
 import { getBeds24GoLiveReadiness } from "@/lib/channel-manager/go-live";
+import { readServerEnv } from "@/lib/channel-manager/env";
 import {
   DetailPageShell,
   DetailSectionCard,
@@ -26,6 +27,10 @@ export const dynamic = "force-dynamic";
 export default async function Beds24IntegrationPage() {
   await requireAdminPage(["administrator"]);
   const config = getBeds24Config();
+  const siteUrl = (
+    readServerEnv("SITE_URL") || "https://www.highbury-lounge.co.zw"
+  ).replace(/\/$/, "");
+  const webhookUrl = `${siteUrl}/api/integrations/beds24/webhook`;
   const db = getDb();
   const rooms = await db.select({ id: roomTypes.id }).from(roomTypes);
   const mappings = await db
@@ -97,6 +102,7 @@ export default async function Beds24IntegrationPage() {
         <Beds24IntegrationClient
           initialStatus={initialStatus}
           initialReadiness={readiness}
+          webhookUrl={webhookUrl}
         />
       </DetailSectionCard>
     </DetailPageShell>

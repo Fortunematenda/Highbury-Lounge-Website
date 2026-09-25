@@ -31,6 +31,7 @@ import {
   bookingSourceLabel,
   syncStatusLabel,
 } from "@/lib/channel-manager/booking-sources";
+import { isBeds24Enabled } from "@/lib/channel-manager";
 import {
   DetailMetadataCard,
   DetailPageShell,
@@ -40,6 +41,7 @@ import {
 import { BookingFoodPreOrders } from "./food-preorders";
 import { BookingNotesForm } from "./notes-form";
 import { BookingStatusActions } from "./status-actions";
+import { BookingChannelSyncActions } from "./channel-sync-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -241,6 +243,12 @@ export default async function AdminBookingDetailPage({
                       <span className="form-error">{b.lastSyncError}</span>
                     </>
                   ) : null}
+                  <BookingChannelSyncActions
+                    bookingId={b.id}
+                    syncStatus={b.syncStatus}
+                    beds24Enabled={isBeds24Enabled()}
+                    hasExternalId={Boolean(b.externalBookingId)}
+                  />
                 </dd>
               </div>
             </dl>

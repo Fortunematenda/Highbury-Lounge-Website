@@ -45,9 +45,11 @@ export type GoLiveReadiness = {
 export function Beds24IntegrationClient({
   initialStatus,
   initialReadiness,
+  webhookUrl,
 }: {
   initialStatus: Beds24Status;
   initialReadiness: GoLiveReadiness;
+  webhookUrl: string;
 }) {
   const [status, setStatus] = useState(initialStatus);
   const [readiness, setReadiness] = useState(initialReadiness);
@@ -231,9 +233,28 @@ export function Beds24IntegrationClient({
             <tr>
               <th>Webhook</th>
               <td>
-                <code>/api/integrations/beds24/webhook</code>
+                <code style={{ wordBreak: "break-all" }}>{webhookUrl}</code>
+                <br />
+                <button
+                  type="button"
+                  className="admin-btn ghost"
+                  style={{ marginTop: 6 }}
+                  onClick={() => {
+                    void navigator.clipboard.writeText(webhookUrl).then(
+                      () => toast.success("Webhook URL copied"),
+                      () => toast.error("Could not copy"),
+                    );
+                  }}
+                >
+                  Copy webhook URL
+                </button>
                 <br />
                 <span className="muted">{status.webhookStatus}</span>
+                <br />
+                <span className="muted">
+                  Configure in Beds24 → Properties → Access → Booking Webhook.
+                  Leave sync disabled until Beds24 activation is complete.
+                </span>
               </td>
             </tr>
           </tbody>

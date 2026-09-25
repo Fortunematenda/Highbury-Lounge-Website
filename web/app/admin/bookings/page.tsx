@@ -18,6 +18,7 @@ export default async function AdminBookingsPage({
   const params = await searchParams;
   const q = (params.q ?? "").trim();
   const status = params.status ?? "";
+  const source = params.source ?? "";
   const roomTypeId = params.roomTypeId ?? "";
   const checkInFrom = params.checkInFrom ?? "";
   const checkInTo = params.checkInTo ?? "";
@@ -28,6 +29,13 @@ export default async function AdminBookingsPage({
 
   const filters: SQL[] = [];
   if (status) filters.push(eq(bookings.status, status));
+  if (source === "DIRECT") {
+    filters.push(
+      or(eq(bookings.source, "DIRECT"), eq(bookings.source, "website"))!,
+    );
+  } else if (source) {
+    filters.push(eq(bookings.source, source));
+  }
   if (roomTypeId) filters.push(eq(bookings.roomTypeId, Number(roomTypeId)));
   if (checkInFrom) filters.push(sql`${bookings.checkIn} >= ${checkInFrom}`);
   if (checkInTo) filters.push(sql`${bookings.checkIn} <= ${checkInTo}`);
@@ -40,6 +48,8 @@ export default async function AdminBookingsPage({
         like(bookingGuests.phone, pattern),
         like(bookingGuests.firstName, pattern),
         like(bookingGuests.lastName, pattern),
+        like(bookings.externalBookingId, pattern),
+        like(bookings.externalBookingReference, pattern),
       )!,
     );
   }
@@ -103,7 +113,7 @@ export default async function AdminBookingsPage({
         <input
           className="admin-input"
           name="q"
-          placeholder="Search name, email, phone, reference"
+          placeholder="Search name, email, phone, reference, external id"
           defaultValue={q}
         />
         <select className="admin-input" name="status" defaultValue={status}>
@@ -113,6 +123,13 @@ export default async function AdminBookingsPage({
               {s}
             </option>
           ))}
+        </select>
+        <select className="admin-input" name="source" defaultValue={source}>
+          <option value="">All sources</option>
+          <option value="DIRECT">Direct website</option>
+          <option value="BOOKING_COM">Booking.com</option>
+          <option value="MANUAL">Manual</option>
+          <option value="OTHER">Other</option>
         </select>
         <select className="admin-input" name="roomTypeId" defaultValue={roomTypeId}>
           <option value="">All rooms</option>
@@ -133,13 +150,17 @@ export default async function AdminBookingsPage({
         <BookingsList rows={rows} />
         <div className="admin-pagination">
           {page > 1 && (
-            <Link href={`/admin/bookings?page=${page - 1}&q=${q}&status=${status}`}>
+            <Link
+              href={`/admin/bookings?page=${page - 1}&q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}&source=${encodeURIComponent(source)}`}
+            >
               Previous
             </Link>
           )}
           <span>Page {page}</span>
           {rows.length === PAGE_SIZE && (
-            <Link href={`/admin/bookings?page=${page + 1}&q=${q}&status=${status}`}>
+            <Link
+              href={`/admin/bookings?page=${page + 1}&q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}&source=${encodeURIComponent(source)}`}
+            >
               Next
             </Link>
           )}
