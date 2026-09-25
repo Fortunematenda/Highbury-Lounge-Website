@@ -118,7 +118,13 @@ export async function revalidateRoomAvailability(options: {
   checkOut: string;
   roomsNeeded: number;
   excludeBookingId?: number;
-}): Promise<{ ok: boolean; remaining: number; source: "local" | "beds24" }> {
+}): Promise<{
+  ok: boolean;
+  remaining: number;
+  source: "local" | "beds24";
+  /** Authoritative nightly rate when channel provides one */
+  pricePerNight?: number;
+}> {
   const db = getDb();
   const [room] = await db
     .select()
@@ -128,6 +134,11 @@ export async function revalidateRoomAvailability(options: {
   if (!room || !room.isActive) {
     return { ok: false, remaining: 0, source: "local" };
   }
+
+  const localPrice =
+    room.promotionalPrice != null && room.promotionalPrice > 0
+      ? room.promotionalPrice
+      : room.pricePerNight;
 
   if (!isBeds24Enabled()) {
     const remaining = await getAvailableCount(
@@ -141,6 +152,7 @@ export async function revalidateRoomAvailability(options: {
       ok: remaining >= options.roomsNeeded,
       remaining,
       source: "local",
+      pricePerNight: localPrice,
     };
   }
 
@@ -176,9 +188,15 @@ export async function revalidateRoomAvailability(options: {
     Number.POSITIVE_INFINITY,
   );
   const avail = Number.isFinite(remaining) ? remaining : 0;
+  const channelPrice = channelAvail.find((r) => r.pricePerNight != null)
+    ?.pricePerNight;
   return {
     ok: avail >= options.roomsNeeded,
     remaining: avail,
     source: "beds24",
+    pricePerNight:
+      channelPrice != null && Number.isFinite(channelPrice)
+        ? channelPrice
+        : localPrice,
   };
 }

@@ -53,7 +53,12 @@ export async function expireStalePendingBookings() {
   const db = getDb();
   const now = new Date().toISOString();
   const stale = await db
-    .select({ id: bookings.id, status: bookings.status })
+    .select({
+      id: bookings.id,
+      status: bookings.status,
+      externalBookingId: bookings.externalBookingId,
+      channelManager: bookings.channelManager,
+    })
     .from(bookings)
     .where(
       and(
@@ -67,6 +72,21 @@ export async function expireStalePendingBookings() {
       .update(bookings)
       .set({ status: "Expired", updatedAt: sql`CURRENT_TIMESTAMP` })
       .where(eq(bookings.id, row.id));
+
+    // Release channel inventory held by unpaid Direct/Manual bookings.
+    if (row.externalBookingId && row.channelManager === "beds24") {
+      try {
+        const { cancelBookingOutboundIfEnabled } = await import(
+          "@/lib/channel-manager/booking-sync"
+        );
+        await cancelBookingOutboundIfEnabled(
+          row.id,
+          "Expired unpaid Highbury hold",
+        );
+      } catch {
+        /* logged inside cancel helper */
+      }
+    }
   }
 
   return stale.length;
@@ -115,6 +135,26 @@ export async function getOccupiedCount(
   return booked + blocked;
 }
 
+/**
+ * Signed inventory balance (can be negative when overbooked).
+ * Use for post-insert race detection — do not clamp to zero.
+ */
+export async function getInventoryBalance(
+  roomTypeId: number,
+  inventoryCount: number,
+  checkIn: string,
+  checkOut: string,
+  excludeBookingId?: number,
+): Promise<{ occupied: number; balance: number }> {
+  const occupied = await getOccupiedCount(
+    roomTypeId,
+    checkIn,
+    checkOut,
+    excludeBookingId,
+  );
+  return { occupied, balance: inventoryCount - occupied };
+}
+
 export async function getAvailableCount(
   roomTypeId: number,
   inventoryCount: number,
@@ -122,13 +162,14 @@ export async function getAvailableCount(
   checkOut: string,
   excludeBookingId?: number,
 ): Promise<number> {
-  const occupied = await getOccupiedCount(
+  const { balance } = await getInventoryBalance(
     roomTypeId,
+    inventoryCount,
     checkIn,
     checkOut,
     excludeBookingId,
   );
-  return Math.max(0, inventoryCount - occupied);
+  return Math.max(0, balance);
 }
 
 export type AvailableRoom = {

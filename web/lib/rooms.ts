@@ -7,10 +7,10 @@ import {
   roomTypes,
 } from "@/db/schema";
 import {
-  findAvailableRooms,
   nightsBetween,
   validateStayDates,
 } from "@/lib/availability";
+import { searchAccommodationAvailability } from "@/lib/channel-manager";
 import { getSettingsMap } from "@/lib/settings";
 
 export type PublicRoomImage = {
@@ -237,7 +237,7 @@ export async function listPublicRooms(filters?: {
     }
 
     try {
-      const available = await findAvailableRooms({
+      const available = await searchAccommodationAvailability({
         checkIn,
         checkOut,
         adults: guests,

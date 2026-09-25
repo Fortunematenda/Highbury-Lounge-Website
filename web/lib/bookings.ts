@@ -7,7 +7,7 @@ import {
   roomTypes,
 } from "@/db/schema";
 import {
-  getAvailableCount,
+  getInventoryBalance,
   nightsBetween,
   validateStayDates,
 } from "@/lib/availability";
@@ -16,6 +16,7 @@ import {
   revalidateRoomAvailability,
   syncBookingOutboundIfEnabled,
 } from "@/lib/channel-manager";
+import { cancelBookingOutboundIfEnabled } from "@/lib/channel-manager/booking-sync";
 import { getSettingsMap } from "@/lib/settings";
 import { queueNotification } from "@/lib/notifications";
 import { createAdminNotification } from "@/lib/admin-notifications";
@@ -122,10 +123,13 @@ export async function createBooking(input: CreateBookingInput) {
   }
 
   const nights = nightsBetween(input.checkIn, input.checkOut);
+  // When Beds24 is live, charge the channel rate shown at recheck (not a stale local list price).
   const unitPrice =
-    room.promotionalPrice != null && room.promotionalPrice > 0
-      ? room.promotionalPrice
-      : room.pricePerNight;
+    recheck.pricePerNight != null && Number.isFinite(recheck.pricePerNight)
+      ? recheck.pricePerNight
+      : room.promotionalPrice != null && room.promotionalPrice > 0
+        ? room.promotionalPrice
+        : room.pricePerNight;
   const subtotal = unitPrice * nights * roomsBooked;
   const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
   const serviceFee = Math.round(subtotal * serviceFeeRate * 100) / 100;
@@ -136,10 +140,12 @@ export async function createBooking(input: CreateBookingInput) {
   expiresAt.setHours(expiresAt.getHours() + pendingHours);
 
   const reference = bookingReference();
+  const source = input.source || "DIRECT";
   const pricingSnapshot = {
     pricePerNight: unitPrice,
     listPrice: room.pricePerNight,
     promotionalPrice: room.promotionalPrice,
+    priceSource: recheck.source,
     nights,
     roomsBooked,
     taxRate,
@@ -148,7 +154,6 @@ export async function createBooking(input: CreateBookingInput) {
     calculatedAt: new Date().toISOString(),
   };
 
-  // D1 batch as transactional protection for the final insert path
   const insertResult = await db
     .insert(bookings)
     .values({
@@ -174,7 +179,7 @@ export async function createBooking(input: CreateBookingInput) {
       termsAccepted: true,
       paymentStatus: "Unpaid",
       expiresAt: expiresAt.toISOString(),
-      source: input.source || "website",
+      source,
       syncStatus: "NOT_SYNCED",
       preferredLanguage: input.preferredLanguage || "en",
     })
@@ -183,14 +188,14 @@ export async function createBooking(input: CreateBookingInput) {
   const booking = insertResult[0];
   if (!booking) throw new BookingError("Could not create booking.", 500);
 
-  // Re-check after insert to reduce race overbooking
-  const remainingAfter = await getAvailableCount(
+  // Post-insert race check using signed balance (clamped remaining can never go < 0).
+  const { balance } = await getInventoryBalance(
     room.id,
     room.inventoryCount,
     input.checkIn,
     input.checkOut,
   );
-  if (remainingAfter < 0) {
+  if (balance < 0) {
     await db.delete(bookings).where(eq(bookings.id, booking.id));
     throw new BookingError(
       "Sorry, this room just became unavailable. Please try another room or dates.",
@@ -216,6 +221,21 @@ export async function createBooking(input: CreateBookingInput) {
     note: "Guest submitted reservation request",
   });
 
+  // When Beds24 is live, push immediately so OTAs stop selling during the payment window.
+  // Paynow fulfillment remains idempotent (skips when externalBookingId is already set).
+  if (isBeds24Enabled()) {
+    const sync = await syncBookingOutboundIfEnabled(booking.id);
+    if (!sync.synced) {
+      await db.delete(bookings).where(eq(bookings.id, booking.id));
+      throw new BookingError(
+        sync.reason === "unmapped"
+          ? "This room is not mapped to Beds24. Staff must complete room mapping before live bookings."
+          : "Could not reserve this room on the channel manager. Please try again or contact Highbury Lounge.",
+        502,
+      );
+    }
+  }
+
   let foodAttached = false;
   try {
     if (input.extras?.length) {
@@ -232,6 +252,12 @@ export async function createBooking(input: CreateBookingInput) {
       foodAttached = true;
     }
   } catch (error) {
+    if (isBeds24Enabled()) {
+      await cancelBookingOutboundIfEnabled(
+        booking.id,
+        "Rolled back after food pre-order failure",
+      );
+    }
     await db.delete(bookings).where(eq(bookings.id, booking.id));
     throw error instanceof BookingError
       ? error
@@ -303,16 +329,6 @@ export async function createBooking(input: CreateBookingInput) {
     }
   } catch {
     /* non-blocking */
-  }
-
-  // When Beds24 is live, push manual staff bookings immediately so OTAs stop selling.
-  // Direct website bookings sync after Paynow fulfillment (see paynow-payments).
-  if (input.source === "MANUAL" && isBeds24Enabled()) {
-    try {
-      await syncBookingOutboundIfEnabled(booking.id);
-    } catch {
-      /* sync failure is logged on the booking; do not fail create */
-    }
   }
 
   return finalBooking;
@@ -395,36 +411,12 @@ export async function updateBookingStatus(params: {
 
     if (isBeds24Enabled() && booking.externalBookingId) {
       try {
-        const { getChannelManager, writeChannelSyncLog, BEDS24_PROVIDER } =
-          await import("@/lib/channel-manager");
-        await getChannelManager().cancelBooking(
-          booking.externalBookingId,
+        await cancelBookingOutboundIfEnabled(
+          params.bookingId,
           params.note || params.newStatus,
         );
-        await writeChannelSyncLog({
-          provider: BEDS24_PROVIDER,
-          entityType: "booking",
-          entityId: booking.id,
-          externalReference: booking.externalBookingId,
-          direction: "OUTBOUND",
-          eventType: "booking.cancel",
-          status: "SUCCESS",
-          message: `Cancelled on Beds24 after Highbury ${params.newStatus}`,
-        });
-      } catch (err) {
-        const { writeChannelSyncLog, BEDS24_PROVIDER } = await import(
-          "@/lib/channel-manager"
-        );
-        await writeChannelSyncLog({
-          provider: BEDS24_PROVIDER,
-          entityType: "booking",
-          entityId: booking.id,
-          externalReference: booking.externalBookingId,
-          direction: "OUTBOUND",
-          eventType: "booking.cancel",
-          status: "FAILED",
-          error: err instanceof Error ? err.message : "cancel failed",
-        });
+      } catch {
+        /* logged in cancel helper */
       }
     }
   } else if (params.newStatus === "Pending" || params.newStatus === "Awaiting Payment") {

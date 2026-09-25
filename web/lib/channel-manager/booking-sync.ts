@@ -353,3 +353,73 @@ export async function syncBookingOutboundIfEnabled(bookingId: number) {
     return { synced: false, reason: "error" as const, error: message };
   }
 }
+
+/**
+ * Cancel (or release) a Highbury booking on Beds24 when live sync is enabled.
+ * No-op when disabled or when the booking was never pushed.
+ */
+export async function cancelBookingOutboundIfEnabled(
+  bookingId: number,
+  reason?: string,
+) {
+  if (!isBeds24Enabled()) {
+    return { cancelled: false, reason: "disabled" as const };
+  }
+
+  const db = getDb();
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1);
+  if (!booking?.externalBookingId) {
+    return { cancelled: false, reason: "not_synced" as const };
+  }
+
+  try {
+    const provider = getChannelManager();
+    await provider.cancelBooking(
+      booking.externalBookingId,
+      reason || "Cancelled in Highbury",
+    );
+    await db
+      .update(bookings)
+      .set({
+        syncStatus: "SYNCED",
+        lastSyncedAt: new Date().toISOString(),
+        lastSyncError: null,
+      })
+      .where(eq(bookings.id, bookingId));
+    await writeChannelSyncLog({
+      provider: BEDS24_PROVIDER,
+      entityType: "booking",
+      entityId: bookingId,
+      externalReference: booking.externalBookingId,
+      direction: "OUTBOUND",
+      eventType: "booking.cancel",
+      status: "SUCCESS",
+      message: reason || "Cancelled on Beds24",
+    });
+    return { cancelled: true, reason: "ok" as const };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Beds24 cancel failed";
+    await db
+      .update(bookings)
+      .set({
+        syncStatus: "FAILED",
+        lastSyncError: message,
+      })
+      .where(eq(bookings.id, bookingId));
+    await writeChannelSyncLog({
+      provider: BEDS24_PROVIDER,
+      entityType: "booking",
+      entityId: bookingId,
+      externalReference: booking.externalBookingId,
+      direction: "OUTBOUND",
+      eventType: "booking.cancel",
+      status: "FAILED",
+      error: message,
+    });
+    return { cancelled: false, reason: "error" as const, error: message };
+  }
+}

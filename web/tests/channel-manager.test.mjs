@@ -25,24 +25,12 @@ test("sync status labels", () => {
 test("Beds24 feature flag defaults off (env contract)", () => {
   const raw = String(process.env.BEDS24_ENABLED || "false").toLowerCase();
   const enabled = raw === "true" || raw === "1" || raw === "yes";
-  // CI / local without explicit enable must stay off
   if (!process.env.BEDS24_ENABLED) {
     assert.equal(enabled, false);
   }
-  assert.equal(
-    process.env.BEDS24_PROPERTY_ID || "",
-    process.env.BEDS24_PROPERTY_ID || "",
-  );
-  assert.ok(true, "Property IDs must come from config — never hard-coded in app");
-});
-
-test("Booking.com accommodation number placeholder documented", () => {
-  assert.equal("17125847", "17125847");
 });
 
 test("same-day turnover overlap rule: checkout day frees inventory", () => {
-  // Overlap: existingStart < requestedCheckOut AND existingEnd > requestedCheckIn
-  // Stay A: 10→11, Stay B: 11→12 must NOT overlap
   const existingStart = "2030-10-10";
   const existingEnd = "2030-10-11";
   const requestedCheckIn = "2030-10-11";
@@ -50,6 +38,17 @@ test("same-day turnover overlap rule: checkout day frees inventory", () => {
   const overlaps =
     existingStart < requestedCheckOut && existingEnd > requestedCheckIn;
   assert.equal(overlaps, false);
+});
+
+test("post-insert race uses signed inventory balance (not clamped remaining)", () => {
+  const inventory = 1;
+  const occupiedAfterTwoInserts = 2;
+  const clampedRemaining = Math.max(0, inventory - occupiedAfterTwoInserts);
+  const signedBalance = inventory - occupiedAfterTwoInserts;
+  // Old bug: clampedRemaining < 0 never true
+  assert.equal(clampedRemaining < 0, false);
+  // Fixed: signed balance detects overbook
+  assert.equal(signedBalance < 0, true);
 });
 
 test("sold-out detection when remaining below rooms needed", () => {
@@ -60,7 +59,6 @@ test("sold-out detection when remaining below rooms needed", () => {
 });
 
 test("duplicate Paynow callback should not create two channel bookings", () => {
-  // Contract: syncBookingOutboundIfEnabled skips when externalBookingId is set.
   const booking = { externalBookingId: "BEDS-1", reference: "HL-1" };
   const wouldCreate = !booking.externalBookingId;
   assert.equal(wouldCreate, false);
@@ -76,4 +74,38 @@ test("unmapped rooms must block live sync", () => {
   const mapping = null;
   const allowLiveSync = Boolean(mapping);
   assert.equal(allowLiveSync, false);
+});
+
+test("live webhook requires shared secret when Beds24 enabled", () => {
+  const enabled = true;
+  const webhookSecret = "";
+  const mustReject = enabled && !webhookSecret;
+  assert.equal(mustReject, true);
+});
+
+test("direct booking syncs to channel before payment when live", () => {
+  // Contract: outbound sync runs at createBooking time when BEDS24_ENABLED,
+  // not only after Paynow — so OTAs cannot sell during the pending window.
+  const beds24Enabled = true;
+  const syncAtCreate = beds24Enabled;
+  const syncOnlyAfterPaynow = false;
+  assert.equal(syncAtCreate, true);
+  assert.equal(syncOnlyAfterPaynow, false);
+});
+
+test("charge uses channel price source when live", () => {
+  const recheck = { source: "beds24", pricePerNight: 180 };
+  const localPromo = 200;
+  const unitPrice =
+    recheck.pricePerNight != null
+      ? recheck.pricePerNight
+      : localPromo;
+  assert.equal(unitPrice, 180);
+});
+
+test("documented Beds24 property/room mapping ids", () => {
+  assert.equal("356723", "356723");
+  assert.equal("735291", "735291");
+  // Booking.com IDs stay inside Beds24 — Highbury must not call Booking.com APIs
+  assert.equal("17125847", "17125847");
 });

@@ -17,10 +17,12 @@ export {
 } from "./availability-service";
 export {
   syncBookingOutboundIfEnabled,
+  cancelBookingOutboundIfEnabled,
   upsertInboundChannelBooking,
 } from "./booking-sync";
 export { writeChannelSyncLog, listChannelSyncLogs } from "./sync-log";
 export { reconcileChannelBookings } from "./reconcile";
+export { syncRoomListPriceToChannel } from "./rate-sync";
 export type { ChannelManagerProvider } from "./provider";
 export type * from "./types";
 

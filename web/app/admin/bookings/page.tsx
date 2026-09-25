@@ -94,6 +94,9 @@ export default async function AdminBookingsPage({
           <h1>Bookings</h1>
           <p className="pms-page-sub">Search, filter and manage reservations</p>
         </div>
+        <Link className="admin-btn" href="/admin/bookings/new">
+          New manual booking
+        </Link>
       </header>
 
       <form className="admin-filters" method="get">

@@ -188,8 +188,7 @@ export class Beds24Provider implements ChannelManagerProvider {
 
   async createBooking(input: ChannelBookingInput): Promise<ChannelBooking> {
     assertLiveSyncAllowed("createBooking");
-    // Beds24 booking create semantics must be confirmed against live account
-    // before enabling. Payload shape follows API V2 bookings POST conventions.
+    // Beds24 API V2 bookings POST — apiReference used for idempotent retries.
     const data = await beds24Request<unknown>("/bookings", {
       method: "POST",
       body: [
@@ -205,6 +204,8 @@ export class Beds24Provider implements ChannelManagerProvider {
           email: input.guest.email,
           mobile: input.guest.phone,
           apiReference: input.idempotencyKey,
+          status: "confirmed",
+          price: input.totalAmount,
           comment: [
             input.localReference ? `Highbury ref ${input.localReference}` : null,
             input.notes,
@@ -223,7 +224,15 @@ export class Beds24Provider implements ChannelManagerProvider {
         "beds24_create",
       );
     }
-    return mapBooking(first);
+    const mapped = mapBooking(first);
+    if (!mapped.externalId) {
+      throw new ChannelManagerError(
+        "Beds24 booking response missing id.",
+        502,
+        "beds24_create",
+      );
+    }
+    return mapped;
   }
 
   async getBooking(externalId: string): Promise<ChannelBooking | null> {
@@ -319,6 +328,15 @@ export class Beds24Provider implements ChannelManagerProvider {
         message:
           "Webhook received but Beds24 synchronisation is disabled. No Highbury booking was created or updated.",
       };
+    }
+
+    // Live mode requires a configured shared secret — reject open webhooks.
+    if (!config.webhookSecret) {
+      throw new ChannelManagerError(
+        "BEDS24_WEBHOOK_SECRET is required when Beds24 synchronisation is enabled.",
+        503,
+        "beds24_webhook_secret_missing",
+      );
     }
 
     return {
