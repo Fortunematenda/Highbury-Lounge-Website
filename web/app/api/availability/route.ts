@@ -1,4 +1,5 @@
-import { findAvailableRooms, validateStayDates } from "@/lib/availability";
+import { searchAccommodationAvailability } from "@/lib/channel-manager";
+import { validateStayDates } from "@/lib/availability";
 import { jsonError } from "@/lib/format";
 
 export async function GET(request: Request) {
@@ -22,7 +23,9 @@ export async function GET(request: Request) {
       return jsonError("Number of rooms must be at least 1.", 400);
     }
 
-    const available = await findAvailableRooms({
+    // Browser → Highbury API → channel manager (when enabled) → response.
+    // Never call Beds24 from the browser.
+    const available = await searchAccommodationAvailability({
       checkIn,
       checkOut,
       adults,

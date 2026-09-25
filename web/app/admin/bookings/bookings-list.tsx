@@ -14,11 +14,19 @@ import {
 } from "@/app/admin/components/AdminMobileCard";
 import { formatDate, formatMoney, statusColor } from "@/lib/format";
 import { formatVenueDateTime } from "@/lib/timezone";
+import {
+  bookingSourceLabel,
+  syncStatusLabel,
+} from "@/lib/channel-manager/booking-sources";
 
 type BookingRow = {
   id: number;
   reference: string;
   status: string;
+  paymentStatus: string;
+  source: string | null;
+  syncStatus: string;
+  externalBookingReference: string | null;
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -91,6 +99,9 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
               <th>Guests</th>
               <th>Total</th>
               <th>Status</th>
+              <th>Payment</th>
+              <th>Source</th>
+              <th>Sync</th>
               <th>Created</th>
               <th aria-label="Actions" />
             </tr>
@@ -98,7 +109,7 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={10}>No bookings match your filters.</td>
+                <td colSpan={13}>No bookings match your filters.</td>
               </tr>
             ) : (
               rows.map((b) => (
@@ -121,6 +132,17 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
                     >
                       {b.status}
                     </span>
+                  </td>
+                  <td>{b.paymentStatus}</td>
+                  <td>{bookingSourceLabel(b.source)}</td>
+                  <td>
+                    {syncStatusLabel(b.syncStatus)}
+                    {b.externalBookingReference ? (
+                      <>
+                        <br />
+                        <span className="muted">{b.externalBookingReference}</span>
+                      </>
+                    ) : null}
                   </td>
                   <td>{formatVenueDateTime(b.createdAt)}</td>
                   <td>
@@ -163,6 +185,9 @@ export function BookingsList({ rows }: { rows: BookingRow[] }) {
                     label: "Total",
                     value: formatMoney(b.totalAmount, b.currency),
                   },
+                  { label: "Payment", value: b.paymentStatus },
+                  { label: "Source", value: bookingSourceLabel(b.source) },
+                  { label: "Sync", value: syncStatusLabel(b.syncStatus) },
                   { label: "Check-in", value: formatDate(b.checkIn) },
                   { label: "Check-out", value: formatDate(b.checkOut) },
                   {

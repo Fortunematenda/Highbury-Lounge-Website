@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { bookings, bookingGuests, roomBlocks, roomTypes } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
 import { statusColor } from "@/lib/format";
+import { bookingSourceLabel } from "@/lib/channel-manager/booking-sources";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export default async function AdminCalendarPage({
       id: bookings.id,
       reference: bookings.reference,
       status: bookings.status,
+      source: bookings.source,
       checkIn: bookings.checkIn,
       checkOut: bookings.checkOut,
       roomName: roomTypes.name,
@@ -132,9 +134,12 @@ export default async function AdminCalendarPage({
                       href={`/admin/bookings/${b.id}`}
                       className="admin-cal-item"
                       style={{ borderLeftColor: statusColor(b.status) }}
-                      title={`${b.reference} · ${b.status}`}
+                      title={`${b.reference} · ${b.roomName || "Room"} · ${bookingSourceLabel(b.source)} · ${b.status}`}
                     >
                       {b.reference}
+                      <span className="muted" style={{ display: "block", fontSize: 11 }}>
+                        {bookingSourceLabel(b.source)}
+                      </span>
                     </Link>
                   ))}
                   {dayBlocks.map((b) => (

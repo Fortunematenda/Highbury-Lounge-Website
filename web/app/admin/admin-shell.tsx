@@ -42,6 +42,8 @@ import {
   Users,
   Wallet,
   X,
+  Plug,
+  CalendarRange,
 } from "lucide-react";
 
 type NavItem = {
@@ -75,6 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/bookings", label: "Bookings", icon: ClipboardList },
       { href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
       { href: "/admin/rooms", label: "Rooms", icon: BedDouble },
+      { href: "/admin/rates", label: "Rates & Availability", icon: CalendarRange },
       { href: "/admin/blocks", label: "Blocks", icon: CalendarOff },
       { href: "/admin/payments", label: "Payments", icon: Wallet },
       { href: "/admin/guests", label: "Guests", icon: Users },
@@ -122,6 +125,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/analytics", label: "Analytics", icon: LineChart },
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/audit", label: "Audit", icon: Shield },
+      { href: "/admin/integrations/beds24", label: "Beds24", icon: Plug },
       { href: "/admin/settings", label: "Settings", icon: Settings },
     ],
   },

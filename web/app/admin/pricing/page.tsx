@@ -3,8 +3,8 @@ import { requireAdminPage } from "@/lib/admin-page";
 
 export const dynamic = "force-dynamic";
 
-/** Pricing lives on each room — keep this URL working as a redirect. */
+/** Legacy URL — rates & availability now live at /admin/rates */
 export default async function PricingPage() {
-  await requireAdminPage(["content_manager"]);
-  redirect("/admin/rooms");
+  await requireAdminPage(["content_manager", "booking_manager"]);
+  redirect("/admin/rates");
 }

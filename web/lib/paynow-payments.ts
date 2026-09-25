@@ -99,7 +99,13 @@ async function markBookingPaid(bookingId: number, paynowRef: string | null, amou
     .where(eq(bookings.id, bookingId))
     .limit(1);
   if (!booking) return;
-  if (booking.paymentStatus === "Paid") return;
+  const alreadyPaid = booking.paymentStatus === "Paid";
+  if (alreadyPaid) {
+    // Idempotent Paynow callbacks must not create a second Beds24 booking.
+    const { syncBookingOutboundIfEnabled } = await import("@/lib/channel-manager");
+    await syncBookingOutboundIfEnabled(bookingId);
+    return;
+  }
 
   const existingPaynow = await db
     .select({ id: payments.id })
@@ -144,6 +150,11 @@ async function markBookingPaid(bookingId: number, paynowRef: string | null, amou
       updatedAt: sql`CURRENT_TIMESTAMP`,
     })
     .where(eq(bookings.id, bookingId));
+
+  if (paymentStatus === "Paid") {
+    const { syncBookingOutboundIfEnabled } = await import("@/lib/channel-manager");
+    await syncBookingOutboundIfEnabled(bookingId);
+  }
 }
 
 async function markTicketPaid(orderId: number) {

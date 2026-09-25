@@ -157,7 +157,21 @@ export const bookings = sqliteTable(
     adminNotes: text("admin_notes"),
     paymentStatus: text("payment_status").notNull().default("Unpaid"),
     expiresAt: text("expires_at"),
+    /**
+     * Booking origin. Legacy rows may still say "website".
+     * Canonical values: DIRECT | BOOKING_COM | MANUAL | OTHER (plus legacy website).
+     */
     source: text("source").default("website"),
+    /** Channel manager provider key when synced, e.g. beds24 */
+    channelManager: text("channel_manager"),
+    /** Provider booking id (unique per provider when set) */
+    externalBookingId: text("external_booking_id"),
+    /** Human-facing OTA / Beds24 reference */
+    externalBookingReference: text("external_booking_reference"),
+    /** NOT_SYNCED | PENDING | SYNCED | FAILED */
+    syncStatus: text("sync_status").notNull().default("NOT_SYNCED"),
+    lastSyncedAt: text("last_synced_at"),
+    lastSyncError: text("last_sync_error"),
     /** Guest UI language: en | zh-CN | sn | nd */
     preferredLanguage: text("preferred_language").default("en"),
     ...timestamps,
@@ -168,6 +182,12 @@ export const bookings = sqliteTable(
     index("bookings_room_idx").on(t.roomTypeId),
     index("bookings_created_idx").on(t.createdAt),
     index("bookings_payment_idx").on(t.paymentStatus),
+    index("bookings_source_idx").on(t.source),
+    index("bookings_sync_status_idx").on(t.syncStatus),
+    uniqueIndex("bookings_external_uidx").on(
+      t.channelManager,
+      t.externalBookingId,
+    ),
   ],
 );
 
@@ -854,5 +874,70 @@ export const paynowTransactions = sqliteTable(
   (t) => [
     index("paynow_transactions_entity_idx").on(t.entityType, t.entityId),
     index("paynow_transactions_status_idx").on(t.status),
+  ],
+);
+
+/**
+ * Maps Highbury room types to an external channel-manager room/rate plan.
+ * Populate Beds24 IDs only after account verification — no live sync until enabled.
+ */
+export const channelRoomMappings = sqliteTable(
+  "channel_room_mappings",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** e.g. beds24 */
+    provider: text("provider").notNull(),
+    localRoomTypeId: integer("local_room_type_id")
+      .notNull()
+      .references(() => roomTypes.id, { onDelete: "cascade" }),
+    externalPropertyId: text("external_property_id").notNull(),
+    externalRoomId: text("external_room_id").notNull(),
+    externalRoomName: text("external_room_name"),
+    externalRatePlanId: text("external_rate_plan_id"),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [
+    uniqueIndex("channel_room_mappings_provider_local_uidx").on(
+      t.provider,
+      t.localRoomTypeId,
+    ),
+    uniqueIndex("channel_room_mappings_provider_ext_uidx").on(
+      t.provider,
+      t.externalPropertyId,
+      t.externalRoomId,
+    ),
+    index("channel_room_mappings_provider_idx").on(t.provider),
+  ],
+);
+
+/**
+ * Technical sync audit trail for channel managers (no secrets / card data).
+ */
+export const channelSyncLogs = sqliteTable(
+  "channel_sync_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    provider: text("provider").notNull(),
+    /** booking | room_type | rate | inventory | webhook | connection */
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    externalReference: text("external_reference"),
+    /** INBOUND | OUTBOUND */
+    direction: text("direction").notNull(),
+    eventType: text("event_type").notNull(),
+    /** PENDING | SUCCESS | FAILED | RETRYING */
+    status: text("status").notNull(),
+    message: text("message"),
+    error: text("error"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("channel_sync_logs_provider_idx").on(t.provider),
+    index("channel_sync_logs_created_idx").on(t.createdAt),
+    index("channel_sync_logs_status_idx").on(t.status),
+    index("channel_sync_logs_entity_idx").on(t.entityType, t.entityId),
   ],
 );

@@ -37,6 +37,8 @@ export function resolveAdminRouteMeta(pathname: string): AdminRouteMeta {
     users: "Users",
     audit: "Audit",
     settings: "Settings",
+    integrations: "Beds24",
+    rates: "Rates & Availability",
   };
 
   const moduleLabel = modules[root] ?? "Admin";

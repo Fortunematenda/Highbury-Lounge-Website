@@ -13,6 +13,7 @@
     "start:node": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "test:i18n": "node --experimental-strip-types --test tests/i18n.test.mjs",
+    "test:channel": "node --experimental-strip-types --test tests/channel-manager.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",

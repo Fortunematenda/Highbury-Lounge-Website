@@ -11,6 +11,11 @@ import {
   nightsBetween,
   validateStayDates,
 } from "@/lib/availability";
+import {
+  isBeds24Enabled,
+  revalidateRoomAvailability,
+  syncBookingOutboundIfEnabled,
+} from "@/lib/channel-manager";
 import { getSettingsMap } from "@/lib/settings";
 import { queueNotification } from "@/lib/notifications";
 import { createAdminNotification } from "@/lib/admin-notifications";
@@ -44,6 +49,11 @@ export type CreateBookingInput = {
   /** Optional food pre-order lines saved with the booking */
   extras?: FoodOrderItemInput[];
   foodSpecialInstructions?: string | null;
+  /**
+   * DIRECT (website) | MANUAL (staff) | OTHER.
+   * BOOKING_COM is set only by inbound channel sync.
+   */
+  source?: "DIRECT" | "MANUAL" | "OTHER" | "website";
 };
 
 function bookingReference(): string {
@@ -97,13 +107,14 @@ export async function createBooking(input: CreateBookingInput) {
     throw new BookingError("Guest count exceeds room capacity.", 400);
   }
 
-  const remaining = await getAvailableCount(
-    room.id,
-    room.inventoryCount,
-    input.checkIn,
-    input.checkOut,
-  );
-  if (remaining < roomsBooked) {
+  // Always revalidate immediately before commit (local or Beds24 when enabled).
+  const recheck = await revalidateRoomAvailability({
+    roomTypeId: room.id,
+    checkIn: input.checkIn,
+    checkOut: input.checkOut,
+    roomsNeeded: roomsBooked,
+  });
+  if (!recheck.ok) {
     throw new BookingError(
       "Sorry, this room is no longer available for your selected dates. Please choose different dates or another room.",
       409,
@@ -163,7 +174,8 @@ export async function createBooking(input: CreateBookingInput) {
       termsAccepted: true,
       paymentStatus: "Unpaid",
       expiresAt: expiresAt.toISOString(),
-      source: "website",
+      source: input.source || "website",
+      syncStatus: "NOT_SYNCED",
       preferredLanguage: input.preferredLanguage || "en",
     })
     .returning();
@@ -293,6 +305,16 @@ export async function createBooking(input: CreateBookingInput) {
     /* non-blocking */
   }
 
+  // When Beds24 is live, push manual staff bookings immediately so OTAs stop selling.
+  // Direct website bookings sync after Paynow fulfillment (see paynow-payments).
+  if (input.source === "MANUAL" && isBeds24Enabled()) {
+    try {
+      await syncBookingOutboundIfEnabled(booking.id);
+    } catch {
+      /* sync failure is logged on the booking; do not fail create */
+    }
+  }
+
   return finalBooking;
 }
 
@@ -370,6 +392,41 @@ export async function updateBookingStatus(params: {
       entityId: booking.id,
       actionUrl: `/admin/bookings/${booking.id}`,
     });
+
+    if (isBeds24Enabled() && booking.externalBookingId) {
+      try {
+        const { getChannelManager, writeChannelSyncLog, BEDS24_PROVIDER } =
+          await import("@/lib/channel-manager");
+        await getChannelManager().cancelBooking(
+          booking.externalBookingId,
+          params.note || params.newStatus,
+        );
+        await writeChannelSyncLog({
+          provider: BEDS24_PROVIDER,
+          entityType: "booking",
+          entityId: booking.id,
+          externalReference: booking.externalBookingId,
+          direction: "OUTBOUND",
+          eventType: "booking.cancel",
+          status: "SUCCESS",
+          message: `Cancelled on Beds24 after Highbury ${params.newStatus}`,
+        });
+      } catch (err) {
+        const { writeChannelSyncLog, BEDS24_PROVIDER } = await import(
+          "@/lib/channel-manager"
+        );
+        await writeChannelSyncLog({
+          provider: BEDS24_PROVIDER,
+          entityType: "booking",
+          entityId: booking.id,
+          externalReference: booking.externalBookingId,
+          direction: "OUTBOUND",
+          eventType: "booking.cancel",
+          status: "FAILED",
+          error: err instanceof Error ? err.message : "cancel failed",
+        });
+      }
+    }
   } else if (params.newStatus === "Pending" || params.newStatus === "Awaiting Payment") {
     await createAdminNotification({
       type: "booking_confirmation_needed",

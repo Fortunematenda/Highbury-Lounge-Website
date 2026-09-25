@@ -28,6 +28,10 @@ import { formatVenueDateTime } from "@/lib/timezone";
 import { getFoodOrderForBooking } from "@/lib/food-orders";
 import { LOCALE_NATIVE_NAMES, isAppLocale } from "@/lib/i18n/locales";
 import {
+  bookingSourceLabel,
+  syncStatusLabel,
+} from "@/lib/channel-manager/booking-sources";
+import {
   DetailMetadataCard,
   DetailPageShell,
   DetailSectionCard,
@@ -208,6 +212,36 @@ export default async function AdminBookingDetailPage({
               <div>
                 <dt>Payment</dt>
                 <dd>{b.paymentStatus}</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd>{bookingSourceLabel(b.source)}</dd>
+              </div>
+              <div>
+                <dt>External reference</dt>
+                <dd>
+                  {b.externalBookingReference || b.externalBookingId || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Sync status</dt>
+                <dd>
+                  {syncStatusLabel(b.syncStatus)}
+                  {b.lastSyncedAt ? (
+                    <>
+                      <br />
+                      <span className="admin-muted">
+                        Last sync {formatVenueDateTime(b.lastSyncedAt)}
+                      </span>
+                    </>
+                  ) : null}
+                  {b.lastSyncError ? (
+                    <>
+                      <br />
+                      <span className="form-error">{b.lastSyncError}</span>
+                    </>
+                  ) : null}
+                </dd>
               </div>
             </dl>
           </section>

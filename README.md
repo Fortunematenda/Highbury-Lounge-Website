@@ -105,6 +105,10 @@ Copy `web/.env.example`. Important variables:
 | `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional email delivery |
 | `PAYNOW_ENABLED` | Guest online checkout switch (`false` until live; set `true` to turn Paynow on) |
 | `PAYNOW_INTEGRATION_ID` / `PAYNOW_INTEGRATION_KEY` | Paynow Zimbabwe keys (safe to keep on server while disabled) |
+| `BEDS24_ENABLED` | Channel manager sync (`false` until Beds24 Property/Room IDs + token are ready) |
+| `BEDS24_REFRESH_TOKEN` / `BEDS24_PROPERTY_ID` | Beds24 API V2 credentials (server-only) |
+| `BEDS24_WEBHOOK_SECRET` | Optional custom header secret for booking webhooks |
+| `BEDS24_API_BASE_URL` | Defaults to `https://beds24.com/api/v2` |
 | `SITE_URL` | Public site origin for emails and Paynow return/result URLs |
 
 Without SMTP, notifications are stored with status `unconfigured` and are **not** marked sent.
@@ -169,6 +173,23 @@ When Paynow approves live mode: set `PAYNOW_ENABLED=true`, restore any commented
 Never commit the integration key. After deploy, migration `0010_paynow` runs on container start. Leave the Paynow dashboard Notification URL blank — each transaction sends its own `resulturl` / `returnurl` from `SITE_URL`.
 
 Admins can still record cash / bank / EcoCash / card payments manually for walk-ins.
+
+## Channel manager (Beds24 / Booking.com)
+
+Accommodation inventory can sync through **Beds24 API V2** (Booking.com accommodation number `17125847`). Preparation is in place; **live sync stays off**.
+
+```
+BEDS24_ENABLED=false
+BEDS24_REFRESH_TOKEN=
+BEDS24_PROPERTY_ID=
+BEDS24_WEBHOOK_SECRET=
+BEDS24_API_BASE_URL=https://beds24.com/api/v2
+```
+
+Admin → **Beds24** (Management): health, Test Connection, room mapping, sync logs, reconciliation.  
+Webhook URL (configure in Beds24 after go-live): `{SITE_URL}/api/integrations/beds24/webhook`
+
+Events, tickets, menus, conference, and CMS remain Highbury-only.
 
 
 ## Guest booking flow
