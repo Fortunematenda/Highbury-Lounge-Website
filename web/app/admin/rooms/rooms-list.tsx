@@ -34,9 +34,17 @@ type RoomRow = {
   featuredImage: string | null;
   isActive: boolean;
   isFeatured: boolean;
+  channelStatus?: string;
+  channelLastSyncedAt?: string | null;
 };
 
-export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
+export function RoomsList({
+  rooms,
+  beds24Enabled = false,
+}: {
+  rooms: RoomRow[];
+  beds24Enabled?: boolean;
+}) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<number | null>(null);
 
@@ -124,6 +132,13 @@ export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
                   {room.isFeatured ? (
                     <PmsStatusPill label="Featured" tone="info" />
                   ) : null}
+                  {room.channelStatus === "Synced" ? (
+                    <PmsStatusPill label="Channel Synced" tone="success" />
+                  ) : room.channelStatus === "Failed" ? (
+                    <PmsStatusPill label="Sync Failed" tone="danger" />
+                  ) : room.channelStatus === "Not mapped" && beds24Enabled ? (
+                    <PmsStatusPill label="Not mapped" tone="neutral" />
+                  ) : null}
                 </div>
               </Link>
 
@@ -172,6 +187,19 @@ export function RoomsList({ rooms }: { rooms: RoomRow[] }) {
                     <span>available</span>
                   </li>
                 </ul>
+
+                {room.channelStatus ? (
+                  <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                    Channel: <strong>{room.channelStatus}</strong>
+                    {room.channelStatus === "Failed" ? (
+                      <>
+                        {" "}
+                        · Booking.com may still have the previous price ·{" "}
+                        <Link href="/admin/rates">Retry Sync</Link>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
 
                 <div className="pms-room-card-actions">
                   <Link

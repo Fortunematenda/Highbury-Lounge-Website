@@ -1,6 +1,7 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { channelSyncLogs } from "@/db/schema";
+import { createAdminNotification } from "@/lib/admin-notifications";
 import type {
   ChannelProviderKey,
   SyncLogDirection,
@@ -39,6 +40,25 @@ export async function writeChannelSyncLog(input: WriteSyncLogInput) {
       error: input.error ?? null,
     })
     .returning();
+
+  if (input.status === "FAILED") {
+    const entityNum =
+      input.entityId != null && Number.isFinite(Number(input.entityId))
+        ? Number(input.entityId)
+        : null;
+    await createAdminNotification({
+      type: "channel_sync_failed",
+      title: `Channel sync failed · ${input.eventType}`,
+      message:
+        input.error ||
+        input.message ||
+        "A Beds24 synchronisation failed. Check Sync Logs and retry.",
+      entityType: input.entityType,
+      entityId: entityNum,
+      actionUrl: "/admin/integrations/beds24/logs",
+    });
+  }
+
   return row;
 }
 
@@ -79,4 +99,25 @@ export async function getLatestSyncEvent(options: {
       return true;
     }) ?? null
   );
+}
+
+export async function getLatestEntitySync(options: {
+  provider: string;
+  entityType: string;
+  entityId: string | number;
+}) {
+  const db = getDb();
+  const [row] = await db
+    .select()
+    .from(channelSyncLogs)
+    .where(
+      and(
+        eq(channelSyncLogs.provider, options.provider),
+        eq(channelSyncLogs.entityType, options.entityType),
+        eq(channelSyncLogs.entityId, String(options.entityId)),
+      ),
+    )
+    .orderBy(desc(channelSyncLogs.createdAt))
+    .limit(1);
+  return row ?? null;
 }

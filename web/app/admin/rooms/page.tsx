@@ -2,6 +2,8 @@ import { asc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { roomTypes } from "@/db/schema";
 import { requireAdminPage } from "@/lib/admin-page";
+import { isBeds24Enabled } from "@/lib/channel-manager";
+import { listRoomChannelStatuses } from "@/lib/channel-manager/room-sync-status";
 import { RoomsList } from "./rooms-list";
 
 export const dynamic = "force-dynamic";
@@ -27,5 +29,19 @@ export default async function AdminRoomsPage() {
     .from(roomTypes)
     .orderBy(asc(roomTypes.displayOrder), asc(roomTypes.name));
 
-  return <RoomsList rooms={rooms} />;
+  const channelStatuses = await listRoomChannelStatuses();
+  const byId = new Map(channelStatuses.map((c) => [c.roomTypeId, c]));
+
+  const roomsWithChannel = rooms.map((r) => {
+    const ch = byId.get(r.id);
+    return {
+      ...r,
+      channelStatus: ch?.channelStatus ?? "Not mapped",
+      channelLastSyncedAt: ch?.lastSyncedAt ?? null,
+    };
+  });
+
+  return (
+    <RoomsList rooms={roomsWithChannel} beds24Enabled={isBeds24Enabled()} />
+  );
 }

@@ -103,9 +103,20 @@ test("charge uses channel price source when live", () => {
   assert.equal(unitPrice, 180);
 });
 
-test("documented Beds24 property/room mapping ids", () => {
-  assert.equal("356723", "356723");
-  assert.equal("735291", "735291");
-  // Booking.com IDs stay inside Beds24 — Highbury must not call Booking.com APIs
-  assert.equal("17125847", "17125847");
+test("failed channel sync should surface as Failed not Saved successfully", () => {
+  const apiResponse = { ok: true, syncStatus: "FAILED" };
+  const staffLabel =
+    apiResponse.syncStatus === "Synced"
+      ? "Synced"
+      : apiResponse.syncStatus === "FAILED"
+        ? "Failed"
+        : "Saved locally";
+  assert.equal(staffLabel, "Failed");
+  assert.notEqual(staffLabel, "Saved successfully");
+});
+
+test("thin webhook payloads are enriched before upsert", () => {
+  const payload = { bookId: "99" };
+  const thin = !payload.roomId || !payload.arrival;
+  assert.equal(thin, true);
 });

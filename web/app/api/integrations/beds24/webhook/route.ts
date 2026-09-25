@@ -1,5 +1,6 @@
 import {
   getBeds24Config,
+  getChannelManager,
   isBeds24Enabled,
   upsertInboundChannelBooking,
   writeChannelSyncLog,
@@ -12,9 +13,10 @@ import { jsonError } from "@/lib/format";
 /**
  * Beds24 booking webhook (API V2 / property Access → Booking Webhook).
  * Configure URL: {SITE_URL}/api/integrations/beds24/webhook
- * Optional custom header secret via BEDS24_WEBHOOK_SECRET.
+ * BEDS24_WEBHOOK_SECRET is required when BEDS24_ENABLED=true.
  *
  * Idempotent: duplicate deliveries update the same Highbury booking.
+ * Thin payloads are enriched via Beds24 getBooking when possible.
  */
 export async function POST(request: Request) {
   const raw = await request.text();
@@ -56,32 +58,104 @@ export async function POST(request: Request) {
     }
 
     const config = getBeds24Config();
-    await upsertInboundChannelBooking({
-      externalBookingId: result.externalBookingId,
-      externalReference: String(
-        payload.reference ?? payload.apiReference ?? result.externalBookingId,
-      ),
-      externalRoomId: String(payload.roomId ?? ""),
-      externalPropertyId: String(
-        payload.propertyId ?? payload.propId ?? config.propertyId,
-      ),
-      checkIn: String(payload.arrival ?? payload.firstNight ?? ""),
-      checkOut: String(payload.departure ?? payload.lastNight ?? ""),
-      adults: Number(payload.numAdult ?? payload.adults ?? 1),
-      children: Number(payload.numChild ?? payload.children ?? 0),
-      status: String(payload.status ?? payload.bookingStatus ?? ""),
-      totalAmount:
-        payload.price != null ? Number(payload.price) : undefined,
-      currency: payload.currency ? String(payload.currency) : undefined,
-      guest: {
-        firstName: String(payload.firstName ?? ""),
-        lastName: String(payload.lastName ?? ""),
-        email: payload.email ? String(payload.email) : undefined,
-        phone: payload.mobile || payload.phone
+    let externalRoomId = String(payload.roomId ?? "");
+    let externalPropertyId = String(
+      payload.propertyId ?? payload.propId ?? config.propertyId,
+    );
+    let checkIn = String(payload.arrival ?? payload.firstNight ?? "");
+    let checkOut = String(payload.departure ?? payload.lastNight ?? "");
+    let adults = Number(payload.numAdult ?? payload.adults ?? 1);
+    let children = Number(payload.numChild ?? payload.children ?? 0);
+    let status = String(payload.status ?? payload.bookingStatus ?? "");
+    let totalAmount =
+      payload.price != null ? Number(payload.price) : undefined;
+    let currency = payload.currency ? String(payload.currency) : undefined;
+    let guest = {
+      firstName: String(payload.firstName ?? ""),
+      lastName: String(payload.lastName ?? ""),
+      email: payload.email ? String(payload.email) : undefined,
+      phone:
+        payload.mobile || payload.phone
           ? String(payload.mobile ?? payload.phone)
           : undefined,
-      },
-      channelName: String(payload.referer ?? payload.channel ?? payload.apiSource ?? ""),
+    };
+    let channelName = String(
+      payload.referer ?? payload.channel ?? payload.apiSource ?? "",
+    );
+    let externalReference = String(
+      payload.reference ?? payload.apiReference ?? result.externalBookingId,
+    );
+
+    const thin =
+      !externalRoomId ||
+      !checkIn ||
+      !checkOut ||
+      (!guest.firstName && !guest.email);
+
+    if (thin) {
+      try {
+        const live = await getChannelManager().getBooking(
+          result.externalBookingId,
+        );
+        if (live) {
+          externalRoomId = externalRoomId || live.roomId;
+          externalPropertyId = externalPropertyId || live.propertyId;
+          checkIn = checkIn || live.checkIn;
+          checkOut = checkOut || live.checkOut;
+          adults = adults || live.adults || 1;
+          children = children || live.children || 0;
+          status = status || live.status;
+          if (totalAmount == null && live.totalAmount != null) {
+            totalAmount = live.totalAmount;
+          }
+          currency = currency || live.currency;
+          guest = {
+            firstName: guest.firstName || live.guest?.firstName || "",
+            lastName: guest.lastName || live.guest?.lastName || "",
+            email: guest.email || live.guest?.email,
+            phone: guest.phone || live.guest?.phone,
+          };
+          externalReference =
+            externalReference ||
+            live.externalReference ||
+            result.externalBookingId;
+          await writeChannelSyncLog({
+            provider: BEDS24_PROVIDER,
+            entityType: "webhook",
+            externalReference: result.externalBookingId,
+            direction: "INBOUND",
+            eventType: "webhook.enrich",
+            status: "SUCCESS",
+            message: "Enriched thin webhook payload via Beds24 getBooking.",
+          });
+        }
+      } catch (err) {
+        await writeChannelSyncLog({
+          provider: BEDS24_PROVIDER,
+          entityType: "webhook",
+          externalReference: result.externalBookingId,
+          direction: "INBOUND",
+          eventType: "webhook.enrich",
+          status: "FAILED",
+          error: err instanceof Error ? err.message : "enrich failed",
+        });
+      }
+    }
+
+    await upsertInboundChannelBooking({
+      externalBookingId: result.externalBookingId,
+      externalReference,
+      externalRoomId,
+      externalPropertyId,
+      checkIn,
+      checkOut,
+      adults,
+      children,
+      status,
+      totalAmount,
+      currency,
+      guest,
+      channelName,
     });
 
     return Response.json({ ok: true, handled: true });

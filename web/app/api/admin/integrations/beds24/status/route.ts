@@ -64,8 +64,12 @@ export async function GET() {
       lastInventoryUpdate: lastInventory?.createdAt ?? null,
       failedSynchronisations: failed,
       webhookStatus: config.webhookSecret
-        ? "Secret configured (verify custom header in Beds24)"
-        : "Optional secret not set — endpoint accepts requests without header auth",
+        ? isBeds24Enabled()
+          ? "Secret configured — required for live webhooks"
+          : "Secret configured (verify custom header in Beds24)"
+        : isBeds24Enabled()
+          ? "MISSING — set BEDS24_WEBHOOK_SECRET before relying on inbound bookings"
+          : "Not set — required when BEDS24_ENABLED=true",
       message: isBeds24Enabled()
         ? "Beds24 synchronisation is enabled."
         : "Beds24 synchronisation is disabled.",

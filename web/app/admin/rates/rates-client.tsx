@@ -47,7 +47,11 @@ export function RatesAvailabilityClient({ rooms }: { rooms: RoomOption[] }) {
             ? "Saved locally"
             : String(data.syncStatus || "Success"),
       );
-      toast.success(data.message || "Rates updated");
+      toast.success(
+        data.syncStatus === "Synced"
+          ? "Synced to Beds24 (Booking.com should update via the channel)"
+          : data.message || "Rates updated",
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {

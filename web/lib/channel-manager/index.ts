@@ -20,9 +20,13 @@ export {
   cancelBookingOutboundIfEnabled,
   upsertInboundChannelBooking,
 } from "./booking-sync";
-export { writeChannelSyncLog, listChannelSyncLogs } from "./sync-log";
+export { writeChannelSyncLog, listChannelSyncLogs, getLatestEntitySync } from "./sync-log";
 export { reconcileChannelBookings } from "./reconcile";
 export { syncRoomListPriceToChannel } from "./rate-sync";
+export {
+  listRoomChannelStatuses,
+  retryRoomRateSync,
+} from "./room-sync-status";
 export type { ChannelManagerProvider } from "./provider";
 export type * from "./types";
 
